@@ -68,3 +68,12 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
+### LIVE CHAT IMPLEMENTATION 
+
+I used Tawk.to for free chart service in this project during development
+https://dashboard.tawk.to/#/wizard?lang=en
+https://dashboard.tawk.to/#/wizard
+
+https://dashboard.tawk.to/#/chat

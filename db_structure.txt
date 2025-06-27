@@ -1,0 +1,263 @@
+Backend Architecture for Literacy Tree School Website
+Based on your frontend code, I'll design a comprehensive backend system that allows admins to control all aspects of the website through a dashboard.
+
+Backend Technology Stack
+Server: Node.js with Express.js
+
+Database: MongoDB (with Mongoose ODM)
+
+Authentication: JWT (JSON Web Tokens)
+
+File Storage: Cloudinary (for image uploads) or AWS S3
+
+API Documentation: Swagger
+
+Database Schema
+Core Models
+User Model (for admins, staff, and parents)
+
+javascript
+{
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['admin', 'staff', 'parent'], default: 'parent' },
+  phone: { type: String },
+  profileImage: { type: String },
+  isActive: { type: Boolean, default: true },
+  lastLogin: { type: Date },
+  permissions: [{ type: String }], // For granular access control
+  createdAt: { type: Date, default: Date.now }
+}
+Admission Model (for your admission form)
+
+javascript
+{
+  childInfo: {
+    firstName: { type: String, required: true },
+    surname: { type: String, required: true },
+    dob: { type: Date, required: true },
+    age: { type: Number },
+    placeOfBirth: { type: String, required: true },
+    nationality: { type: String, required: true },
+    religion: { type: String }
+  },
+  parentInfo: {
+    fathersName: { type: String },
+    fathersContact: { type: String },
+    mothersName: { type: String },
+    mothersContact: { type: String },
+    residentialAddress: { type: String, required: true }
+  },
+  healthInfo: {
+    hasAllergies: { type: String, enum: ['Yes', 'No'], default: 'No' },
+    allergyDetails: { type: String },
+    isVaccinated: { type: String, enum: ['Yes', 'No'], default: 'Yes' },
+    vaccinationDetails: { type: String },
+    doctorDetails: { type: String },
+    doctorContact: { type: String },
+    emergencyContacts: [{ type: String }]
+  },
+  documents: {
+    underFiveCard: { type: String }, // URL to stored file
+    passportPhoto: { type: String }  // URL to stored file
+  },
+  declaration: {
+    declarationName: { type: String },
+    signatureData: { type: String } // Base64 encoded signature
+  },
+  otherInfo: { type: String },
+  status: { type: String, enum: ['pending', 'under-review', 'accepted', 'rejected'], default: 'pending' },
+  admissionDate: { type: Date },
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Admin/staff assigned to process
+  notes: [{
+    content: { type: String },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    createdAt: { type: Date, default: Date.now }
+  }],
+  createdAt: { type: Date, default: Date.now }
+}
+Content Management Models
+
+javascript
+// Page Model
+{
+  title: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
+  content: { type: String, required: true },
+  seoTitle: { type: String },
+  seoDescription: { type: String },
+  isPublished: { type: Boolean, default: false },
+  lastUpdated: { type: Date, default: Date.now },
+  lastUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}
+
+// Program Model
+{
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  ageRange: { type: String },
+  image: { type: String },
+  curriculum: [{ 
+    title: { type: String },
+    description: { type: String }
+  }],
+  isActive: { type: Boolean, default: true }
+}
+
+// Gallery Model
+{
+  title: { type: String, required: true },
+  description: { type: String },
+  images: [{ 
+    url: { type: String, required: true },
+    caption: { type: String }
+  }],
+  date: { type: Date, default: Date.now },
+  isFeatured: { type: Boolean, default: false }
+}
+
+// News/Announcement Model
+{
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  image: { type: String },
+  publishDate: { type: Date, default: Date.now },
+  isFeatured: { type: Boolean, default: false },
+  tags: [{ type: String }]
+}
+API Endpoints
+Authentication
+POST /api/auth/register - Admin registration (first admin only)
+
+POST /api/auth/login - Login for all users
+
+POST /api/auth/forgot-password - Password reset request
+
+POST /api/auth/reset-password - Password reset
+
+Admissions
+GET /api/admissions - Get all admissions (with filters)
+
+GET /api/admissions/:id - Get single admission
+
+POST /api/admissions - Create new admission (your existing form)
+
+PUT /api/admissions/:id/status - Update admission status
+
+PUT /api/admissions/:id/assign - Assign admission to staff
+
+POST /api/admissions/:id/notes - Add note to admission
+
+Content Management
+GET /api/pages - Get all pages
+
+POST /api/pages - Create new page
+
+PUT /api/pages/:slug - Update page
+
+DELETE /api/pages/:slug - Delete page
+
+(Similar endpoints for programs, gallery, news)
+
+User Management
+GET /api/users - Get all users
+
+POST /api/users - Create new user (admin only)
+
+PUT /api/users/:id - Update user
+
+PUT /api/users/:id/permissions - Update user permissions
+
+DELETE /api/users/:id - Delete user (or deactivate)
+
+Dashboard Statistics
+GET /api/dashboard/stats - Get dashboard statistics (admissions count, etc.)
+
+Admin Dashboard Features
+Admissions Management
+
+View all applications with filters (pending, accepted, rejected)
+
+Change application status
+
+Assign applications to staff members
+
+Add internal notes
+
+Download application data (CSV/PDF)
+
+Content Management
+
+Edit all website pages (Home, About, Programs, etc.)
+
+Manage academic programs (add, edit, remove)
+
+Upload and organize gallery images
+
+Create and publish news/announcements
+
+User Management
+
+Create and manage admin/staff accounts
+
+Set permissions for different roles
+
+View user activity logs
+
+Site Configuration
+
+Update school contact information
+
+Manage school calendar/events
+
+Configure admission form fields (optional)
+
+Set up tuition fees and payment options
+
+Analytics Dashboard
+
+View application trends
+
+Website traffic statistics
+
+Conversion rates
+
+Implementation Steps
+Set up the backend server
+
+bash
+npm init -y
+npm install express mongoose bcryptjs jsonwebtoken multer cloudinary cors helmet morgan dotenv
+Create server structure
+
+text
+/src
+  /config
+    db.js
+    cloudinary.js
+  /controllers
+    authController.js
+    admissionController.js
+    pageController.js
+    ...
+  /middleware
+    auth.js
+    errorHandler.js
+    upload.js
+  /models
+    User.js
+    Admission.js
+    Page.js
+    ...
+  /routes
+    authRoutes.js
+    admissionRoutes.js
+    adminRoutes.js
+    ...
+  /utils
+    apiFeatures.js
+    appError.js
+  app.js
+server.js

@@ -3,7 +3,7 @@ import User from '../models/User.js';
 import APIFeatures from '../utils/apiFeatures.js';
 import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
-import { uploadToCloudinary } from '../config/cloudinary.js';
+import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary.js';
 
 export const getAllAdmissions = catchAsync(async (req, res, next) => {
   const features = new APIFeatures(Admission.find(), req.query)
@@ -42,34 +42,50 @@ export const getAdmission = catchAsync(async (req, res, next) => {
 });
 
 export const createAdmission = catchAsync(async (req, res, next) => {
-  // Handle file uploads
+  // Add validation for required fields
+  if (!req.body.childInfo || !req.body.parentInfo) {
+    return next(new AppError('Missing required form data', 400));
+  }
+
   const files = req.files;
   const documents = {};
-  
+  let uploadedFiles = [];
+
   try {
-    if (files) {
-      if (files['underFiveCard']) {
-        const result = await uploadToCloudinary(files['underFiveCard'][0]);
-        documents.underFiveCard = result.secure_url;
-      }
-      
-      if (files['passportPhoto']) {
-        const result = await uploadToCloudinary(files['passportPhoto'][0]);
-        documents.passportPhoto = result.secure_url;
-      }
+    // Process files
+    if (!files?.passportPhoto) {
+      throw new AppError('Passport photo is required', 400);
     }
-    
-    // Create new admission with form data and files
+
+    // Process passport photo
+    const passportResult = await uploadToCloudinary(
+      files.passportPhoto[0],
+      'literacy-tree/passport-photos'
+    );
+    documents.passportPhoto = {
+      url: passportResult.secure_url,
+      public_id: passportResult.public_id
+    };
+    uploadedFiles.push(passportResult.public_id);
+
+    // Process under five card if exists
+    if (files?.underFiveCard) {
+      const underFiveResult = await uploadToCloudinary(
+        files.underFiveCard[0],
+        'literacy-tree/under-five-cards'
+      );
+      documents.underFiveCard = {
+        url: underFiveResult.secure_url,
+        public_id: underFiveResult.public_id
+      };
+      uploadedFiles.push(underFiveResult.public_id);
+    }
+
+    // Create admission
     const newAdmission = await Admission.create({
       ...req.body,
       documents
     });
-
-    // Notify admins via Socket.IO
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('newAdmission', newAdmission);
-    }
 
     res.status(201).json({
       status: 'success',
@@ -77,9 +93,19 @@ export const createAdmission = catchAsync(async (req, res, next) => {
         admission: newAdmission
       }
     });
+
   } catch (error) {
-    console.error('Error creating admission:', error);
-    return next(new AppError('Failed to create admission. Please try again.', 500));
+    // Cleanup uploaded files if error occurs
+    if (uploadedFiles.length > 0) {
+      await Promise.all(
+        uploadedFiles.map(publicId => 
+          deleteFromCloudinary(publicId).catch(cleanupError => 
+            console.error('Cleanup error:', cleanupError)
+          )
+        )
+      );
+    }
+    next(error);
   }
 });
 

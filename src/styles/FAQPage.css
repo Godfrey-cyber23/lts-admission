@@ -116,7 +116,7 @@
 }
 
 .section-title {
-  font-size: 2.5rem;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 700;
   color: var(--color-primary-dark);
   margin-bottom: 3rem;
@@ -125,7 +125,6 @@
 }
 
 /* FAQ Grid */
-/* FAQ Page Styles */
 .faq-page {
   font-family: var(--font-main);
   color: var(--color-text);
@@ -136,6 +135,20 @@
   position: relative;
   height: 70vh;
   min-height: 500px;
+}
+
+.testimonial-slider .testimonial-heading {
+  font-size: 2.5rem;
+  color: var(--color-accent);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.cta-content .testimonial-heading {
+  font-size: 2.5rem;
+  color: var(--color-accent);
+  margin-bottom: 2rem;
+  text-align: center;
 }
 
 .hero-slide {

@@ -135,65 +135,54 @@ const AdmissionForm = () => {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (validateStep(currentStep)) {
-            try {
-                setIsSubmitting(true);
-                const formPayload = new FormData();
+  e.preventDefault();
+  if (!validateStep(currentStep)) return;
 
-                // Append all form data to FormData object
-                Object.entries(formData).forEach(([section, fields]) => {
-                    Object.entries(fields).forEach(([field, value]) => {
-                        // Handle file fields
-                        if (field === 'underFiveCard' || field === 'passportPhoto') {
-                            if (value) formPayload.append(field, value);
-                        }
-                        // Handle array data (emergencyContacts)
-                        else if (field === 'emergencyContacts') {
-                            value.forEach(item => formPayload.append(`${section}.${field}[]`, item));
-                        }
-                        // Handle nested objects
-                        else if (typeof value === 'object' && value !== null) {
-                            Object.entries(value).forEach(([subField, subValue]) => {
-                                formPayload.append(`${section}.${field}.${subField}`, subValue);
-                            });
-                        }
-                        // Handle regular fields
-                        else {
-                            formPayload.append(`${section}.${field}`, value);
-                        }
-                    });
-                });
+  try {
+    setIsSubmitting(true);
+    const formPayload = new FormData();
 
-                // Append files if they exist
-                if (formData.documents.underFiveCard) {
-                    formPayload.append('underFiveCard', formData.documents.underFiveCard);
-                }
-                if (formData.documents.passportPhoto) {
-                    formPayload.append('passportPhoto', formData.documents.passportPhoto);
-                }
-
-                const response = await fetch('/api/admissions', {
-                    method: 'POST',
-                    body: formPayload
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Submission failed');
-                }
-
-                await response.json();
-                setSubmitted(true);
-            } catch (error) {
-                console.error('Submission error:', error);
-                // Show error to user
-                alert(`Submission failed: ${error.message}`);
-            } finally {
-                setIsSubmitting(false);
-            }
+    // Append form data
+    Object.entries(formData).forEach(([section, fields]) => {
+      if (section === 'documents') return; // Handle files separately
+      
+      Object.entries(fields).forEach(([field, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach(item => formPayload.append(`${section}.${field}[]`, item));
+        } else if (value !== null && value !== undefined) {
+          formPayload.append(`${section}.${field}`, value);
         }
-    };
+      });
+    });
+
+    // Append files
+    if (!formData.documents.passportPhoto) {
+      throw new Error('Passport photo is required');
+    }
+    formPayload.append('passportPhoto', formData.documents.passportPhoto);
+
+    if (formData.documents.underFiveCard) {
+      formPayload.append('underFiveCard', formData.documents.underFiveCard);
+    }
+
+    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/admissions`, {
+      method: 'POST',
+      body: formPayload
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Submission failed');
+    }
+
+    setSubmitted(true);
+  } catch (error) {
+    console.error('Submission error:', error);
+    alert(`Error: ${error.message}`);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
     const setupSignaturePad = useCallback(() => {
         const canvas = signatureRef.current;

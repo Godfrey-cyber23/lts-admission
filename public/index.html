@@ -41,12 +41,14 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/favicon_io/android-chrome-512x512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon_io/apple-touch-icon.png">
   <link rel="manifest" href="/favicon_io/site.webmanifest" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <title>Literacy Tree School - Online Admission Portal</title>
 
   <!-- Production Analytics (optional) -->
   <% if (process.env.NODE_ENV==='production' ) { %>
     <script src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID" async></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() { dataLayer.push(arguments); }
@@ -100,5 +102,68 @@
 
   <!-- Preload only the most important font format -->
   <link rel="preload" href="/fonts/Schoolbell-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+      // Initialize particles.js after the DOM is loaded
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof particlesJS === 'function') {
+          particlesJS('particles-js', {
+            particles: {
+              number: { value: 30, density: { enable: true, value_area: 800 } },
+              color: { value: "#ffffff" },
+              shape: { type: "circle" },
+              opacity: { value: 0.1, random: true },
+              size: { value: 3, random: true },
+              line_linked: {
+                enable: true,
+                distance: 150,
+                color: "#ffffff",
+                opacity: 0.05,
+                width: 1
+              },
+              move: {
+                enable: true,
+                speed: 1,
+                direction: "none",
+                random: true,
+                straight: false,
+                out_mode: "out",
+                bounce: false
+              }
+            },
+            interactivity: {
+              detect_on: "canvas",
+              events: {
+                onhover: { enable: true, mode: "repulse" },
+                onclick: { enable: true, mode: "push" },
+                resize: true
+              }
+            },
+            retina_detect: true
+          });
+        }
+        
+        // Count-up animation for stats
+        const counters = document.querySelectorAll('.count-up');
+        const speed = 200;
+        
+        counters.forEach(counter => {
+          const updateCount = () => {
+            const target = +counter.getAttribute('data-target');
+            const count = +counter.innerText;
+            
+            const inc = target / speed;
+            
+            if (count < target) {
+              counter.innerText = Math.ceil(count + inc);
+              setTimeout(updateCount, 20);
+            } else {
+              counter.innerText = target;
+            }
+          };
+          
+          updateCount();
+        });
+      });
+    </script>
 </body>
 </html>

@@ -1,80 +1,82 @@
-import app from './app.js';
-import connectDB from './src/config/db.js';
+// server.js - Complete consolidated version
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
-// eslint-disable-next-line no-unused-vars
-import colors from 'colors';
+import connectDB from './src/config/db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Get __dirname equivalent in ES modules
+// Environment setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, 'src', 'config', '.env') });
 
-// Load environment variables FIRST
-dotenv.config({ path: path.join(__dirname, 'config', 'config.env') });
+// Create Express app
+const app = express();
 
-// Verify environment variables
-console.log('Environment variables loaded:');
-console.log(`- NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`- PORT: ${process.env.PORT}`);
-console.log(`- MONGODB_URI: ${process.env.MONGODB_URI ? 'Exists' : 'MISSING'}`);
+// Basic middleware
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
+app.use(express.json());
+
+// Health check route
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
+// Import and mount your routes - CRITICAL FIX HERE
+try {
+  const { default: router } = await import('./src/routes/index.js');
+  
+  // Debug route paths before mounting
+  router.stack.forEach(layer => {
+    if (layer.route) {
+      console.log(`Mounting route: ${layer.route.path}`);
+      if (layer.route.path.startsWith('?')) {
+        throw new Error(`Invalid route path starts with modifier: ${layer.route.path}`);
+      }
+    }
+  });
+  
+  app.use('/api', router);
+} catch (err) {
+  console.error('Route initialization failed:', err);
+  process.exit(1);
+}
 
 // Create HTTP server
 const server = createServer(app);
 
-// Setup Socket.IO
+// Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL,  
+    origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST']
   }
 });
 
-// Socket.IO connection handler
+// Socket.IO handlers
 io.on('connection', (socket) => {
-  console.log('A user connected'.cyan);
-  
-  socket.on('joinRoom', (room) => {
-    socket.join(room);
-    console.log(`User joined room: ${room}`.cyan);
-  });
-  
-  socket.on('disconnect', () => {
-    console.log('User disconnected'.cyan);
-  });
+  console.log('User connected');
+  // Your socket logic here
 });
 
-// Attach Socket.IO to app for use in controllers
-app.set('io', io);
-
-// Connect to database and start server
-const startServer = async () => {
+// Start server
+const start = async () => {
   try {
     await connectDB();
-    const PORT = process.env.PORT || 5000;  // Changed from process.config.env
-    const NODE_ENV = process.env.NODE_ENV || 'development';  // Changed from process.config.env
-    
+    const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
-      console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`.yellow.bold);
-      console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'Configured' : 'Missing'}`.yellow);
+      console.log(`Server running on port ${PORT}`);
     });
-  } catch (error) {
-    console.error(`Failed to start server: ${error.message}`.red.bold);
+  } catch (err) {
+    console.error('Server failed to start:', err);
     process.exit(1);
   }
 };
 
-startServer()
-
-// Error handling
-process.on('unhandledRejection', (err) => {
-  console.log(`Error: ${err.message}`.red);
-  server.close(() => process.exit(1));
-});
-
-process.on('uncaughtException', (err) => {
-  console.log(`Error: ${err.message}`.red);
-  process.exit(1);
-});
+start();

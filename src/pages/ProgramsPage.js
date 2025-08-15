@@ -148,7 +148,7 @@ const ProgramsPage = () => {
                 </Carousel>
                 
                 <div className="program-hero-content container">
-                    <h1 className="hero-title">Our Academic Programs</h1>
+                    <h1 className="program-hero-title">Our Academic Programs</h1>
                     <p className="hero-subtitle">
                         Comprehensive educational pathways designed to nurture each child's potential up to Grade 7.
                     </p>
@@ -161,7 +161,7 @@ const ProgramsPage = () => {
                 <div className="container">
                     <div className="approach-grid">
                         <div className="approach-text">
-                            <h2 className="section-title">Our Curriculum Approach</h2>
+                            <h2 className="program-section-title">Our Curriculum Approach</h2>
                             <p className="approach-description">
                                 At Literacy Tree School, we blend the Zambian national curriculum with international best practices
                                 to create a dynamic learning experience for primary school students.
@@ -202,7 +202,7 @@ const ProgramsPage = () => {
             {/* Main Programs */}
             <section className="main-programs py-16 bg-gray-50">
                 <div className="container">
-                    <h2 className="section-title text-center mb-12">Program Offerings</h2>
+                    <h2 className="program-section-title text-center mb-12">Program Offerings</h2>
                     <div className="programs-grid">
                         {programs.map((program, index) => (
                             <div key={index} className="program-card">
@@ -248,7 +248,7 @@ const ProgramsPage = () => {
             {/* Special Programs */}
             <section className="special-programs py-16">
                 <div className="container">
-                    <h2 className="section-title text-center mb-12">Special Programs</h2>
+                    <h2 className="program-section-title text-center mb-12">Special Programs</h2>
                     <div className="special-programs-grid">
                         {specialPrograms.map((program, index) => (
                             <div key={index} className="special-program-card">

@@ -45,7 +45,7 @@ const AboutPage = () => {
         </Carousel>
         
         <div className="about-hero-content container mx-auto px-4 text-center">
-          <h1 className="hero-title">About Literacy Tree School</h1>
+          <h1 className="about-hero-title">About Literacy Tree School</h1>
           <p className="hero-subtitle">
             Nurturing young minds since 2010 with a commitment to academic excellence and character development.
           </p>
@@ -57,7 +57,7 @@ const AboutPage = () => {
         <div className="container mx-auto px-4">
           <div className="story-content">
             <div className="story-text">
-              <h2 className="section-title">
+              <h2 className="about-section-title">
                 <FaSchool className="title-icon" /> Our Story
               </h2>
               <p className="story-paragraph">
@@ -104,6 +104,7 @@ const AboutPage = () => {
                 Our founder with the first class of students, 2010
               </div>
             </div>
+            
           </div>
         </div>
       </section>
@@ -111,7 +112,7 @@ const AboutPage = () => {
       {/* Key Facts Section */}
       <section className="facts-section py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="section-title text-center mb-12">Key Facts About Our School</h2>
+          <h2 className="about-section-title text-center mb-12">Key Facts About Our School</h2>
           
           <div className="facts-grid">
             <div className="fact-card">
@@ -164,7 +165,7 @@ const AboutPage = () => {
         <div className="container mx-auto px-4">
           <div className="mission-content">
             <div className="mission-statement">
-              <h2 className="section-title">Our Mission</h2>
+              <h2 className="about-section-title">Our Mission</h2>
               <blockquote className="mission-quote">
                 "To provide a nurturing environment that fosters academic excellence, critical thinking, and moral character, 
                 preparing students to become responsible global citizens."
@@ -199,7 +200,7 @@ const AboutPage = () => {
       {/* Community Section */}
       <section className="community-section py-16 bg-primary text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="section-title">Join Our Growing Community</h2>
+          <h2 className="about-section-title">Join Our Growing Community</h2>
           <p className="community-subtitle">
             Become part of a school that values each student's unique potential and prepares them for success in life.
           </p>

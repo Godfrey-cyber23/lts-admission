@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/lts-admission/static/css/main.01747f79.css",
+    "main.js": "/lts-admission/static/js/main.ace3d4ac.js",
+    "static/js/279.aa18a7df.chunk.js": "/lts-admission/static/js/279.aa18a7df.chunk.js",
+    "static/js/453.7de917a0.chunk.js": "/lts-admission/static/js/453.7de917a0.chunk.js",
+    "static/media/classroom-1.jpg": "/lts-admission/static/media/classroom-1.4911ed284dbfa97053e1.jpg",
+    "index.html": "/lts-admission/index.html",
+    "main.01747f79.css.map": "/lts-admission/static/css/main.01747f79.css.map",
+    "main.ace3d4ac.js.map": "/lts-admission/static/js/main.ace3d4ac.js.map",
+    "279.aa18a7df.chunk.js.map": "/lts-admission/static/js/279.aa18a7df.chunk.js.map",
+    "453.7de917a0.chunk.js.map": "/lts-admission/static/js/453.7de917a0.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.01747f79.css",
+    "static/js/main.ace3d4ac.js"
+  ]
+}

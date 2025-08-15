@@ -12,23 +12,17 @@ import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Admin registration (first admin only)
+// Public routes
 router.post('/register', registerAdmin);
-
-// User login
 router.post('/login', login);
-
-// Password reset
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 
-// Get current user (protected)
-router.get('/me', protect, getMe);
+// Protected routes
+router.use(protect);
 
-// Update user details
-router.put('/update-details', protect, updateDetails);
-
-// Update password
-router.put('/update-password', protect, updatePassword);
+router.get('/me', getMe);
+router.put('/update-details', updateDetails);
+router.put('/update-password', updatePassword);
 
 export default router;

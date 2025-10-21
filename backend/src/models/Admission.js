@@ -1,9 +1,26 @@
 import mongoose from 'mongoose';
 
-const cloudinaryDocumentSchema = new mongoose.Schema({
-  url: { 
+/**
+ * @typedef {object} SupabaseDocument
+ * @property {string} path - The file path in the Supabase bucket (e.g., 'public/uuid-filename.jpg'). This is the primary identifier.
+ * @property {string} publicUrl - The full public URL for accessing the file.
+ * @property {string} [bucketId] - The ID of the Supabase bucket.
+ * @property {string} [fileName] - The original name of the uploaded file.
+ * @property {string} [mimeType] - The MIME type of the file (e.g., 'image/jpeg').
+ * @property {number} [size] - The size of the file in bytes.
+ * @property {Date} [uploadedAt] - Timestamp of when the file was uploaded.
+ */
+
+// NEW: Schema for documents stored in Supabase
+const supabaseDocumentSchema = new mongoose.Schema({
+  path: { 
     type: String, 
-    required: [true, 'Document URL is required'],
+    required: [true, 'Document path is required'],
+    trim: true
+  },
+  publicUrl: { 
+    type: String, 
+    required: [true, 'Document public URL is required'],
     validate: {
       validator: function(v) {
         return /^https?:\/\/.+/i.test(v);
@@ -11,29 +28,26 @@ const cloudinaryDocumentSchema = new mongoose.Schema({
       message: props => `${props.value} is not a valid URL`
     }
   },
-  public_id: { 
-    type: String, 
-    required: [true, 'Cloudinary public ID is required'] 
+  bucketId: { 
+    type: String,
+    trim: true
   },
-  format: { 
-    type: String, 
-    required: [true, 'File format is required'],
-    enum: ['jpg', 'jpeg', 'png', 'pdf', 'gif']
+  fileName: {
+    type: String,
+    trim: true
   },
-  secure_url: { 
-    type: String, 
-    required: [true, 'Secure URL is required'] 
+  mimeType: {
+    type: String,
+    trim: true
   },
-  resource_type: { 
-    type: String, 
-    required: true,
-    enum: ['image', 'raw'] 
+  size: {
+    type: Number
   },
-  created_at: { 
+  uploadedAt: { 
     type: Date, 
     default: Date.now 
   }
-}, { _id: false });
+}, { _id: false }); // No need for a separate ID for sub-documents
 
 const admissionSchema = new mongoose.Schema({
   childInfo: {
@@ -158,13 +172,14 @@ const admissionSchema = new mongoose.Schema({
       }
     }]
   },
+  // UPDATED: Using the new Supabase document schema
   documents: {
     passportPhoto: { 
-      type: cloudinaryDocumentSchema,
+      type: supabaseDocumentSchema,
       required: [true, 'Passport photo is required']
     },
-    underFiveCard: cloudinaryDocumentSchema,
-    birthCertificate: cloudinaryDocumentSchema
+    underFiveCard: supabaseDocumentSchema,
+    birthCertificate: supabaseDocumentSchema
   },
   declaration: {
     declarationName: { 
@@ -197,6 +212,7 @@ const admissionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
   },
+  // In Mongoose, embedding notes is a common and efficient pattern
   notes: [{
     content: { 
       type: String, 
@@ -220,7 +236,7 @@ const admissionSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtuals
+// Virtuals remain the same and are very useful
 admissionSchema.virtual('assignedUser', {
   ref: 'User',
   localField: 'assignedTo',
@@ -235,7 +251,7 @@ admissionSchema.virtual('creator', {
   justOne: true
 });
 
-// Pre-save hook to calculate age
+// Pre-save hook to calculate age is perfect, keep it
 admissionSchema.pre('save', function(next) {
   if (this.childInfo.dob && !this.childInfo.age) {
     const dob = new Date(this.childInfo.dob);
@@ -246,11 +262,13 @@ admissionSchema.pre('save', function(next) {
   next();
 });
 
-// Indexes
+// UPDATED: Indexes for performance
 admissionSchema.index({ status: 1 });
+admissionSchema.index({ createdBy: 1 }); // Good for finding applications by a user
 admissionSchema.index({ 'childInfo.firstName': 'text', 'childInfo.surname': 'text' });
 admissionSchema.index({ createdAt: -1 });
-admissionSchema.index({ 'documents.passportPhoto.public_id': 1 });
+// Index for the new document path
+admissionSchema.index({ 'documents.passportPhoto.path': 1 });
 
 const Admission = mongoose.model('Admission', admissionSchema);
 export default Admission;

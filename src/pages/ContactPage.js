@@ -17,7 +17,7 @@ const ContactPage = () => {
       <section className="contact-hero">
         <div className="hero-overlay"></div>
         <div className="hero-content">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={isMounted ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8 }}
@@ -39,7 +39,7 @@ const ContactPage = () => {
       {/* Main Content */}
       <div className="contact-container">
         {/* Contact Info Section */}
-        <motion.section 
+        <motion.section
           initial={{ opacity: 0 }}
           animate={isMounted ? { opacity: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.4 }}
@@ -48,10 +48,10 @@ const ContactPage = () => {
           <h2 className="section-title">
             <span>Our Contact Information</span>
           </h2>
-          
+
           <div className="contact-grid">
             {/* Address Card */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -5 }}
               className="contact-card"
             >
@@ -60,13 +60,13 @@ const ContactPage = () => {
               </div>
               <div className="contact-details">
                 <h3>Our Location</h3>
-                <p>St. Bonaventure University Campus</p>
+                <p>St. Bonaventure University College</p>
                 <p>Makeni Area, Lusaka, Zambia</p>
               </div>
             </motion.div>
 
             {/* Phone Card */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -5 }}
               className="contact-card"
             >
@@ -81,7 +81,7 @@ const ContactPage = () => {
             </motion.div>
 
             {/* Email Card */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -5 }}
               className="contact-card"
             >
@@ -90,13 +90,13 @@ const ContactPage = () => {
               </div>
               <div className="contact-details">
                 <h3>Email Us</h3>
-                <p>General: info@literacytree.edu</p>
+                <p>General: kasandwe69@yahoo.co.uk</p>
                 <p>Admissions: admissions@literacytree.edu</p>
               </div>
             </motion.div>
 
             {/* Hours Card */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -5 }}
               className="contact-card"
             >
@@ -115,22 +115,22 @@ const ContactPage = () => {
           <div className="social-media-section">
             <h3>Follow Our Journey</h3>
             <div className="social-icons">
-              <motion.a 
-                href="https://facebook.com" 
+              <motion.a
+                href="https://facebook.com"
                 whileHover={{ scale: 1.1 }}
                 className="social-icon facebook"
               >
                 <FaFacebook />
               </motion.a>
-              <motion.a 
-                href="https://twitter.com" 
+              <motion.a
+                href="https://twitter.com"
                 whileHover={{ scale: 1.1 }}
                 className="social-icon twitter"
               >
                 <FaTwitter />
               </motion.a>
-              <motion.a 
-                href="https://instagram.com" 
+              <motion.a
+                href="https://instagram.com"
                 whileHover={{ scale: 1.1 }}
                 className="social-icon instagram"
               >
@@ -141,7 +141,7 @@ const ContactPage = () => {
         </motion.section>
 
         {/* Contact Form Section */}
-        <motion.section 
+        <motion.section
           initial={{ opacity: 0 }}
           animate={isMounted ? { opacity: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.6 }}
@@ -150,40 +150,40 @@ const ContactPage = () => {
           <h2 className="section-title">
             <span>Send Us a Message</span>
           </h2>
-          
+
           <form className="enquiry-form">
             <div className="form-group">
               <label htmlFor="name">Your Name</label>
-              <input 
-                type="text" 
-                id="name" 
-                placeholder="Full Name" 
+              <input
+                type="text"
+                id="name"
+                placeholder="Full Name"
                 className="form-input"
               />
             </div>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="email">Email Address</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  placeholder="your@email.com" 
+                <input
+                  type="email"
+                  id="email"
+                  placeholder="lts@gmail.com"
                   className="form-input"
                 />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="phone">Phone Number</label>
-                <input 
-                  type="tel" 
-                  id="phone" 
-                  placeholder="(+260) XXX-XXXXXX" 
+                <input
+                  type="tel"
+                  id="phone"
+                  placeholder="(+260) XXX-XXXXXX"
                   className="form-input"
                 />
               </div>
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="subject">Subject</label>
               <select id="subject" className="form-input">
@@ -193,19 +193,19 @@ const ContactPage = () => {
                 <option>Other</option>
               </select>
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="message">Your Message</label>
-              <textarea 
-                id="message" 
-                rows="5" 
-                placeholder="How can we help you?" 
+              <textarea
+                id="message"
+                rows="5"
+                placeholder="How can we help you?"
                 className="form-input"
               ></textarea>
             </div>
-            
-            <motion.button 
-              type="submit" 
+
+            <motion.button
+              type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="submit-btn"
@@ -216,7 +216,7 @@ const ContactPage = () => {
         </motion.section>
 
         {/* Map Section */}
-        <motion.section 
+        <motion.section
           initial={{ opacity: 0 }}
           animate={isMounted ? { opacity: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.8 }}
@@ -225,7 +225,7 @@ const ContactPage = () => {
           <h2 className="section-title">
             <span>Find Our Campus</span>
           </h2>
-          
+
           <div className="map-container">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2384.123456789012!2d28.12345678901234!3d-15.123456789012345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTXCsDA3JzI0LjQiUyAyOMKwMDcnMjQuNCJF!5e0!3m2!1sen!2szm!4v1234567890123!5m2!1sen!2szm"
@@ -239,9 +239,9 @@ const ContactPage = () => {
               className="map-iframe"
             ></iframe>
           </div>
-          
+
           <div className="map-footer">
-            <p>St. Bonaventure University Campus, Makeni Area, Lusaka, Zambia</p>
+            <p>St. Bonaventure University College, Makeni Area, Lusaka, Zambia</p>
             <button type="button" className="directions-btn">Get Directions</button>
           </div>
         </motion.section>

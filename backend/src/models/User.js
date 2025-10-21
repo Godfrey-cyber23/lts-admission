@@ -1,81 +1,116 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
+// src/models/User.js
+import bcrypt from 'bcrypt';
+import { supabase } from '../config/db.js';
 
-const userSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  email: { 
-    type: String, 
-    required: true, 
-    unique: true,
-    lowercase: true,
-    trim: true
-  },
-  password: { type: String, required: true, select: false },
-  role: { 
-    type: String, 
-    enum: ['superadmin', 'admin', 'staff', 'parent'], 
-    default: 'parent' 
-  },
-  phone: { type: String },
-  profileImage: { type: String },
-  isActive: { type: Boolean, default: true },
-  lastLogin: { type: Date },
-  permissions: [{ type: String }],
-  resetPasswordToken: { type: String },
-  resetPasswordExpire: { type: Date }
-}, {
-  timestamps: true
-});
-
-// Encrypt password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    next();
+class User {
+  constructor(userData) {
+    this.id = userData.id;
+    this.email = userData.email;
+    this.password_hash = userData.password_hash;
+    this.role = userData.role;
+    this.isActive = userData.isActive;
+    this.fullName = userData.full_name;
+    this.createdAt = userData.created_at;
+    this.updatedAt = userData.updated_at;
   }
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-});
 
-// Sign JWT and return
-userSchema.methods.getSignedJwtToken = function() {
-  return jwt.sign(
-    { id: this._id, role: this.role }, 
-    process.env.JWT_SECRET, 
-    { expiresIn: process.env.JWT_EXPIRE }
-  );
-};
+  // Find user by email
+  static async findByEmail(email) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .eq('isActive', true)
+        .single();
 
-// Match user entered password to hashed password in database
-userSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // No user found
+        }
+        throw error;
+      }
 
-userSchema.index({ role: 1 });
-
-userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
-  if (this.passwordChangedAt) {
-    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-    return JWTTimestamp < changedTimestamp;
+      return data ? new User(data) : null;
+    } catch (error) {
+      console.error('Error finding user by email:', error);
+      throw error;
+    }
   }
-  return false;
-};
 
-// Generate and hash password token
-userSchema.methods.getResetPasswordToken = function() {
-  const resetToken = crypto.randomBytes(20).toString('hex');
-  
-  this.resetPasswordToken = crypto
-    .createHash('sha256')
-    .update(resetToken)
-    .digest('hex');
-    
-  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
-  
-  return resetToken;
-};
+  // Find user by ID
+  static async findById(id) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .eq('isActive', true)
+        .single();
 
-const User = mongoose.model('User', userSchema);
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw error;
+      }
+
+      return data ? new User(data) : null;
+    } catch (error) {
+      console.error('Error finding user by ID:', error);
+      throw error;
+    }
+  }
+
+  // Verify password
+  async verifyPassword(password) {
+    try {
+      return await bcrypt.compare(password, this.password_hash);
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      return false;
+    }
+  }
+
+  // Convert to JSON (exclude password)
+  toJSON() {
+    return {
+      id: this.id,
+      email: this.email,
+      role: this.role,
+      isActive: this.isActive,
+      fullName: this.fullName,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt
+    };
+  }
+
+  // Create new user
+  static async create(userData) {
+    try {
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .insert([
+          {
+            email: userData.email.toLowerCase(),
+            password_hash: hashedPassword,
+            role: userData.role || 'staff',
+            full_name: userData.fullName,
+            isActive: true
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return new User(data);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  }
+}
+
 export default User;

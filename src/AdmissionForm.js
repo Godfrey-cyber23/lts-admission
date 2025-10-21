@@ -135,54 +135,92 @@ const AdmissionForm = () => {
     };
 
     const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateStep(currentStep)) return;
+        e.preventDefault();
+        if (!validateStep(currentStep)) return;
 
-  try {
-    setIsSubmitting(true);
-    const formPayload = new FormData();
+        try {
+            setIsSubmitting(true);
+            const formPayload = new FormData();
 
-    // Append form data
-    Object.entries(formData).forEach(([section, fields]) => {
-      if (section === 'documents') return; // Handle files separately
-      
-      Object.entries(fields).forEach(([field, value]) => {
-        if (Array.isArray(value)) {
-          value.forEach(item => formPayload.append(`${section}.${field}[]`, item));
-        } else if (value !== null && value !== undefined) {
-          formPayload.append(`${section}.${field}`, value);
+            // Create a flat structure that matches what the backend expects
+            const createFlatStructure = (obj, prefix = '') => {
+                const flatObj = {};
+                Object.entries(obj).forEach(([key, value]) => {
+                    const fullKey = prefix ? `${prefix}.${key}` : key;
+
+                    if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof File)) {
+                        // Recursively flatten nested objects
+                        Object.assign(flatObj, createFlatStructure(value, fullKey));
+                    } else if (Array.isArray(value)) {
+                        // Handle arrays (like emergencyContacts)
+                        value.forEach((item, index) => {
+                            flatObj[`${fullKey}[${index}]`] = item;
+                        });
+                    } else {
+                        flatObj[fullKey] = value;
+                    }
+                });
+                return flatObj;
+            };
+
+            // Create flat structure from formData
+            const flatData = createFlatStructure(formData);
+
+            // Append all fields to FormData
+            Object.entries(flatData).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    if (Array.isArray(value)) {
+                        value.forEach(item => formPayload.append(key, item.toString()));
+                    } else {
+                        formPayload.append(key, value.toString());
+                    }
+                }
+            });
+
+            // Append files with correct field names
+            if (!formData.documents.passportPhoto) {
+                throw new Error('Passport photo is required');
+            }
+            formPayload.append('passportPhoto', formData.documents.passportPhoto);
+
+            if (formData.documents.underFiveCard) {
+                formPayload.append('underFiveCard', formData.documents.underFiveCard);
+            }
+
+            console.log('Submitting form with fields:');
+            for (let [key, value] of formPayload.entries()) {
+                console.log(key, value);
+            }
+
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/admissions`, {
+                method: 'POST',
+                body: formPayload
+            });
+
+            // Handle both JSON and text responses
+            const responseText = await response.text();
+            let responseData;
+
+            try {
+                responseData = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse JSON response:', responseText);
+                throw new Error(`Server returned invalid response: ${responseText.substring(0, 100)}...`);
+            }
+
+            if (!response.ok) {
+                throw new Error(responseData.message || `Submission failed: ${response.status}`);
+            }
+
+            console.log('Submission successful:', responseData);
+            setSubmitted(true);
+        } catch (error) {
+            console.error('Submission error:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
         }
-      });
-    });
-
-    // Append files
-    if (!formData.documents.passportPhoto) {
-      throw new Error('Passport photo is required');
-    }
-    formPayload.append('passportPhoto', formData.documents.passportPhoto);
-
-    if (formData.documents.underFiveCard) {
-      formPayload.append('underFiveCard', formData.documents.underFiveCard);
-    }
-
-    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/admissions`, {
-      method: 'POST',
-      body: formPayload
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Submission failed');
-    }
-
-    setSubmitted(true);
-  } catch (error) {
-    console.error('Submission error:', error);
-    alert(`Error: ${error.message}`);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    };
 
     const setupSignaturePad = useCallback(() => {
         const canvas = signatureRef.current;

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import api from '../api/api';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 
-const ProtectedRoute = ({ roles = [] }) => {
+const ProtectedRoute = ({ children, roles = [] }) => { // Accept children prop
   const [authStatus, setAuthStatus] = useState('checking'); 
   const [userRole, setUserRole] = useState(null);
   const location = useLocation();
@@ -21,17 +21,24 @@ const ProtectedRoute = ({ roles = [] }) => {
           return;
         }
         
-        // Verify token with backend
-        const response = await api.get('/auth/verify');
+        // Verify token by calling /auth/me endpoint
+        const response = await api.get('/auth/me');
         
-        // Check if user has required role
-        if (roles.length > 0 && !roles.includes(response.data.role)) {
-          setAuthStatus('unauthorized');
-          return;
+        if (response.data.success) {
+          const user = response.data.user;
+          
+          // Check if user has required role
+          if (roles.length > 0 && !roles.includes(user.role)) {
+            setUserRole(user.role);
+            setAuthStatus('unauthorized');
+            return;
+          }
+          
+          setUserRole(user.role);
+          setAuthStatus('authenticated');
+        } else {
+          throw new Error('Authentication failed');
         }
-        
-        setUserRole(response.data.role);
-        setAuthStatus('authenticated');
       } catch (error) {
         console.error('Authentication check failed:', error);
         localStorage.removeItem('token');
@@ -40,7 +47,7 @@ const ProtectedRoute = ({ roles = [] }) => {
     };
     
     verifyAuth();
-  }, [roles]);
+  }, [roles, location]);
 
   if (authStatus === 'checking') {
     return (
@@ -48,9 +55,14 @@ const ProtectedRoute = ({ roles = [] }) => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        height: '100vh' 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: 2
       }}>
         <CircularProgress size={60} />
+        <Typography variant="body1" color="text.secondary">
+          Verifying authentication...
+        </Typography>
       </Box>
     );
   }
@@ -70,24 +82,36 @@ const ProtectedRoute = ({ roles = [] }) => {
         p: 3,
         textAlign: 'center'
       }}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom color="error">
           Access Denied
         </Typography>
         <Typography variant="body1" sx={{ mb: 3 }}>
           Your account ({userRole}) does not have permission to access this page.
+          <br />
+          Required roles: {roles.join(', ')}
         </Typography>
         <Button 
           variant="contained" 
           color="primary" 
           onClick={() => window.history.back()}
+          sx={{ mb: 1 }}
         >
           Go Back
+        </Button>
+        <Button 
+          variant="outlined" 
+          onClick={() => {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+          }}
+        >
+          Login with Different Account
         </Button>
       </Box>
     );
   }
 
-  return <Outlet />;
+  return children; // Return children instead of Outlet
 };
 
 export default ProtectedRoute;

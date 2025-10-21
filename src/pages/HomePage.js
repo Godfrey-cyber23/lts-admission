@@ -176,11 +176,11 @@ const HomePage = () => {
             <h2 className="home-section-title">About Our School</h2>
             <p className="about-description">
               Literacy Tree School is a premier educational institution located in Lusaka, Zambia,
-              offering quality education from early childhood through secondary levels.
+              offering quality education from early childhood through upper primary levels.
             </p>
             <p className="about-description">
-              Our mission is to provide a nurturing environment that fosters academic excellence,
-              character development, and lifelong learning skills.
+              We believe that each child is an individual with his/her own unique temperament, needs,interests and abilities. We try to be aware of the uniqueness of each child
+              in encouraging their interests, fostering their abilities and in meeting their needs for integral growth.
             </p>
             <Link
               to="/about"

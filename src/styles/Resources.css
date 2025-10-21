@@ -167,7 +167,7 @@
 }
 
 .category-card {
-  background: white;
+  background: green;
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
@@ -191,10 +191,11 @@
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 1rem;
+  color: #000;
 }
 
 .category-card p {
-  color: var(--gray);
+  color: var(--dark);
   margin-bottom: 1.5rem;
 }
 
@@ -250,7 +251,7 @@
 }
 
 .resource-card {
-  background: white;
+  background: green;
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
@@ -266,12 +267,13 @@
 
 .file-icon {
   font-size: 2rem;
-  color: var(--primary);
+  color: var(--light);
   margin-bottom: 1rem;
 }
 
 .resource-details h3 {
   font-size: 1.25rem;
+  text-align: left;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -346,11 +348,12 @@
 }
 
 
-
 .video-info h3 {
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+  text-align: left;
+  color: #000;
 }
 
 .video-grid {
@@ -363,7 +366,7 @@
 }
 
 .video-card {
-  background: white;
+  background: rgb(255, 255, 255,0.6);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
@@ -388,7 +391,7 @@
 /* Interactive Tools */
 .interactive-tools {
   padding: 4rem 0;
-  background-color: var(--light);
+  background: var(--light);
 }
 
 .tools-grid {

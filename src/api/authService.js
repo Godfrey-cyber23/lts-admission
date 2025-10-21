@@ -1,4 +1,4 @@
-import api from './api'; // Your axios instance
+import api from './api'; 
 
 export const login = async (email, password) => {
   try {

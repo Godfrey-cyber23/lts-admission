@@ -16,6 +16,13 @@ function AppContent() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
+  // Check if current route is an admin or dashboard route
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isDashboardRoute = location.pathname.startsWith('/dashboard');
+  
+  // Don't show UI elements on admin or dashboard routes
+  const shouldShowUI = !isAdminRoute && !isDashboardRoute;
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -49,56 +56,60 @@ function AppContent() {
 
   return (
     <div className={`literacy-tree-app ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
-      <header className={`app-header ${scrolled ? 'scrolled' : ''}`}>
-        <div className="header-main">
-          <div className="container">
-            <nav className="header-nav">
-              <div className="header-branding-wrapper">
-                <img
-                  src="/school-logo.jpg"
-                  alt="Literacy Tree School"
-                  className="school-logo"
-                />
-                <div className="school-branding">
-                  <h1>Literacy Tree School</h1>
-                  <p className="school-motto">"To teach is to touch a life forever"</p>
+      {/* Conditionally render header - don't show on admin or dashboard routes */}
+      {shouldShowUI && (
+        <header className={`app-header ${scrolled ? 'scrolled' : ''}`}>
+          <div className="header-main">
+            <div className="container">
+              <nav className="header-nav">
+                <div className="header-branding-wrapper">
+                  <img
+                    src="/school-logo.jpg"
+                    alt="Literacy Tree School"
+                    className="school-logo"
+                  />
+                  <div className="school-branding">
+                    <h1>Literacy Tree School</h1>
+                    <p className="school-motto">"To teach is to touch a life forever"</p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="mobile-menu-wrapper">
-                <button
-                  className={`hamburger-button ${isMobileMenuOpen ? 'open' : ''}`}
-                  onClick={toggleMobileMenu}
-                  aria-label="Toggle menu"
-                  aria-expanded={isMobileMenuOpen}
-                >
-                  {isMobileMenuOpen ? (
-                    <FaTimes className="menu-icon" />
-                  ) : (
-                    <FaBars className="menu-icon" />
-                  )}
-                </button>
-              </div>
+                
+                <div className="mobile-menu-wrapper">
+                  <button
+                    className={`hamburger-button ${isMobileMenuOpen ? 'open' : ''}`}
+                    onClick={toggleMobileMenu}
+                    aria-label="Toggle menu"
+                    aria-expanded={isMobileMenuOpen}
+                  >
+                    {isMobileMenuOpen ? (
+                      <FaTimes className="menu-icon" />
+                    ) : (
+                      <FaBars className="menu-icon" />
+                    )}
+                  </button>
+                </div>
 
-              <div className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-                <NavLink to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</NavLink>
-                <NavLink to="/about" onClick={() => setIsMobileMenuOpen(false)}>About Us</NavLink>
-                <NavLink to="/programs" onClick={() => setIsMobileMenuOpen(false)}>Programs</NavLink>
-                <NavLink to="/faq" onClick={() => setIsMobileMenuOpen(false)}>Admissions</NavLink>
-                <NavLink to="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</NavLink>
-                <NavLink to="/admission" className="enroll-btn" onClick={() => setIsMobileMenuOpen(false)}>Enroll Now</NavLink>
-                <NavLink to="/login" className="login-btn" onClick={() => setIsMobileMenuOpen(false)}>Login</NavLink>
-              </div>
-            </nav>
+                <div className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+                  <NavLink to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</NavLink>
+                  <NavLink to="/about" onClick={() => setIsMobileMenuOpen(false)}>About Us</NavLink>
+                  <NavLink to="/programs" onClick={() => setIsMobileMenuOpen(false)}>Programs</NavLink>
+                  <NavLink to="/faq" onClick={() => setIsMobileMenuOpen(false)}>Admissions</NavLink>
+                  <NavLink to="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</NavLink>
+                  <NavLink to="/admission" className="enroll-btn" onClick={() => setIsMobileMenuOpen(false)}>Enroll Now</NavLink>
+                  <NavLink to="/login" className="login-btn" onClick={() => setIsMobileMenuOpen(false)}>Login</NavLink>
+                </div>
+              </nav>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="app-content">
         <AppRoutes />
       </main>
 
-      {isChatReady && (
+      {/* Conditionally render chat button - don't show on admin or dashboard routes */}
+      {isChatReady && shouldShowUI && (
         <button
           className="chat-button pulse"
           onClick={toggleChat}
@@ -114,7 +125,9 @@ function AppContent() {
         </button>
       )}
 
-      <Footer />
+      {/* Conditionally render footer - don't show on admin or dashboard routes */}
+      {shouldShowUI && <Footer />}
+      
       <ScrollToTop />
     </div>
   );

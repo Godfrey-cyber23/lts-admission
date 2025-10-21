@@ -167,8 +167,8 @@ const AboutPage = () => {
             <div className="mission-statement">
               <h2 className="about-section-title">Our Mission</h2>
               <blockquote className="mission-quote">
-                "To provide a nurturing environment that fosters academic excellence, critical thinking, and moral character, 
-                preparing students to become responsible global citizens."
+                "We believe that each child is an individual with his/her own unique temperament, needs,interests and abilities. We try to be aware of the uniqueness of each child
+              in encouraging their interests, fostering their abilities and in meeting their needs for integral growth."
               </blockquote>
               <div className="founder-signature">
                 <img src="/signature.png" alt="Founder's Signature" />
@@ -180,10 +180,10 @@ const AboutPage = () => {
               <h3 className="values-title">Our Core Values</h3>
               <div className="values-grid">
                 {[
-                  { icon: <FaSeedling />, title: "Growth", description: "Continuous personal and academic development" },
-                  { icon: <FaHandsHelping />, title: "Integrity", description: "Honesty and ethical behavior in all we do" },
-                  { icon: <FaSchool />, title: "Respect", description: "For ourselves, others, and our environment" },
-                  { icon: <FaLightbulb />, title: "Innovation", description: "Creative thinking and problem solving" }
+                  { icon: <FaSeedling />, title: "WE ARE PARTNERS"},
+                  { icon: <FaHandsHelping />, title: "WE VALUE OUR LEARNERS"},
+                  { icon: <FaSchool />, title: "WE ARE COMMITTED"},
+                  { icon: <FaLightbulb />, title: "WE ARE RESPONSIVE"}
                 ].map((value, index) => (
                   <div key={index} className="value-card">
                     <div className="value-icon">{value.icon}</div>

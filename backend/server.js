@@ -1,52 +1,70 @@
-// server.js - Complete consolidated version
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import connectDB from './src/config/db.js';
+import connectDB, { supabase } from './src/config/db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Environment setup
+// Get the current file's directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, 'src', 'config', '.env') });
+
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, 'src', '.env') });
 
 // Create Express app
 const app = express();
 
-// Basic middleware
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://192.168.43.26:3000',
+  'http://127.0.0.1:3000',
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: allowedOrigins,
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
-app.use(express.json());
+
+app.use(express.json({ limit: '10mb' }));
+
+// Middleware to attach Supabase client
+app.use((req, res, next) => {
+  req.supabase = supabase;
+  next();
+});
 
 // Health check route
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
+  res.status(200).json({ 
+    status: 'healthy', 
+    database: 'supabase',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Import and mount your routes - CRITICAL FIX HERE
-try {
-  const { default: router } = await import('./src/routes/index.js');
-  
-  // Debug route paths before mounting
-  router.stack.forEach(layer => {
-    if (layer.route) {
-      console.log(`Mounting route: ${layer.route.path}`);
-      if (layer.route.path.startsWith('?')) {
-        throw new Error(`Invalid route path starts with modifier: ${layer.route.path}`);
-      }
-    }
-  });
-  
-  app.use('/api', router);
-} catch (err) {
-  console.error('Route initialization failed:', err);
-  process.exit(1);
-}
+// Import and use routes with error handling
+const initializeRoutes = async () => {
+  try {
+    const { default: router } = await import('./src/routes/index.js');
+    app.use('/api', router);
+    console.log('✅ Routes mounted successfully');
+  } catch (err) {
+    console.error('❌ Route initialization failed:', err);
+    
+    // Provide basic routes if main routes fail
+    app.use('/api', (req, res) => {
+      res.status(500).json({ 
+        error: 'Routes not available', 
+        message: 'Check route configuration' 
+      });
+    });
+  }
+};
 
 // Create HTTP server
 const server = createServer(app);
@@ -54,27 +72,34 @@ const server = createServer(app);
 // Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: allowedOrigins,
     methods: ['GET', 'POST']
   }
 });
 
-// Socket.IO handlers
 io.on('connection', (socket) => {
-  console.log('User connected');
-  // Your socket logic here
+  console.log('User connected:', socket.id);
 });
 
 // Start server
 const start = async () => {
   try {
+    console.log('🚀 Starting server...');
+    
+    // Initialize routes before starting server
+    await initializeRoutes();
+    
+    // Connect to database
     await connectDB();
+    
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🌐 CORS enabled for: ${allowedOrigins.join(', ')}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
     });
   } catch (err) {
-    console.error('Server failed to start:', err);
+    console.error('❌ Server failed to start:', err);
     process.exit(1);
   }
 };

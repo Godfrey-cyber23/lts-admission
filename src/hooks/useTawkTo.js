@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 const useTawkTo = () => {
   // Tawk.to Configuration
@@ -14,6 +14,9 @@ const useTawkTo = () => {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [chatError, setChatError] = useState(null);
 
+  // Use a ref to track if the script has been loaded to prevent duplicate loads
+  const isScriptLoaded = useRef(false);
+
   const initializeTawk = useCallback(async () => {
     if (!window.Tawk_API) {
       throw new Error('Tawk.to API not loaded');
@@ -26,7 +29,7 @@ const useTawkTo = () => {
       const checkInitialized = () => {
         attempts++;
 
-        if (window.Tawk_API?.getStatus && window.Tawk_API.getStatus() === 'online') {
+        if (window.Tawk_API?.getStatus && window.Tawk_API.getStatus() !== 'offline') {
           // Configure widget appearance
           window.Tawk_API.hideWidget();
           window.Tawk_API.setAttributes({
@@ -36,6 +39,10 @@ const useTawkTo = () => {
             'name': 'Website Visitor',
             'email': '',
             'phone': ''
+          }, function(error) {
+              if(error) {
+                  console.error('Tawk setAttributes error:', error);
+              }
           });
 
           setIsChatReady(true);
@@ -43,7 +50,10 @@ const useTawkTo = () => {
         } else if (attempts < maxAttempts) {
           setTimeout(checkInitialized, 300);
         } else {
-          reject(new Error('Tawk.to initialization timed out'));
+          // Don't reject as an error, the chat might just be offline
+          console.warn('Tawk.to initialization timed out or is offline.');
+          setIsChatReady(true); // Consider it "ready" even if offline
+          resolve();
         }
       };
 
@@ -52,6 +62,12 @@ const useTawkTo = () => {
   }, []);
 
   const loadTawkScript = useCallback(() => {
+    // Prevent loading the script more than once
+    if (isScriptLoaded.current) {
+      return;
+    }
+    isScriptLoaded.current = true;
+
     setIsChatLoading(true);
     setChatError(null);
 
@@ -59,41 +75,40 @@ const useTawkTo = () => {
     script.async = true;
     script.src = `${tawkToConfig.embedUrl}/${tawkToConfig.propertyId}/${tawkToConfig.widgetId}`;
     script.charset = 'UTF-8';
-    script.crossOrigin = 'anonymous';
+    script.crossOrigin = 'anonymous'; // You already had this, which is correct!
 
     script.onload = () => {
       initializeTawk()
         .then(() => setIsChatLoading(false))
         .catch(error => {
+          console.error('Tawk initialization failed:', error);
           setChatError(error);
           setIsChatLoading(false);
         });
     };
 
-    script.onerror = () => {
-      const error = new Error('Failed to load Tawk.to script');
-      setChatError(error);
+    script.onerror = (error) => {
+      console.error('Tawk script failed to load:', error);
+      const err = new Error('Failed to load Tawk.to script');
+      setChatError(err);
       setIsChatLoading(false);
     };
 
     document.body.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
   }, [tawkToConfig.embedUrl, tawkToConfig.propertyId, tawkToConfig.widgetId, initializeTawk]);
 
   useEffect(() => {
+    // If Tawk_API is already available (e.g., from a previous hot-reload), just initialize it
     if (window.Tawk_API) {
       initializeTawk()
         .catch(error => {
+          console.error('Tawk initialization on re-render failed:', error);
           setChatError(error);
         });
       return;
     }
 
+    // Otherwise, load the script
     loadTawkScript();
   }, [initializeTawk, loadTawkScript]);
 
@@ -107,6 +122,10 @@ const useTawkTo = () => {
             'name': `${userData.studentInfo.firstName} ${userData.studentInfo.lastName}`,
             'email': userData.parentInfo.email,
             'phone': userData.parentInfo.phone
+          }, function(error) {
+              if(error) {
+                  console.error('Tawk setAttributes error:', error);
+              }
           });
         }
 

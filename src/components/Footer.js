@@ -10,33 +10,11 @@ const Footer = () => {
         <footer className="app-footer">
             <div className="container">
                 <div className="grid">
-                    {/* Quick Links Section */}
-                    <div className="footer-section">
+                    {/* Mobile: Contact Section First */}
+                    <div className="footer-section contact-section-mobile">
                         <h3>
-                            <IoMdSchool className="mr-2" /> Quick Links
+                            <FaMapMarkerAlt className="mr-2" /> Get in Touch
                         </h3>
-                        <ul>
-                            <li>
-                                <a href="/">
-                                    <FaHome /> Home
-                                </a>
-                            </li>
-                            <li>
-                                <a href="/admissions">
-                                    <IoMdSchool /> Admissions
-                                </a>
-                            </li>
-                            <li>
-                                <a href="/calendar">
-                                    <FaCalendarAlt /> Academic Calendar
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {/* Contact Section */}
-                    <div className="footer-section">
-                        <h3>Contact Information</h3>
                         <ul className="contact-info">
                             <li>
                                 <FaMapMarkerAlt className="icon" />
@@ -50,7 +28,7 @@ const Footer = () => {
                             </li>
                             <li>
                                 <FaPhone className="icon" />
-                                <div>
+                                <div className="phone-numbers">
                                     <p>+260 977-845317</p>
                                     <p>+260 966-845317</p>
                                     <p>+260 971-935653</p>
@@ -59,30 +37,57 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Academics Section */}
-                    <div className="footer-section">
-                        <h3>Academics</h3>
-                        <ul>
-                            <li>
-                                <a href="/programs">
-                                    <IoMdSchool /> Programs
-                                </a>
-                            </li>
-                            <li>
-                                <a href="/faculty">
-                                    <IoMdSchool /> Faculty
-                                </a>
-                            </li>
-                            <li>
-                                <a href="/resources">
-                                    <IoMdSchool /> Resources
-                                </a>
-                            </li>
-                        </ul>
+                    {/* Combined Quick Links & Academics */}
+                    <div className="footer-section links-section-mobile">
+                        <div className="links-group">
+                            <h3>
+                                <IoMdSchool className="mr-2" /> Quick Links
+                            </h3>
+                            <ul>
+                                <li>
+                                    <a href="/">
+                                        <FaHome /> Home
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/admissions">
+                                        <IoMdSchool /> Admissions
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/calendar">
+                                        <FaCalendarAlt /> Academic Calendar
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div className="links-group">
+                            <h3>
+                                <IoMdSchool className="mr-2" /> Academics
+                            </h3>
+                            <ul>
+                                <li>
+                                    <a href="/programs">
+                                        <IoMdSchool /> Programs
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/faculty">
+                                        <IoMdSchool /> Faculty
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/resources">
+                                        <IoMdSchool /> Resources
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
 
-                    {/* Social Media Section */}
-                    <div className="footer-section">
+                    {/* Social Media & Newsletter */}
+                    <div className="footer-section social-section-mobile">
                         <h3>Connect With Us</h3>
                         <div className="social-links">
                             <a href="https://facebook.com" aria-label="Facebook">

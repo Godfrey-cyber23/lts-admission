@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from './styles/themes';
+import { FaUser, FaUsers, FaGraduationCap, FaHeartbeat } from 'react-icons/fa';
 
 const AdmissionForm = () => {
     const theme = useTheme();
@@ -341,34 +342,112 @@ const AdmissionForm = () => {
                         2025-2026 Academic Year - {getFormStage(currentStep).replace('_', ' ').toUpperCase()}
                     </p>
 
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginTop: theme.sizes.spacing.lg,
-                        flexDirection: isMobile ? 'column' : 'row',
-                        gap: isMobile ? theme.sizes.spacing.sm : 0
-                    }}>
-                        {[1, 2, 3, 4].map(step => (
-                            <div
-                                key={step}
-                                style={{
-                                    flex: 1,
-                                    textAlign: 'center',
-                                    padding: isMobile ? theme.sizes.spacing.xs : theme.sizes.spacing.sm,
-                                    backgroundColor: currentStep >= step ? theme.colors.accent : theme.colors.gray[200],
-                                    color: currentStep >= step ? theme.colors.white : theme.colors.text,
-                                    fontWeight: currentStep >= step ? 600 : 400,
-                                    position: 'relative',
-                                    fontSize: isMobile ? '0.8rem' : '1rem'
-                                }}
-                            >
-                                {step === 1 && 'Student'}
-                                {step === 2 && 'Parent'}
-                                {step === 3 && 'Academic'}
-                                {step === 4 && 'Medical'}
+                    {/* Mobile-friendly Progress Bar */}
+                    {isMobile ? (
+                        <div style={{ marginTop: theme.sizes.spacing.lg }}>
+                            {/* Option 1: Horizontal scrollable progress bar with icons */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: theme.sizes.spacing.md,
+                                position: 'relative'
+                            }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '20px',
+                                    left: '0',
+                                    right: '0',
+                                    height: '4px',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                                    zIndex: 1
+                                }}></div>
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '20px',
+                                    left: '0',
+                                    height: '4px',
+                                    backgroundColor: theme.colors.accent,
+                                    zIndex: 2,
+                                    width: `${((currentStep - 1) / 3) * 100}%`,
+                                    transition: 'width 0.3s ease'
+                                }}></div>
+                                
+                                {[1, 2, 3, 4].map(step => (
+                                    <div
+                                        key={step}
+                                        style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '50%',
+                                            backgroundColor: currentStep >= step ? theme.colors.accent : 'rgba(255, 255, 255, 0.3)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            zIndex: 3,
+                                            position: 'relative'
+                                        }}
+                                    >
+                                        {step === 1 && <FaUser size={16} />}
+                                        {step === 2 && <FaUsers size={16} />}
+                                        {step === 3 && <FaGraduationCap size={16} />}
+                                        {step === 4 && <FaHeartbeat size={16} />}
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                            
+                            {/* Step labels below icons */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                marginTop: theme.sizes.spacing.xs
+                            }}>
+                                <span style={{ fontSize: '0.75rem', color: currentStep >= 1 ? theme.colors.accent : 'rgba(255, 255, 255, 0.7)' }}>Student</span>
+                                <span style={{ fontSize: '0.75rem', color: currentStep >= 2 ? theme.colors.accent : 'rgba(255, 255, 255, 0.7)' }}>Parent</span>
+                                <span style={{ fontSize: '0.75rem', color: currentStep >= 3 ? theme.colors.accent : 'rgba(255, 255, 255, 0.7)' }}>Academic</span>
+                                <span style={{ fontSize: '0.75rem', color: currentStep >= 4 ? theme.colors.accent : 'rgba(255, 255, 255, 0.7)' }}>Medical</span>
+                            </div>
+                            
+                            {/* Step counter */}
+                            <div style={{
+                                marginTop: theme.sizes.spacing.sm,
+                                fontSize: '0.9rem',
+                                fontWeight: 600
+                            }}>
+                                Step {currentStep} of 4
+                            </div>
+                        </div>
+                    ) : (
+                        // Desktop version - original horizontal layout
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginTop: theme.sizes.spacing.lg,
+                            flexDirection: isMobile ? 'column' : 'row',
+                            gap: isMobile ? theme.sizes.spacing.sm : 0
+                        }}>
+                            {[1, 2, 3, 4].map(step => (
+                                <div
+                                    key={step}
+                                    style={{
+                                        flex: 1,
+                                        textAlign: 'center',
+                                        padding: isMobile ? theme.sizes.spacing.xs : theme.sizes.spacing.sm,
+                                        backgroundColor: currentStep >= step ? theme.colors.accent : theme.colors.gray[200],
+                                        color: currentStep >= step ? theme.colors.white : theme.colors.text,
+                                        fontWeight: currentStep >= step ? 600 : 400,
+                                        position: 'relative',
+                                        fontSize: isMobile ? '0.8rem' : '1rem'
+                                    }}
+                                >
+                                    {step === 1 && 'Student'}
+                                    {step === 2 && 'Parent'}
+                                    {step === 3 && 'Academic'}
+                                    {step === 4 && 'Medical'}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </header>
 
                 <form onSubmit={handleSubmit} style={{
@@ -694,7 +773,7 @@ const AdmissionForm = () => {
     );
 };
 
-// Reusable Form Components
+// Reusable Form Components (unchanged)
 const FormSection = ({ title, children, theme }) => {
     const [isMobile, setIsMobile] = useState(false);
     

@@ -1,11 +1,39 @@
 import React from 'react';
 
 export class ErrorBoundary extends React.Component {
-  state = { 
-    hasError: false,
-    error: null,
-    errorInfo: null
-  };
+  constructor(props) {
+    super(props);
+    this.state = { 
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      isMobile: false
+    };
+    
+    // Check if device is mobile
+    this.checkMobile = this.checkMobile.bind(this);
+    this.handleResize = this.handleResize.bind(this);
+  }
+
+  componentDidMount() {
+    this.checkMobile();
+    window.addEventListener('resize', this.handleResize);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.handleResize);
+  }
+
+  handleResize() {
+    this.checkMobile();
+  }
+
+  checkMobile() {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile !== this.state.isMobile) {
+      this.setState({ isMobile });
+    }
+  }
 
   static getDerivedStateFromError(error) {
     return { 
@@ -60,35 +88,87 @@ export class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      const { isMobile } = this.state;
+      
       return (
-        <div className="error-fallback" style={styles.errorContainer}>
-          <div style={styles.errorContent}>
+        <div className="error-fallback" style={{
+          ...styles.errorContainer,
+          padding: isMobile ? '15px' : '20px'
+        }}>
+          <div style={{
+            ...styles.errorContent,
+            maxWidth: isMobile ? '100%' : '600px',
+            padding: isMobile ? '20px' : '30px',
+            margin: isMobile ? '0' : 'auto'
+          }}>
             <img 
-              src="/images/school-logo-error.png" 
+              src="/school-logo.png" 
               alt="Literacy Tree School" 
-              style={styles.logo}
+              style={{
+                ...styles.logo,
+                height: isMobile ? '45px' : '60px',
+                marginBottom: isMobile ? '15px' : '20px'
+              }}
             />
-            <h2 style={styles.heading}>Admission Form Error</h2>
-            <p style={styles.message}>
+            <h2 style={{
+              ...styles.heading,
+              fontSize: isMobile ? '1.5rem' : '1.8rem',
+              marginBottom: isMobile ? '12px' : '15px'
+            }}>
+              Admission Form Error
+            </h2>
+            <p style={{
+              ...styles.message,
+              fontSize: isMobile ? '0.95rem' : '1rem',
+              marginBottom: isMobile ? '15px' : '20px',
+              lineHeight: isMobile ? '1.4' : '1.5'
+            }}>
               We encountered an issue with the admission form. Our team has been notified.
             </p>
-            <div style={styles.details}>
+            <div style={{
+              ...styles.details,
+              margin: isMobile ? '15px 0' : '20px 0'
+            }}>
               {process.env.NODE_ENV === 'development' && (
-                <details style={styles.detailsContent}>
+                <details style={{
+                  ...styles.detailsContent,
+                  padding: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '12px' : '14px'
+                }}>
                   <summary>Error Details</summary>
                   <p>{this.state.error?.toString()}</p>
-                  <pre>{this.state.errorInfo?.componentStack}</pre>
+                  <pre style={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    fontSize: isMobile ? '11px' : '12px'
+                  }}>
+                    {this.state.errorInfo?.componentStack}
+                  </pre>
                 </details>
               )}
             </div>
             <button 
               onClick={this.handleRefresh}
-              style={styles.button}
+              style={{
+                ...styles.button,
+                padding: isMobile ? '14px 20px' : '12px 24px',
+                fontSize: isMobile ? '1rem' : '16px',
+                width: isMobile ? '100%' : 'auto',
+                marginTop: isMobile ? '15px' : '10px'
+              }}
             >
               Refresh Page
             </button>
-            <p style={styles.contact}>
-              Need help? Contact admissions@literacytree.edu
+            <p style={{
+              ...styles.contact,
+              marginTop: isMobile ? '15px' : '20px',
+              fontSize: isMobile ? '13px' : '14px'
+            }}>
+              Need help? Contact <a href="mailto:admissions@literacytree.edu" style={{
+                color: '#2c5e3a',
+                textDecoration: 'none',
+                fontWeight: '500'
+              }}>admissions@literacytree.edu</a>
             </p>
           </div>
         </div>
@@ -115,7 +195,9 @@ const styles = {
     backgroundColor: 'white',
     padding: '30px',
     borderRadius: '8px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+    width: '100%',
+    boxSizing: 'border-box'
   },
   logo: {
     height: '60px',
@@ -139,7 +221,9 @@ const styles = {
     backgroundColor: '#f1f1f1',
     padding: '10px',
     borderRadius: '4px',
-    fontSize: '14px'
+    fontSize: '14px',
+    maxHeight: '200px',
+    overflow: 'auto'
   },
   button: {
     backgroundColor: '#2c5e3a',
@@ -150,7 +234,9 @@ const styles = {
     fontSize: '16px',
     cursor: 'pointer',
     transition: 'background-color 0.3s',
-    marginTop: '10px'
+    marginTop: '10px',
+    fontWeight: '500',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
   },
   contact: {
     marginTop: '20px',

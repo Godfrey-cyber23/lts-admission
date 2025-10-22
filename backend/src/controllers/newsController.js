@@ -14,7 +14,13 @@ export const getNews = asyncHandler(async (req, res) => {
     ? { isFeatured: req.query.featured === 'true' } 
     : {};
 
-  res.status(200).json(res.advancedResults);
+  const news = await News.find(filter);
+
+  res.status(200).json({
+    success: true,
+    count: news.length,
+    data: news
+  });
 });
 
 /**

@@ -92,7 +92,7 @@
 }
 
 /* Section Titles */
-.section-title {
+.contact-form-section .section-title {
   text-align: center;
   color: var(--color-secondary);
   margin-bottom: 3rem;

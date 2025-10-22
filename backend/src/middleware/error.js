@@ -1,21 +1,29 @@
 import ErrorResponse from '../utils/errorResponse.js';
 import colors from 'colors'; // For colored console output
+import multer from 'multer';
 
 const errorHandler = (err, req, res, next) => {
+  console.error('Error:', err);
   let error = { ...err };
   error.message = err.message;
   
   // Log full error in development
-  if (process.env.NODE_ENV === 'development') {
-    console.error('\n--- ERROR DETAILS ---'.red);
-    console.error('Error:'.yellow, err);
-    console.error('Stack:'.yellow, err.stack);
-    console.error('Request:'.yellow, {
-      method: req.method,
-      url: req.originalUrl,
-      body: req.body,
-      params: req.params,
-      query: req.query
+  if (err.message.includes('pathToRegexp')) {
+  console.error('ROUTE PATH ERROR:'.red.bold);
+  console.error('The problematic route path is malformed');
+  console.error('Check for routes with missing parameter names (e.g. "/path/:")');
+  return res.status(500).json({
+    error: 'Server configuration error',
+    message: 'Invalid route path detected'
+  });
+}
+
+ if (err.name === 'MulterError') {
+    return res.status(400).json({
+      success: false,
+      message: err.code === 'LIMIT_FILE_SIZE' 
+        ? 'File too large (max 5MB)' 
+        : 'File upload error'
     });
   }
 
@@ -88,6 +96,23 @@ const errorHandler = (err, req, res, next) => {
       fullError: err
     })
   });
+};
+
+export const handleUploadErrors = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ 
+      success: false,
+      message: err.code === 'LIMIT_FILE_SIZE' 
+        ? 'File too large (max 5MB)' 
+        : err.message || 'File upload error'
+    });
+  } else if (err) {
+    return res.status(400).json({ 
+      success: false, 
+      message: err.message || 'File upload failed'
+    });
+  }
+  next();
 };
 
 export default errorHandler;

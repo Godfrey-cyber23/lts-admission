@@ -94,7 +94,7 @@ const FAQPage = () => {
 
           {/* Testimonial Slider */}
           <div className="testimonial-slider">
-            <h2>What Parents Say</h2>
+            <h2 className="testimonial-heading">What Parents Say</h2>
             <Carousel
               showArrows={true}
               showThumbs={false}
@@ -118,7 +118,7 @@ const FAQPage = () => {
           {/* CTA Section */}
           <div className="cta-section">
             <div className="cta-content">
-              <h2>Still have questions?</h2>
+              <h2 className='testimonial-heading'>Still have questions?</h2>
               <p>Our admissions team is happy to help with any additional questions you may have.</p>
               <a href="/contact" className="cta-button">
                 Contact Admissions

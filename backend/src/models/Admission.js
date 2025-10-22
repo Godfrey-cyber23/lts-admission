@@ -1,16 +1,53 @@
 import mongoose from 'mongoose';
 
+const cloudinaryDocumentSchema = new mongoose.Schema({
+  url: { 
+    type: String, 
+    required: [true, 'Document URL is required'],
+    validate: {
+      validator: function(v) {
+        return /^https?:\/\/.+/i.test(v);
+      },
+      message: props => `${props.value} is not a valid URL`
+    }
+  },
+  public_id: { 
+    type: String, 
+    required: [true, 'Cloudinary public ID is required'] 
+  },
+  format: { 
+    type: String, 
+    required: [true, 'File format is required'],
+    enum: ['jpg', 'jpeg', 'png', 'pdf', 'gif']
+  },
+  secure_url: { 
+    type: String, 
+    required: [true, 'Secure URL is required'] 
+  },
+  resource_type: { 
+    type: String, 
+    required: true,
+    enum: ['image', 'raw'] 
+  },
+  created_at: { 
+    type: Date, 
+    default: Date.now 
+  }
+}, { _id: false });
+
 const admissionSchema = new mongoose.Schema({
   childInfo: {
     firstName: { 
       type: String, 
       required: [true, 'First name is required'],
-      trim: true
+      trim: true,
+      maxlength: [50, 'First name cannot exceed 50 characters']
     },
     surname: { 
       type: String, 
       required: [true, 'Surname is required'],
-      trim: true
+      trim: true,
+      maxlength: [50, 'Surname cannot exceed 50 characters']
     },
     dob: { 
       type: Date, 
@@ -22,7 +59,11 @@ const admissionSchema = new mongoose.Schema({
         message: 'Date of birth must be in the past'
       }
     },
-    age: { type: Number },
+    age: { 
+      type: Number,
+      min: [1, 'Age must be at least 1'],
+      max: [18, 'Age cannot exceed 18']
+    },
     placeOfBirth: { 
       type: String, 
       required: [true, 'Place of birth is required'],
@@ -45,7 +86,13 @@ const admissionSchema = new mongoose.Schema({
     },
     fathersContact: { 
       type: String,
-      trim: true
+      trim: true,
+      validate: {
+        validator: function(v) {
+          return !v || /^[0-9]{10,15}$/.test(v);
+        },
+        message: 'Please enter a valid phone number'
+      }
     },
     mothersName: { 
       type: String,
@@ -53,7 +100,13 @@ const admissionSchema = new mongoose.Schema({
     },
     mothersContact: { 
       type: String,
-      trim: true
+      trim: true,
+      validate: {
+        validator: function(v) {
+          return !v || /^[0-9]{10,15}$/.test(v);
+        },
+        message: 'Please enter a valid phone number'
+      }
     },
     residentialAddress: { 
       type: String, 
@@ -86,24 +139,49 @@ const admissionSchema = new mongoose.Schema({
     },
     doctorContact: { 
       type: String,
-      trim: true
+      trim: true,
+      validate: {
+        validator: function(v) {
+          return !v || /^[0-9]{10,15}$/.test(v);
+        },
+        message: 'Please enter a valid phone number'
+      }
     },
     emergencyContacts: [{ 
       type: String,
-      trim: true
+      trim: true,
+      validate: {
+        validator: function(v) {
+          return /^[0-9]{10,15}$/.test(v);
+        },
+        message: 'Please enter a valid phone number'
+      }
     }]
   },
   documents: {
-    underFiveCard: { type: String },
-    passportPhoto: { type: String },
-    birthCertificate: { type: String }
+    passportPhoto: { 
+      type: cloudinaryDocumentSchema,
+      required: [true, 'Passport photo is required']
+    },
+    underFiveCard: cloudinaryDocumentSchema,
+    birthCertificate: cloudinaryDocumentSchema
   },
   declaration: {
     declarationName: { 
       type: String,
-      trim: true
+      trim: true,
+      required: [true, 'Declaration name is required']
     },
-    signatureData: { type: String }
+    signatureData: { 
+      type: String,
+      required: [true, 'Signature is required'],
+      validate: {
+        validator: function(v) {
+          return v.startsWith('data:image/');
+        },
+        message: 'Invalid signature format'
+      }
+    }
   },
   otherInfo: { 
     type: String,
@@ -127,7 +205,8 @@ const admissionSchema = new mongoose.Schema({
     },
     createdBy: { 
       type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User' 
+      ref: 'User',
+      required: true
     },
     createdAt: { type: Date, default: Date.now }
   }],
@@ -141,7 +220,7 @@ const admissionSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual for assigned user details
+// Virtuals
 admissionSchema.virtual('assignedUser', {
   ref: 'User',
   localField: 'assignedTo',
@@ -149,7 +228,14 @@ admissionSchema.virtual('assignedUser', {
   justOne: true
 });
 
-// Calculate age before saving
+admissionSchema.virtual('creator', {
+  ref: 'User',
+  localField: 'createdBy',
+  foreignField: '_id',
+  justOne: true
+});
+
+// Pre-save hook to calculate age
 admissionSchema.pre('save', function(next) {
   if (this.childInfo.dob && !this.childInfo.age) {
     const dob = new Date(this.childInfo.dob);
@@ -160,9 +246,11 @@ admissionSchema.pre('save', function(next) {
   next();
 });
 
-// Indexes for better performance
+// Indexes
 admissionSchema.index({ status: 1 });
 admissionSchema.index({ 'childInfo.firstName': 'text', 'childInfo.surname': 'text' });
+admissionSchema.index({ createdAt: -1 });
+admissionSchema.index({ 'documents.passportPhoto.public_id': 1 });
 
 const Admission = mongoose.model('Admission', admissionSchema);
 export default Admission;

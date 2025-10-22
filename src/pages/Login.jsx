@@ -13,7 +13,9 @@ import {
   Alert,
   CircularProgress,
   InputAdornment,
-  IconButton
+  IconButton,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { 
   Email as EmailIcon,
@@ -23,6 +25,9 @@ import {
 
 const Login = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -63,74 +68,100 @@ const Login = () => {
 
   return (
     <Grid 
-  container 
-  component="main" 
-  sx={{
-    height: '100%',
-    position: 'relative',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundImage: 'url(/pre-school.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-      zIndex: -1,
-    },
-    '&::after': {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(20, 20, 60, 0.4)', 
-      zIndex: -1,
-    }
-  }}
->
+      container 
+      component="main" 
+      sx={{
+        height: '100vh',
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 0,
+        margin: 0,
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: 'url(/pre-school.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          zIndex: -1,
+        },
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(20, 20, 60, 0.4)', 
+          zIndex: -1,
+        }
+      }}
+    >
       <Grid 
         item 
-        xs={10} 
-        sm={6} 
-        md={5} 
+        xs={12} 
+        sm={8} 
+        md={6} 
         lg={4}
         component={Paper} 
         elevation={6} 
         sx={{
-          borderRadius: '10px',
+          borderRadius: { xs: 0, sm: '10px' },
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          padding: { xs: 2, sm: 4 },
-          margin: 2,
-          maxWidth: '450px'
+          padding: { xs: 3, sm: 4 },
+          margin: { xs: 0, sm: 2 },
+          maxWidth: '450px',
+          width: '100%',
+          height: { xs: '100vh', sm: 'auto' },
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
         }}
       >
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center'
+          alignItems: 'center',
+          width: '100%'
         }}>
           {/* School Logo */}
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: { xs: 2, sm: 3 } }}>
             <img 
               src="/school-logo.jpg" 
               alt="Literacy Tree School Logo" 
-              style={{ height: '80px' }}
+              style={{ height: isMobile ? '60px' : '80px' }}
             />
           </Box>
           
-          <Typography component="h2" color='darkgreen' variant="h4" sx={{ mb: 1, fontWeight: 600 }}>
+          <Typography 
+            component="h2" 
+            color='darkgreen' 
+            variant={isMobile ? "h5" : "h4"} 
+            sx={{ 
+              mb: 1, 
+              fontWeight: 600,
+              textAlign: 'center',
+              px: 1
+            }}
+          >
             Literacy Tree Admin Portal
           </Typography>
           
-          <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              mb: 3, 
+              color: 'text.secondary',
+              textAlign: 'center',
+              px: 2
+            }}
+          >
             Sign in to access the administration dashboard
           </Typography>
           
@@ -204,10 +235,11 @@ const Login = () => {
               sx={{
                 mt: 3,
                 mb: 2,
-                py: 1.5,
+                py: { xs: 1.8, sm: 1.5 },
                 borderRadius: '8px',
                 fontWeight: 600,
                 bgcolor: 'primary.main',
+                fontSize: { xs: '1rem', sm: '0.875rem' },
                 '&:hover': {
                   bgcolor: 'primary.dark',
                   transform: 'translateY(-1px)'

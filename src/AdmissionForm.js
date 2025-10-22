@@ -7,11 +7,25 @@ const AdmissionForm = () => {
     const [showUnderFiveCard, setShowUnderFiveCard] = useState(false);
     const [showAllergyDetails, setShowAllergyDetails] = useState(false);
     const [showVaccinationDetails, setShowVaccinationDetails] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
     const [currentStep, setCurrentStep] = useState(1);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const signatureRef = useRef(null);
+    
+    // Check if device is mobile
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     const handleChange = useCallback((section, field, value) => {
         setFormData(prev => ({
             ...prev,
@@ -67,8 +81,6 @@ const AdmissionForm = () => {
         otherInfo: ''
     });
 
-
-
     useEffect(() => {
         if (formData.childInfo.dob) {
             const dob = new Date(formData.childInfo.dob);
@@ -79,7 +91,6 @@ const AdmissionForm = () => {
             setShowUnderFiveCard(calculatedAge < 5);
         }
     }, [formData.childInfo.dob, handleChange]);
-
 
     const validateStep = (step) => {
         const newErrors = {};
@@ -135,75 +146,90 @@ const AdmissionForm = () => {
     };
 
     const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateStep(currentStep)) return;
+        e.preventDefault();
+        if (!validateStep(currentStep)) return;
 
-  try {
-    setIsSubmitting(true);
-    const formPayload = new FormData();
+        try {
+            setIsSubmitting(true);
+            const formPayload = new FormData();
 
-    // Append form data
-    Object.entries(formData).forEach(([section, fields]) => {
-      if (section === 'documents') return; // Handle files separately
-      
-      Object.entries(fields).forEach(([field, value]) => {
-        if (Array.isArray(value)) {
-          value.forEach(item => formPayload.append(`${section}.${field}[]`, item));
-        } else if (value !== null && value !== undefined) {
-          formPayload.append(`${section}.${field}`, value);
+            // Append form data
+            Object.entries(formData).forEach(([section, fields]) => {
+                if (section === 'documents') return; // Handle files separately
+                
+                Object.entries(fields).forEach(([field, value]) => {
+                    if (Array.isArray(value)) {
+                        value.forEach(item => formPayload.append(`${section}.${field}[]`, item));
+                    } else if (value !== null && value !== undefined) {
+                        formPayload.append(`${section}.${field}`, value);
+                    }
+                });
+            });
+
+            // Append files
+            if (!formData.documents.passportPhoto) {
+                throw new Error('Passport photo is required');
+            }
+            formPayload.append('passportPhoto', formData.documents.passportPhoto);
+
+            if (formData.documents.underFiveCard) {
+                formPayload.append('underFiveCard', formData.documents.underFiveCard);
+            }
+
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/admissions`, {
+                method: 'POST',
+                body: formPayload
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Submission failed');
+            }
+
+            setSubmitted(true);
+        } catch (error) {
+            console.error('Submission error:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
         }
-      });
-    });
-
-    // Append files
-    if (!formData.documents.passportPhoto) {
-      throw new Error('Passport photo is required');
-    }
-    formPayload.append('passportPhoto', formData.documents.passportPhoto);
-
-    if (formData.documents.underFiveCard) {
-      formPayload.append('underFiveCard', formData.documents.underFiveCard);
-    }
-
-    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/admissions`, {
-      method: 'POST',
-      body: formPayload
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Submission failed');
-    }
-
-    setSubmitted(true);
-  } catch (error) {
-    console.error('Submission error:', error);
-    alert(`Error: ${error.message}`);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    };
 
     const setupSignaturePad = useCallback(() => {
         const canvas = signatureRef.current;
         if (!canvas) return;
+        
+        // Adjust canvas size for mobile
+        if (isMobile) {
+            canvas.width = Math.min(window.innerWidth - 40, 300);
+            canvas.height = 150;
+        }
+        
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
         let lastX = 0;
         let lastY = 0;
 
+        // Mouse events for desktop
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
-            [lastX, lastY] = [e.offsetX, e.offsetY];
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
         });
 
         canvas.addEventListener('mousemove', (e) => {
             if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
-            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.lineTo(x, y);
             ctx.stroke();
-            [lastX, lastY] = [e.offsetX, e.offsetY];
+            lastX = x;
+            lastY = y;
         });
 
         canvas.addEventListener('mouseup', () => {
@@ -214,8 +240,39 @@ const AdmissionForm = () => {
         canvas.addEventListener('mouseout', () => {
             isDrawing = false;
         });
-    }, [handleChange]);
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            lastX = touch.clientX - rect.left;
+            lastY = touch.clientY - rect.top;
+        });
 
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            lastX = x;
+            lastY = y;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isDrawing = false;
+            handleChange('declaration', 'signatureData', canvas.toDataURL());
+        });
+    }, [handleChange, isMobile]);
 
     const clearSignature = () => {
         const canvas = signatureRef.current;
@@ -247,7 +304,7 @@ const AdmissionForm = () => {
         <div style={{
             minHeight: '100vh',
             backgroundColor: theme.colors.primaryLight,
-            padding: theme.sizes.spacing.xl
+            padding: isMobile ? theme.sizes.spacing.md : theme.sizes.spacing.xl
         }}>
             <div style={{
                 maxWidth: theme.sizes.container.form,
@@ -256,7 +313,7 @@ const AdmissionForm = () => {
                 <header style={{
                     backgroundColor: theme.colors.primary,
                     color: theme.colors.white,
-                    padding: theme.sizes.spacing.lg,
+                    padding: isMobile ? theme.sizes.spacing.md : theme.sizes.spacing.lg,
                     borderRadius: `${theme.sizes.borderRadius.medium} ${theme.sizes.borderRadius.medium} 0 0`,
                     textAlign: 'center'
                 }}>
@@ -264,21 +321,22 @@ const AdmissionForm = () => {
                         src="/school-logo.jpg"
                         alt="Literacy Tree School Logo"
                         style={{
-                            height: theme.sizes.header.height,
+                            height: isMobile ? '60px' : theme.sizes.header.height,
                             marginBottom: theme.sizes.spacing.md
                         }}
                     />
                     <h1 style={{
                         fontFamily: theme.fonts.heading,
                         margin: 0,
-                        fontSize: '1.8rem'
+                        fontSize: isMobile ? '1.4rem' : '1.8rem'
                     }}>
                         Literacy Tree School Admission Form
                     </h1>
                     <p style={{
                         margin: `${theme.sizes.spacing.sm} 0 0`,
                         fontWeight: 600,
-                        opacity: 0.9
+                        opacity: 0.9,
+                        fontSize: isMobile ? '0.9rem' : '1rem'
                     }}>
                         2025-2026 Academic Year - {getFormStage(currentStep).replace('_', ' ').toUpperCase()}
                     </p>
@@ -286,7 +344,9 @@ const AdmissionForm = () => {
                     <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        marginTop: theme.sizes.spacing.lg
+                        marginTop: theme.sizes.spacing.lg,
+                        flexDirection: isMobile ? 'column' : 'row',
+                        gap: isMobile ? theme.sizes.spacing.sm : 0
                     }}>
                         {[1, 2, 3, 4].map(step => (
                             <div
@@ -294,11 +354,12 @@ const AdmissionForm = () => {
                                 style={{
                                     flex: 1,
                                     textAlign: 'center',
-                                    padding: theme.sizes.spacing.sm,
+                                    padding: isMobile ? theme.sizes.spacing.xs : theme.sizes.spacing.sm,
                                     backgroundColor: currentStep >= step ? theme.colors.accent : theme.colors.gray[200],
                                     color: currentStep >= step ? theme.colors.white : theme.colors.text,
                                     fontWeight: currentStep >= step ? 600 : 400,
-                                    position: 'relative'
+                                    position: 'relative',
+                                    fontSize: isMobile ? '0.8rem' : '1rem'
                                 }}
                             >
                                 {step === 1 && 'Student'}
@@ -312,7 +373,7 @@ const AdmissionForm = () => {
 
                 <form onSubmit={handleSubmit} style={{
                     backgroundColor: theme.colors.white,
-                    padding: theme.sizes.spacing.xl,
+                    padding: isMobile ? theme.sizes.spacing.md : theme.sizes.spacing.xl,
                     borderRadius: `0 0 ${theme.sizes.borderRadius.medium} ${theme.sizes.borderRadius.medium}`,
                     boxShadow: theme.shadows.md
                 }}>
@@ -325,6 +386,7 @@ const AdmissionForm = () => {
                                 error={errors.firstName}
                                 required
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Child's Surname"
@@ -333,6 +395,7 @@ const AdmissionForm = () => {
                                 error={errors.surname}
                                 required
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Date of Birth"
@@ -342,12 +405,14 @@ const AdmissionForm = () => {
                                 error={errors.dob}
                                 required
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Child's Age"
                                 value={formData.childInfo.age}
                                 readOnly
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Place of Birth"
@@ -356,6 +421,7 @@ const AdmissionForm = () => {
                                 error={errors.placeOfBirth}
                                 required
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Nationality"
@@ -364,18 +430,21 @@ const AdmissionForm = () => {
                                 error={errors.nationality}
                                 required
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Religion"
                                 value={formData.childInfo.religion}
                                 onChange={(value) => handleChange('childInfo', 'religion', value)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <FormNavigation
                                 onNext={nextStep}
                                 nextDisabled={false}
                                 isSubmitting={isSubmitting}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                         </FormSection>
                     )}
@@ -387,6 +456,7 @@ const AdmissionForm = () => {
                                 value={formData.parentInfo.fathersName}
                                 onChange={(value) => handleChange('parentInfo', 'fathersName', value)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Father's Contact Number"
@@ -394,12 +464,14 @@ const AdmissionForm = () => {
                                 value={formData.parentInfo.fathersContact}
                                 onChange={(value) => handleChange('parentInfo', 'fathersContact', value)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Mother's Name"
                                 value={formData.parentInfo.mothersName}
                                 onChange={(value) => handleChange('parentInfo', 'mothersName', value)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Mother's Contact Number"
@@ -407,6 +479,7 @@ const AdmissionForm = () => {
                                 value={formData.parentInfo.mothersContact}
                                 onChange={(value) => handleChange('parentInfo', 'mothersContact', value)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextArea
                                 label="Residential Address"
@@ -415,12 +488,14 @@ const AdmissionForm = () => {
                                 error={errors.residentialAddress}
                                 required
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <FormNavigation
                                 onPrev={prevStep}
                                 onNext={nextStep}
                                 isSubmitting={isSubmitting}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                         </FormSection>
                     )}
@@ -439,6 +514,7 @@ const AdmissionForm = () => {
                                     { value: 'Yes', label: 'Yes' }
                                 ]}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             {showAllergyDetails && (
                                 <TextArea
@@ -446,6 +522,7 @@ const AdmissionForm = () => {
                                     value={formData.healthInfo.allergyDetails}
                                     onChange={(value) => handleChange('healthInfo', 'allergyDetails', value)}
                                     theme={theme}
+                                    isMobile={isMobile}
                                 />
                             )}
                             <SelectInput
@@ -460,6 +537,7 @@ const AdmissionForm = () => {
                                     { value: 'No', label: 'No' }
                                 ]}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             {showVaccinationDetails && (
                                 <TextArea
@@ -467,6 +545,7 @@ const AdmissionForm = () => {
                                     value={formData.healthInfo.vaccinationDetails}
                                     onChange={(value) => handleChange('healthInfo', 'vaccinationDetails', value)}
                                     theme={theme}
+                                    isMobile={isMobile}
                                 />
                             )}
 
@@ -476,6 +555,7 @@ const AdmissionForm = () => {
                                 selected={formData.healthInfo.emergencyContacts}
                                 onChange={(value, checked) => handleCheckboxChange('healthInfo', 'emergencyContacts', value, checked)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
 
                             <TextArea
@@ -483,6 +563,7 @@ const AdmissionForm = () => {
                                 value={formData.healthInfo.doctorDetails}
                                 onChange={(value) => handleChange('healthInfo', 'doctorDetails', value)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextInput
                                 label="Doctor's Contact Number"
@@ -490,6 +571,7 @@ const AdmissionForm = () => {
                                 value={formData.healthInfo.doctorContact}
                                 onChange={(value) => handleChange('healthInfo', 'doctorContact', value)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
 
                             <FormNavigation
@@ -497,6 +579,7 @@ const AdmissionForm = () => {
                                 onNext={nextStep}
                                 isSubmitting={isSubmitting}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                         </FormSection>
                     )}
@@ -511,6 +594,7 @@ const AdmissionForm = () => {
                                         onChange={(e) => handleFileChange('underFiveCard', e)}
                                         accept="image/*"
                                         theme={theme}
+                                        isMobile={isMobile}
                                     />
                                 )}
                             </div>
@@ -520,15 +604,21 @@ const AdmissionForm = () => {
                                 onChange={(e) => handleFileChange('passportPhoto', e)}
                                 accept="image/*"
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <TextArea
                                 label="Any other information about the child"
                                 value={formData.otherInfo}
                                 onChange={(value) => handleChange('', 'otherInfo', value)}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                             <div style={{ margin: `${theme.sizes.spacing.lg} 0` }}>
-                                <p style={{ marginBottom: theme.sizes.spacing.sm }}>
+                                <p style={{ 
+                                    marginBottom: theme.sizes.spacing.sm,
+                                    fontSize: isMobile ? '0.9rem' : '1rem',
+                                    lineHeight: isMobile ? '1.4' : '1.6'
+                                }}>
                                     I, <TextInput
                                         inline
                                         value={formData.declaration.declarationName}
@@ -536,17 +626,33 @@ const AdmissionForm = () => {
                                         placeholder="Enter your full name"
                                         required
                                         theme={theme}
+                                        isMobile={isMobile}
                                     />, hereby agree to pay all tuition fees in good time and that my child will comply with all school regulations.
                                 </p>
                                 <div style={{ margin: `${theme.sizes.spacing.md} 0` }}>
-                                    <label style={{ display: 'block', marginBottom: theme.sizes.spacing.sm }}>Parent's Signature:</label>
-                                    <canvas
-                                        ref={signatureRef}
-                                        id="signatureCanvas"
-                                        width={300}
-                                        height={150}
-                                        style={{ border: `1px solid ${theme.colors.border}`, borderRadius: theme.sizes.borderRadius.small }}
-                                    ></canvas>
+                                    <label style={{ 
+                                        display: 'block', 
+                                        marginBottom: theme.sizes.spacing.sm,
+                                        fontSize: isMobile ? '0.9rem' : '1rem'
+                                    }}>Parent's Signature:</label>
+                                    <div style={{ 
+                                        overflow: 'auto',
+                                        maxWidth: '100%',
+                                        marginBottom: theme.sizes.spacing.sm
+                                    }}>
+                                        <canvas
+                                            ref={signatureRef}
+                                            id="signatureCanvas"
+                                            width={isMobile ? Math.min(window.innerWidth - 40, 300) : 300}
+                                            height={150}
+                                            style={{ 
+                                                border: `1px solid ${theme.colors.border}`, 
+                                                borderRadius: theme.sizes.borderRadius.small,
+                                                maxWidth: '100%',
+                                                touchAction: 'none'
+                                            }}
+                                        ></canvas>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={clearSignature}
@@ -556,14 +662,20 @@ const AdmissionForm = () => {
                                             border: 'none',
                                             color: theme.colors.primary,
                                             textDecoration: 'underline',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            fontSize: isMobile ? '0.9rem' : '1rem'
                                         }}
                                     >
                                         Clear Signature
                                     </button>
                                 </div>
                             </div>
-                            <p style={{ fontStyle: 'italic', textAlign: 'center', marginTop: theme.sizes.spacing.lg }}>
+                            <p style={{ 
+                                fontStyle: 'italic', 
+                                textAlign: 'center', 
+                                marginTop: theme.sizes.spacing.lg,
+                                fontSize: isMobile ? '0.9rem' : '1rem'
+                            }}>
                                 "TO TEACH IS TO TOUCH A LIFE FOREVER."
                             </p>
                             <FormNavigation
@@ -572,6 +684,7 @@ const AdmissionForm = () => {
                                 isLastStep={true}
                                 isSubmitting={isSubmitting}
                                 theme={theme}
+                                isMobile={isMobile}
                             />
                         </FormSection>
                     )}
@@ -583,6 +696,19 @@ const AdmissionForm = () => {
 
 // Reusable Form Components
 const FormSection = ({ title, children, theme }) => {
+    const [isMobile, setIsMobile] = useState(false);
+    
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+    
     return (
         <div>
             <h2 style={{
@@ -590,7 +716,8 @@ const FormSection = ({ title, children, theme }) => {
                 fontFamily: theme.fonts.heading,
                 marginBottom: theme.sizes.spacing.lg,
                 paddingBottom: theme.sizes.spacing.sm,
-                borderBottom: `2px solid ${theme.colors.gray[200]}`
+                borderBottom: `2px solid ${theme.colors.gray[200]}`,
+                fontSize: isMobile ? '1.4rem' : '1.6rem'
             }}>
                 {title}
             </h2>
@@ -601,14 +728,15 @@ const FormSection = ({ title, children, theme }) => {
     );
 };
 
-const FileInput = ({ label, id, onChange, accept, theme }) => {
+const FileInput = ({ label, id, onChange, accept, theme, isMobile }) => {
     return (
         <div style={{ marginBottom: theme.sizes.spacing.lg }}>
             <label style={{
                 display: 'block',
                 marginBottom: theme.sizes.spacing.sm,
                 fontWeight: 600,
-                color: theme.colors.text
+                color: theme.colors.text,
+                fontSize: isMobile ? '0.9rem' : '1rem'
             }}>
                 {label}
             </label>
@@ -619,15 +747,16 @@ const FileInput = ({ label, id, onChange, accept, theme }) => {
                 accept={accept}
                 style={{
                     width: '100%',
-                    padding: theme.sizes.spacing.sm,
-                    fontFamily: theme.fonts.main
+                    padding: isMobile ? theme.sizes.spacing.sm : theme.sizes.spacing.sm,
+                    fontFamily: theme.fonts.main,
+                    fontSize: isMobile ? '0.9rem' : '1rem'
                 }}
             />
         </div>
     );
 };
 
-const TextInput = ({ label, type = 'text', value, onChange, error, required, placeholder, theme, inline }) => {
+const TextInput = ({ label, type = 'text', value, onChange, error, required, placeholder, theme, inline, isMobile }) => {
     const handleInputChange = (e) => {
         // Support both direct value calls and event object calls
         if (typeof onChange === 'function') {
@@ -645,12 +774,13 @@ const TextInput = ({ label, type = 'text', value, onChange, error, required, pla
                 placeholder={placeholder}
                 style={{
                     display: 'inline',
-                    minWidth: '200px',
-                    padding: '0.25rem 0.5rem',
+                    minWidth: isMobile ? '150px' : '200px',
+                    padding: isMobile ? '0.2rem 0.4rem' : '0.25rem 0.5rem',
                     border: `1px solid ${error ? theme.colors.error : theme.colors.border}`,
                     borderRadius: theme.sizes.borderRadius.small,
                     fontFamily: theme.fonts.main,
-                    margin: '0 0.25rem'
+                    margin: '0 0.25rem',
+                    fontSize: isMobile ? '0.9rem' : '1rem'
                 }}
             />
         );
@@ -662,7 +792,8 @@ const TextInput = ({ label, type = 'text', value, onChange, error, required, pla
                 display: 'block',
                 marginBottom: theme.sizes.spacing.sm,
                 fontWeight: 600,
-                color: theme.colors.text
+                color: theme.colors.text,
+                fontSize: isMobile ? '0.9rem' : '1rem'
             }}>
                 {label}
                 {required && <span style={{ color: theme.colors.error }}>*</span>}
@@ -670,21 +801,22 @@ const TextInput = ({ label, type = 'text', value, onChange, error, required, pla
             <input
                 type={type}
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={handleInputChange}
                 required={required}
                 placeholder={placeholder}
                 style={{
                     width: '100%',
-                    padding: theme.sizes.spacing.sm,
+                    padding: isMobile ? theme.sizes.spacing.sm : theme.sizes.spacing.sm,
                     border: `1px solid ${error ? theme.colors.error : theme.colors.border}`,
                     borderRadius: theme.sizes.borderRadius.small,
-                    fontFamily: theme.fonts.main
+                    fontFamily: theme.fonts.main,
+                    fontSize: isMobile ? '0.9rem' : '1rem'
                 }}
             />
             {error && (
                 <div style={{
                     color: theme.colors.error,
-                    fontSize: '0.875rem',
+                    fontSize: isMobile ? '0.8rem' : '0.875rem',
                     marginTop: theme.sizes.spacing.sm
                 }}>
                     {error}
@@ -694,7 +826,7 @@ const TextInput = ({ label, type = 'text', value, onChange, error, required, pla
     );
 };
 
-const TextArea = ({ label, value, onChange, error, required, placeholder, theme }) => {
+const TextArea = ({ label, value, onChange, error, required, placeholder, theme, isMobile }) => {
     const handleTextAreaChange = (e) => {
         if (typeof onChange === 'function') {
             onChange(e.target.value);
@@ -706,7 +838,8 @@ const TextArea = ({ label, value, onChange, error, required, placeholder, theme 
                 display: 'block',
                 marginBottom: theme.sizes.spacing.sm,
                 fontWeight: 600,
-                color: theme.colors.text
+                color: theme.colors.text,
+                fontSize: isMobile ? '0.9rem' : '1rem'
             }}>
                 {label}
                 {required && <span style={{ color: theme.colors.error }}>*</span>}
@@ -718,18 +851,19 @@ const TextArea = ({ label, value, onChange, error, required, placeholder, theme 
                 placeholder={placeholder}
                 style={{
                     width: '100%',
-                    minHeight: '100px',
+                    minHeight: isMobile ? '80px' : '100px',
                     padding: theme.sizes.spacing.sm,
                     border: `1px solid ${error ? theme.colors.error : theme.colors.border}`,
                     borderRadius: theme.sizes.borderRadius.small,
                     fontFamily: theme.fonts.main,
-                    resize: 'vertical'
+                    resize: 'vertical',
+                    fontSize: isMobile ? '0.9rem' : '1rem'
                 }}
             />
             {error && (
                 <div style={{
                     color: theme.colors.error,
-                    fontSize: '0.875rem',
+                    fontSize: isMobile ? '0.8rem' : '0.875rem',
                     marginTop: theme.sizes.spacing.sm
                 }}>
                     {error}
@@ -739,7 +873,7 @@ const TextArea = ({ label, value, onChange, error, required, placeholder, theme 
     );
 };
 
-const SelectInput = ({ label, value, onChange, options, error, required, theme }) => {
+const SelectInput = ({ label, value, onChange, options, error, required, theme, isMobile }) => {
     const handleSelectChange = (e) => {
         if (typeof onChange === 'function') {
             onChange(e.target.value);
@@ -752,7 +886,8 @@ const SelectInput = ({ label, value, onChange, options, error, required, theme }
                 display: 'block',
                 marginBottom: theme.sizes.spacing.sm,
                 fontWeight: 600,
-                color: theme.colors.text
+                color: theme.colors.text,
+                fontSize: isMobile ? '0.9rem' : '1rem'
             }}>
                 {label}
                 {required && <span style={{ color: theme.colors.error }}>*</span>}
@@ -763,10 +898,11 @@ const SelectInput = ({ label, value, onChange, options, error, required, theme }
                 required={required}
                 style={{
                     width: '100%',
-                    padding: theme.sizes.spacing.sm,
+                    padding: isMobile ? theme.sizes.spacing.sm : theme.sizes.spacing.sm,
                     border: `1px solid ${error ? theme.colors.error : theme.colors.border}`,
                     borderRadius: theme.sizes.borderRadius.small,
-                    fontFamily: theme.fonts.main
+                    fontFamily: theme.fonts.main,
+                    fontSize: isMobile ? '0.9rem' : '1rem'
                 }}
             >
                 {options.map(option => (
@@ -778,7 +914,7 @@ const SelectInput = ({ label, value, onChange, options, error, required, theme }
             {error && (
                 <div style={{
                     color: theme.colors.error,
-                    fontSize: '0.875rem',
+                    fontSize: isMobile ? '0.8rem' : '0.875rem',
                     marginTop: theme.sizes.spacing.sm
                 }}>
                     {error}
@@ -788,7 +924,7 @@ const SelectInput = ({ label, value, onChange, options, error, required, theme }
     );
 };
 
-const CheckboxGroup = ({ label, options, selected, onChange, theme }) => {
+const CheckboxGroup = ({ label, options, selected, onChange, theme, isMobile }) => {
     const handleChange = (option, isChecked) => {
         if (typeof onChange === 'function') {
             onChange(option, isChecked);
@@ -801,16 +937,22 @@ const CheckboxGroup = ({ label, options, selected, onChange, theme }) => {
                 display: 'block',
                 marginBottom: theme.sizes.spacing.sm,
                 fontWeight: 600,
-                color: theme.colors.text
+                color: theme.colors.text,
+                fontSize: isMobile ? '0.9rem' : '1rem'
             }}>
                 {label}
             </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: theme.sizes.spacing.md }}>
+            <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: isMobile ? theme.sizes.spacing.sm : theme.sizes.spacing.md 
+            }}>
                 {options.map(option => (
                     <label key={option} style={{
                         display: 'flex',
                         alignItems: 'center',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        fontSize: isMobile ? '0.9rem' : '1rem'
                     }}>
                         <input
                             type="checkbox"
@@ -818,7 +960,8 @@ const CheckboxGroup = ({ label, options, selected, onChange, theme }) => {
                             onChange={(e) => handleChange(option, e.target.checked)}
                             style={{
                                 marginRight: theme.sizes.spacing.sm,
-                                accentColor: theme.colors.primary
+                                accentColor: theme.colors.primary,
+                                transform: isMobile ? 'scale(1.2)' : 'scale(1)'
                             }}
                         />
                         {option}
@@ -836,7 +979,8 @@ const FormNavigation = ({
     isLastStep = false,
     nextDisabled = false,
     isSubmitting = false,
-    theme
+    theme,
+    isMobile
 }) => {
     return (
         <div style={{
@@ -844,7 +988,9 @@ const FormNavigation = ({
             justifyContent: 'space-between',
             marginTop: theme.sizes.spacing.xl,
             paddingTop: theme.sizes.spacing.lg,
-            borderTop: `1px solid ${theme.colors.gray[200]}`
+            borderTop: `1px solid ${theme.colors.gray[200]}`,
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? theme.sizes.spacing.md : 0
         }}>
             {onPrev ? (
                 <button
@@ -854,17 +1000,19 @@ const FormNavigation = ({
                         backgroundColor: theme.colors.gray[200],
                         color: theme.colors.text,
                         border: 'none',
-                        padding: `${theme.sizes.spacing.sm} ${theme.sizes.spacing.lg}`,
+                        padding: isMobile ? `${theme.sizes.spacing.sm} ${theme.sizes.spacing.md}` : `${theme.sizes.spacing.sm} ${theme.sizes.spacing.lg}`,
                         borderRadius: theme.sizes.borderRadius.small,
                         cursor: 'pointer',
                         fontFamily: theme.fonts.main,
-                        fontWeight: 600
+                        fontWeight: 600,
+                        fontSize: isMobile ? '0.9rem' : '1rem',
+                        order: isMobile ? 2 : 1
                     }}
                 >
                     Previous
                 </button>
             ) : (
-                <div></div>
+                <div style={{ order: isMobile ? 2 : 1 }}></div>
             )}
 
             {isLastStep ? (
@@ -876,13 +1024,15 @@ const FormNavigation = ({
                         backgroundColor: isSubmitting ? theme.colors.gray[300] : theme.colors.success,
                         color: theme.colors.white,
                         border: 'none',
-                        padding: `${theme.sizes.spacing.sm} ${theme.sizes.spacing.lg}`,
+                        padding: isMobile ? `${theme.sizes.spacing.sm} ${theme.sizes.spacing.md}` : `${theme.sizes.spacing.sm} ${theme.sizes.spacing.lg}`,
                         borderRadius: theme.sizes.borderRadius.small,
                         cursor: isSubmitting ? 'not-allowed' : 'pointer',
                         fontFamily: theme.fonts.main,
                         fontWeight: 600,
-                        minWidth: '150px',
-                        opacity: isSubmitting ? 0.7 : 1
+                        minWidth: isMobile ? '120px' : '150px',
+                        opacity: isSubmitting ? 0.7 : 1,
+                        fontSize: isMobile ? '0.9rem' : '1rem',
+                        order: isMobile ? 1 : 2
                     }}
                 >
                     {isSubmitting ? 'Submitting...' : 'Submit Application'}
@@ -896,13 +1046,15 @@ const FormNavigation = ({
                         backgroundColor: nextDisabled || isSubmitting ? theme.colors.gray[300] : theme.colors.primary,
                         color: theme.colors.white,
                         border: 'none',
-                        padding: `${theme.sizes.spacing.sm} ${theme.sizes.spacing.lg}`,
+                        padding: isMobile ? `${theme.sizes.spacing.sm} ${theme.sizes.spacing.md}` : `${theme.sizes.spacing.sm} ${theme.sizes.spacing.lg}`,
                         borderRadius: theme.sizes.borderRadius.small,
                         cursor: nextDisabled || isSubmitting ? 'not-allowed' : 'pointer',
                         fontFamily: theme.fonts.main,
                         fontWeight: 600,
-                        minWidth: '150px',
-                        opacity: nextDisabled || isSubmitting ? 0.7 : 1
+                        minWidth: isMobile ? '120px' : '150px',
+                        opacity: nextDisabled || isSubmitting ? 0.7 : 1,
+                        fontSize: isMobile ? '0.9rem' : '1rem',
+                        order: isMobile ? 1 : 2
                     }}
                 >
                     Next
@@ -913,11 +1065,24 @@ const FormNavigation = ({
 };
 
 const SuccessMessage = ({ theme }) => {
+    const [isMobile, setIsMobile] = useState(false);
+    
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+    
     return (
         <div style={{
             maxWidth: theme.sizes.container.form,
             margin: '0 auto',
-            padding: theme.sizes.spacing.xl,
+            padding: isMobile ? theme.sizes.spacing.md : theme.sizes.spacing.xl,
             backgroundColor: theme.colors.white,
             borderRadius: theme.sizes.borderRadius.medium,
             boxShadow: theme.shadows.md,
@@ -925,7 +1090,7 @@ const SuccessMessage = ({ theme }) => {
         }}>
             <div style={{
                 color: theme.colors.success,
-                fontSize: '3rem',
+                fontSize: isMobile ? '2.5rem' : '3rem',
                 marginBottom: theme.sizes.spacing.md
             }}>
                 ✓
@@ -933,14 +1098,21 @@ const SuccessMessage = ({ theme }) => {
             <h2 style={{
                 fontFamily: theme.fonts.heading,
                 color: theme.colors.primaryDark,
-                marginBottom: theme.sizes.spacing.md
+                marginBottom: theme.sizes.spacing.md,
+                fontSize: isMobile ? '1.5rem' : '1.8rem'
             }}>
                 Thank You for Your Application!
             </h2>
-            <p style={{ marginBottom: theme.sizes.spacing.sm }}>
+            <p style={{ 
+                marginBottom: theme.sizes.spacing.sm,
+                fontSize: isMobile ? '0.9rem' : '1rem'
+            }}>
                 Your admission form has been successfully submitted to Literacy Tree School.
             </p>
-            <p style={{ marginBottom: theme.sizes.spacing.xl }}>
+            <p style={{ 
+                marginBottom: theme.sizes.spacing.xl,
+                fontSize: isMobile ? '0.9rem' : '1rem'
+            }}>
                 We will review your application and contact you within 5-7 business days.
             </p>
 
@@ -952,14 +1124,20 @@ const SuccessMessage = ({ theme }) => {
                 <h3 style={{
                     fontFamily: theme.fonts.heading,
                     color: theme.colors.primary,
-                    marginBottom: theme.sizes.spacing.md
+                    marginBottom: theme.sizes.spacing.md,
+                    fontSize: isMobile ? '1.2rem' : '1.4rem'
                 }}>
                     Need Help?
                 </h3>
-                <p style={{ marginBottom: theme.sizes.spacing.sm }}>
+                <p style={{ 
+                    marginBottom: theme.sizes.spacing.sm,
+                    fontSize: isMobile ? '0.9rem' : '1rem'
+                }}>
                     <strong>Email:</strong> admissions@literacytree.edu
                 </p>
-                <p>
+                <p style={{ 
+                    fontSize: isMobile ? '0.9rem' : '1rem'
+                }}>
                     <strong>Phone:</strong> (123) 456-7890
                 </p>
             </div>

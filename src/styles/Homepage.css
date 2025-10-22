@@ -91,7 +91,6 @@
 }
 
 /* Hero Section */
-
 .hero-overlay {
   position: absolute;
   top: 0;
@@ -380,6 +379,7 @@
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-small);
   transition: all var(--transition-medium);
+  position: relative;
 }
 
 .stat-card::before {
@@ -882,50 +882,7 @@ color: var(--color-accent);
   background-color: var(--color-primary);
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .section-padding {
-    padding: 0;
-  }
-
-  .homepage-hero-buttons,
-  .cta-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .btn {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .programs-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .testimonials-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .navigation-dots {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .homepage-hero-title {
-    font-size: 2.5rem;
-  }
-
-  .homepage-hero-subtitle {
-    font-size: 1.25rem;
-  }
-}
-
+/* Button hover effects */
 .homepage-hero-buttons .btn:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
@@ -940,4 +897,344 @@ color: var(--color-accent);
 .homepage-hero-buttons .btn-secondary:hover {
   background-color: var(--color-secondary);
   color: var(--color-primary-dark) !important;
+}
+
+/* Enhanced Mobile Responsive Styles */
+@media (max-width: 1200px) {
+  .stats-grid {
+    max-width: 900px;
+  }
+  
+  .about-content {
+    max-width: 1000px;
+  }
+  
+  .programs-grid,
+  .testimonials-grid {
+    max-width: 1000px;
+  }
+}
+
+@media (max-width: 992px) {
+  .about-content {
+    gap: 40px;
+  }
+  
+  .program-card .program-image-container {
+    height: 250px;
+  }
+  
+  .testimonial-card {
+    padding: 30px 25px;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-padding {
+    padding: 0;
+  }
+
+  .stats-section {
+    padding: 60px 0;
+  }
+  
+  .about-section {
+    padding: 60px 15px;
+  }
+  
+  .programs-section,
+  .testimonials-section {
+    padding: 60px 15px;
+  }
+  
+  .cta-section {
+    padding: 60px 15px;
+  }
+
+  .homepage-hero-buttons,
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn {
+    width: 100%;
+    max-width: 300px;
+    min-height: 50px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .stat-card {
+    padding: 30px 15px;
+  }
+  
+  .stat-icon-wrapper {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .stat-icon {
+    font-size: 2rem;
+  }
+  
+  .stat-number {
+    font-size: 2.5rem;
+  }
+  
+  .stat-label {
+    font-size: 1rem;
+  }
+
+  .programs-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .program-card .program-image-container {
+    height: 220px;
+  }
+  
+  .program-card .program-content {
+    padding: 25px;
+  }
+  
+  .program-title {
+    font-size: 1.3rem;
+  }
+  
+  .program-description {
+    font-size: 0.95rem;
+  }
+
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .testimonial-card {
+    padding: 25px 20px;
+  }
+  
+  .testimonial-quote {
+    font-size: 1rem;
+  }
+
+  .navigation-dots {
+    display: none;
+  }
+  
+  .home-section-title {
+    font-size: 2rem;
+  }
+  
+  .about-description {
+    font-size: 1rem;
+  }
+  
+  .cta-subtitle {
+    font-size: 1.1rem;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .stat-card {
+    padding: 25px 15px;
+  }
+  
+  .stat-number {
+    font-size: 2.2rem;
+  }
+  
+  .stat-label {
+    font-size: 0.95rem;
+  }
+  
+  .program-card .program-image-container {
+    height: 200px;
+  }
+  
+  .program-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+  
+  .program-card .program-content {
+    padding: 20px;
+  }
+  
+  .program-title {
+    font-size: 1.2rem;
+  }
+  
+  .program-description {
+    font-size: 0.9rem;
+  }
+  
+  .btn-outline {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .homepage-hero-title {
+    font-size: 2.2rem;
+  }
+
+  .homepage-hero-subtitle {
+    font-size: 1rem;
+  }
+  
+  .stats-section {
+    padding: 50px 0;
+  }
+  
+  .about-section {
+    padding: 50px 10px;
+  }
+  
+  .programs-section,
+  .testimonials-section {
+    padding: 50px 10px;
+  }
+  
+  .cta-section {
+    padding: 50px 10px;
+  }
+  
+  .stat-card {
+    padding: 20px 10px;
+  }
+  
+  .stat-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 15px;
+  }
+  
+  .stat-icon {
+    font-size: 1.8rem;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+  }
+  
+  .home-section-title {
+    font-size: 1.8rem;
+  }
+  
+  .about-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  
+  .program-card .program-image-container {
+    height: 180px;
+  }
+  
+  .program-card .program-content {
+    padding: 15px;
+  }
+  
+  .program-title {
+    font-size: 1.1rem;
+  }
+  
+  .program-description {
+    font-size: 0.85rem;
+  }
+  
+  .testimonial-card {
+    padding: 20px 15px;
+  }
+  
+  .testimonial-quote {
+    font-size: 0.95rem;
+  }
+  
+  .cta-subtitle {
+    font-size: 1rem;
+  }
+  
+  .btn {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .homepage-hero-title {
+    font-size: 1.9rem;
+  }
+  
+  .homepage-hero-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .btn {
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+  
+  .home-section-title {
+    font-size: 1.6rem;
+  }
+  
+  .program-card .program-image-container {
+    height: 160px;
+  }
+  
+  .program-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
+  }
+}
+
+/* Touch-friendly adjustments for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  .btn-outline {
+    min-height: 48px;
+  }
+  
+  .dot {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .program-card,
+  .stat-card,
+  .testimonial-card {
+    transform: none !important;
+  }
+  
+  .program-card:hover,
+  .stat-card:hover,
+  .testimonial-card:hover {
+    transform: none;
+    box-shadow: var(--shadow-small);
+  }
+  
+  .program-card:active,
+  .stat-card:active,
+  .testimonial-card:active {
+    transform: scale(0.98);
+  }
 }

@@ -8,6 +8,19 @@ import '../styles/Homepage.css';
 const HomePage = () => {
   const [activeSection, setActiveSection] = useState('hero');
   const [animatedStats, setAnimatedStats] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   useEffect(() => {
     // Scroll event listener for section highlighting
@@ -57,17 +70,19 @@ const HomePage = () => {
 
   return (
     <div className="homepage">
-      {/* Navigation Dots */}
-      <div className="navigation-dots">
-        {['hero', 'stats', 'about', 'programs', 'testimonials', 'cta'].map((section) => (
-          <a 
-            key={section}
-            href={`#${section}`}
-            className={`dot ${activeSection === section ? 'active' : ''}`}
-            aria-label={`Jump to ${section} section`}
-          />
-        ))}
-      </div>
+      {/* Navigation Dots - Hidden on mobile */}
+      {!isMobile && (
+        <div className="navigation-dots">
+          {['hero', 'stats', 'about', 'programs', 'testimonials', 'cta'].map((section) => (
+            <a 
+              key={section}
+              href={`#${section}`}
+              className={`dot ${activeSection === section ? 'active' : ''}`}
+              aria-label={`Jump to ${section} section`}
+            />
+          ))}
+        </div>
+      )}
       
       {/* Hero Section */}
       <section id="hero" className="homepage-hero-section">

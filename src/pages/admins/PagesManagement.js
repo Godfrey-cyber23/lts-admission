@@ -235,24 +235,25 @@ const PagesManagement = () => {
       contentToSave = JSON.stringify(formData.content);
     }
     
+    // Use consistent field names that match your database
     const pageData = {
       title: formData.title,
       slug: formData.slug,
       content: contentToSave,
       status: formData.status,
-      metaTitle: formData.metaTitle,
-      metaDescription: formData.metaDescription,
+      metaTitle: formData.metaTitle, // This maps to seoTitle in database
+      metaDescription: formData.metaDescription, // This maps to seoDescription in database
       isHomePage: formData.isHomePage,
-      isPublished: formData.status === 'published',
+      isPublished: formData.status === 'published', // This maps to both isPublished and is_published
       publishedAt: formData.publishedAt,
       template: formData.template,
       featuredImage: formData.featuredImage,
-      author: formData.author,
-      category: formData.category
+      authorId: formData.author,
+      category: formData.category,
+      seoData: formData.seoData || {}
     };
 
     console.log('📤 Sending page data:', pageData);
-    console.log('📝 Editing page ID:', editingPage?.id);
 
     let response;
     if (editingPage) {
@@ -271,20 +272,7 @@ const PagesManagement = () => {
   } catch (error) {
     console.error('❌ Error saving page:', error);
     console.error('🔍 Error response:', error.response);
-    console.error('📊 Error data:', error.response?.data);
-    console.error('🚨 Error message:', error.message);
-    
-    // Try to extract more specific error message
-    let errorMessage = 'Failed to save page';
-    if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.response?.data?.error) {
-      errorMessage = error.response.data.error;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
   }
 };
 

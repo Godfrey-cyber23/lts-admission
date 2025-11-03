@@ -171,12 +171,14 @@ const PagesManagement = () => {
     setLoading(true);
     try {
       console.log('Fetching pages...');
-      console.log('Current token:', localStorage.getItem('token'));
-
       const response = await api.get('/pages');
       console.log('Pages API response:', response);
 
-      setPages(response.data.data || response.data);
+      // FIX: Properly extract the pages array from the nested structure
+      const pagesData = response.data.data?.pages || response.data.pages || [];
+      console.log('Extracted pages data:', pagesData);
+
+      setPages(pagesData);
     } catch (error) {
       console.error('Error fetching pages:', error);
       console.error('Error response:', error.response);

@@ -10,7 +10,8 @@ import {
   deletePage,
   getPageById,
   updatePageById,
-  deletePageById
+  deletePageById,
+  getHomePage // Make sure this is imported
 } from '../../controllers/pageController.js';
 import { protect, authorize } from '../../middleware/auth.js';
 
@@ -18,7 +19,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/published', getPublishedPages);
-router.get('/home', getPublishedPage); // This should be a separate controller for home page
+router.get('/home', getHomePage); // Use getHomePage instead of getPublishedPage
 router.get('/:slug', getPage);
 
 // Protect all following routes

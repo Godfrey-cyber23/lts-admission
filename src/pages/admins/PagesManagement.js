@@ -230,54 +230,38 @@ const PagesManagement = () => {
 
   const handleSavePage = async () => {
   try {
-    // Create a minimal update object with only changed fields
+    // Create update data with only provided fields
     const updateData = {};
     
-    // Only include fields that have actually changed
-    if (editingPage) {
-      if (formData.title !== editingPage.title) updateData.title = formData.title;
-      if (formData.slug !== editingPage.slug) updateData.slug = formData.slug;
-      if (formData.status !== editingPage.status) updateData.status = formData.status;
-      if (formData.metaTitle !== editingPage.metaTitle) updateData.metaTitle = formData.metaTitle || '';
-      if (formData.metaDescription !== editingPage.metaDescription) updateData.metaDescription = formData.metaDescription || '';
-      if (formData.isHomePage !== editingPage.isHomePage) updateData.isHomePage = formData.isHomePage;
-      if (formData.template !== editingPage.template) updateData.template = formData.template;
-      if (formData.featuredImage !== editingPage.featuredImage) updateData.featuredImage = formData.featuredImage || '';
-      if (formData.category !== editingPage.category) updateData.category = formData.category;
-      
-      // Handle content specially - only update if it changed
+    // Always include these basic fields if they exist
+    if (formData.title !== undefined) updateData.title = formData.title;
+    if (formData.slug !== undefined) updateData.slug = formData.slug;
+    if (formData.status !== undefined) updateData.status = formData.status;
+    
+    // Handle content
+    if (formData.content !== undefined) {
       let contentToSave = formData.content;
       if (formData.template === 'home' && typeof formData.content === 'object') {
         contentToSave = JSON.stringify(formData.content);
       }
-      
-      const originalContent = typeof editingPage.content === 'string' 
-        ? editingPage.content 
-        : JSON.stringify(editingPage.content);
-        
-      if (contentToSave !== originalContent) {
-        updateData.content = contentToSave;
-      }
-    } else {
-      // For new pages, include all necessary fields
-      let contentToSave = formData.content;
-      if (formData.template === 'home' && typeof formData.content === 'object') {
-        contentToSave = JSON.stringify(formData.content);
-      }
-      
-      updateData.title = formData.title;
-      updateData.slug = formData.slug;
       updateData.content = contentToSave;
-      updateData.status = formData.status;
-      updateData.metaTitle = formData.metaTitle || formData.title || '';
-      updateData.metaDescription = formData.metaDescription || '';
-      updateData.isHomePage = formData.isHomePage;
-      updateData.template = formData.template;
-      updateData.featuredImage = formData.featuredImage || '';
-      updateData.category = formData.category;
     }
+    
+    // Handle optional fields - only include if they have values
+    if (formData.metaTitle !== null && formData.metaTitle !== undefined) {
+      updateData.metaTitle = formData.metaTitle || '';
+    }
+    if (formData.metaDescription !== null && formData.metaDescription !== undefined) {
+      updateData.metaDescription = formData.metaDescription || '';
+    }
+    if (formData.isHomePage !== undefined) updateData.isHomePage = formData.isHomePage;
+    if (formData.template !== undefined) updateData.template = formData.template;
+    if (formData.featuredImage !== null && formData.featuredImage !== undefined) {
+      updateData.featuredImage = formData.featuredImage || '';
+    }
+    if (formData.category !== undefined) updateData.category = formData.category;
 
-    console.log('📤 Sending partial update:', updateData);
+    console.log('📤 Sending partial update data:', updateData);
 
     let response;
     if (editingPage) {
@@ -286,7 +270,20 @@ const PagesManagement = () => {
       setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
       setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
     } else {
-      response = await api.post('/pages', updateData);
+      // For new pages, ensure all required fields are present
+      const createData = {
+        title: formData.title,
+        slug: formData.slug,
+        content: updateData.content || '',
+        status: formData.status || 'draft',
+        metaTitle: formData.metaTitle || formData.title || '',
+        metaDescription: formData.metaDescription || '',
+        isHomePage: formData.isHomePage || false,
+        template: formData.template || 'default',
+        category: formData.category || 'general'
+      };
+      
+      response = await api.post('/pages', createData);
       const newPage = response.data.data || response.data;
       setPages(prevPages => [...prevPages, newPage]);
       setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });

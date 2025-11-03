@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -42,9 +42,7 @@ import {
   AppBar,
   Toolbar,
   Drawer,
-  Menu,
-  Hidden
-} from '@mui/material';
+  Menu} from '@mui/material';
 import {
   Add as AddIcon,
   Send as SendIcon,
@@ -578,11 +576,7 @@ const MessagesPage = () => {
               bgcolor: '#2e7d32',
               '&:hover': { bgcolor: '#1b5e20' },
               boxShadow: '0 4px 10px rgba(46, 125, 50, 0.4)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'scale(1.05)',
-                boxShadow: '0 6px 14px rgba(46, 125, 50, 0.6)'
-              }
+              transition: 'all 0.3s ease'
             }}
             color="primary"
             aria-label="compose message"

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { useTheme } from '../styles/themes';
 import { createTheme, ThemeProvider, useTheme as useMuiTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery'; // Fixed import
+import useMediaQuery from '@mui/material/useMediaQuery';
 import api from '../api/api';
 import {
   AppBar,
@@ -33,13 +32,6 @@ import {
   Button,
   BottomNavigation,
   BottomNavigationAction,
-  Fab,
-  Collapse,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Tabs,
-  Tab,
   SwipeableDrawer
 } from '@mui/material';
 import {
@@ -63,8 +55,11 @@ import {
   Email as EmailIcon,
   GroupAdd as GroupAddIcon,
   LibraryAdd as LibraryAddIcon,
-  ExpandMore as ExpandMoreIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Article as PagesIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Visibility as ViewIcon
 } from '@mui/icons-material';
 
 // Create a custom theme with green color palette
@@ -144,6 +139,12 @@ const greenTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'linear-gradient(to bottom right, rgba(200, 230, 201, 0.3), rgba(232, 245, 233, 0.3))',
+          // Hide scrollbar for paper
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+          '-ms-overflow-style': 'none',
         },
       },
     },
@@ -180,17 +181,6 @@ const greenTheme = createTheme({
         },
       },
     },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          '&::-webkit-scrollbar': {
-            display: 'none',
-          },
-          scrollbarWidth: 'none',
-          '-ms-overflow-style': 'none',
-        },
-      },
-    },
   },
 });
 
@@ -204,10 +194,8 @@ const scrollbarHiddenStyles = {
 };
 
 const AdminDashboard = () => {
-  const theme = useTheme();
   const muiTheme = useMuiTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md')); // Fixed import usage
-  const isSmallMobile = useMediaQuery(muiTheme.breakpoints.down('sm')); // Fixed import usage
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md')); 
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -328,6 +316,23 @@ const AdminDashboard = () => {
           action: () => navigate('/admin/messages?action=compose') 
         },
       ],
+      pages: [
+        { 
+          icon: <AddIcon />, 
+          name: 'Create Page', 
+          action: () => navigate('/admin/pages?action=create') 
+        },
+        { 
+          icon: <EditIcon />, 
+          name: 'Edit Page', 
+          action: () => navigate('/admin/pages?action=edit') 
+        },
+        { 
+          icon: <ViewIcon />, 
+          name: 'View Pages', 
+          action: () => navigate('/admin/pages') 
+        },
+      ],
     };
 
     const currentTab = activeTab;
@@ -371,32 +376,26 @@ const AdminDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
+  // Function to update active tab from URL
+  const updateActiveTabFromURL = () => {
+    const path = location.pathname;
+    console.log('Current path:', path);
 
-        const response = await api.get('/auth/me');
-        console.log('User data:', response.data);
-        setUser(response.data.user || response.data.data?.user || response.data);
-
-        // Update active tab based on current URL
-        updateActiveTabFromURL();
-      } catch (error) {
-        console.error('Failed to fetch user', error);
-        localStorage.removeItem('token');
-        navigate('/login');
-      } finally {
-        setLoading(false);
+    if (path === '/admin' || path === '/admin/' || path.includes('/admin/dashboard')) {
+      setActiveTab('dashboard');
+      setMobileBottomNavValue(0);
+    } else {
+      const pathParts = path.split('/');
+      const currentTab = pathParts[pathParts.length - 1];
+      setActiveTab(currentTab);
+      
+      // Update mobile bottom nav value
+      const navIndex = mobileNavItems.findIndex(item => item.id === currentTab);
+      if (navIndex !== -1) {
+        setMobileBottomNavValue(navIndex);
       }
-    };
-
-    fetchUser();
-  }, [navigate]);
+    }
+  };
 
   useEffect(() => {
     // Method 1: Hide via CSS if Tawk.to adds specific classes
@@ -456,25 +455,32 @@ const AdminDashboard = () => {
     updateActiveTabFromURL();
   }, [location]);
 
-  const updateActiveTabFromURL = () => {
-    const path = location.pathname;
-    console.log('Current path:', path);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
 
-    if (path === '/admin' || path === '/admin/' || path.includes('/admin/dashboard')) {
-      setActiveTab('dashboard');
-      setMobileBottomNavValue(0);
-    } else {
-      const pathParts = path.split('/');
-      const currentTab = pathParts[pathParts.length - 1];
-      setActiveTab(currentTab);
-      
-      // Update mobile bottom nav value
-      const navIndex = mobileNavItems.findIndex(item => item.id === currentTab);
-      if (navIndex !== -1) {
-        setMobileBottomNavValue(navIndex);
+        const response = await api.get('/auth/me');
+        console.log('User data:', response.data);
+        setUser(response.data.user || response.data.data?.user || response.data);
+
+        // Update active tab based on current URL
+        updateActiveTabFromURL();
+      } catch (error) {
+        console.error('Failed to fetch user', error);
+        localStorage.removeItem('token');
+        navigate('/login');
+      } finally {
+        setLoading(false);
       }
-    }
-  };
+    };
+
+    fetchUser();
+  }, [navigate]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -518,6 +524,7 @@ const AdminDashboard = () => {
     { id: 'academic', label: 'Academic', icon: <SchoolIcon /> },
     { id: 'finance', label: 'Finance', icon: <ReceiptIcon /> },
     { id: 'events', label: 'Events', icon: <EventIcon /> },
+    { id: 'pages', label: 'Pages', icon: <PagesIcon /> }, // Added Pages tab
     { id: 'reports', label: 'Reports', icon: <AssessmentIcon /> },
     { id: 'messages', label: 'Messages', icon: <MessageIcon /> },
     { id: 'profile', label: 'Profile', icon: <PersonIcon /> },

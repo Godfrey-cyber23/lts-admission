@@ -1,0 +1,87 @@
+/* src/styles/ScrollToTop.css */
+.scroll-to-top {
+  position: fixed;
+  bottom: 9rem; /* Position above both chat and help button */
+  right: 2rem;
+  z-index: 1001; /* Higher than other buttons */
+}
+
+.scroll-to-top-button {
+  background-color: var(--color-secondary);
+  color: var(--color-primary-dark);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-medium);
+  transition: all 0.3s ease;
+}
+
+.scroll-to-top-button:hover {
+  background-color: var(--color-accent);
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: var(--shadow-large);
+}
+
+/* Live Chat Button Positioning */
+.live-chat-button {
+  position: fixed;
+  bottom: 6rem; /* Position above need-help button */
+  right: 2rem;
+  z-index: 1000;
+  /* rest of your existing styles */
+}
+
+/* Need Help Fallback Button Positioning */
+#tawk-fallback {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 999; /* Lowest z-index */
+  /* rest of your existing styles */
+}
+
+/* When chat widget is open */
+.tawk-min-container ~ .scroll-to-top {
+  bottom: 13rem; /* Extra space when chat is open */
+}
+
+.tawk-min-container ~ .live-chat-button {
+  bottom: 10rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .scroll-to-top {
+    bottom: 7rem;
+    right: 1.5rem;
+  }
+  
+  .live-chat-button {
+    bottom: 4rem;
+    right: 1.5rem;
+  }
+
+  #tawk-fallback {
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  .scroll-to-top-button {
+    width: 45px;
+    height: 45px;
+  }
+
+  /* When chat widget is open on mobile */
+  .tawk-min-container ~ .scroll-to-top {
+    bottom: 10rem;
+  }
+
+  .tawk-min-container ~ .live-chat-button {
+    bottom: 7rem;
+  }
+}

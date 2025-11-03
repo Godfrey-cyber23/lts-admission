@@ -71,7 +71,6 @@ const HomePage = () => {
       
       {/* Hero Section */}
       <section id="hero" className="homepage-hero-section">
-        <div className="hero-overlay"></div>
         <div className="particles-container" id="particles-js"></div>
         
         <Carousel
@@ -94,7 +93,7 @@ const HomePage = () => {
         </Carousel>
 
         <div className="homepage-hero-content">
-          <h1 className="homepage-hero-title">Welcome to literacy tree School</h1>
+          <h1 className="homepage-hero-title">Welcome To Literacy Lree School</h1>
           <p className="homepage-hero-subtitle">
             Nurturing young minds for a brighter future through quality education and holistic development.
           </p>
@@ -125,7 +124,7 @@ const HomePage = () => {
               <FaGraduationCap className="stat-icon" />
             </div>
             <h3 className="stat-number">
-              <span className="count-up" data-target="15">0</span>+
+              <span className="count-up" data-target="15">15</span>+
             </h3>
             <p className="stat-label">Years Experience</p>
           </div>
@@ -134,9 +133,9 @@ const HomePage = () => {
               <FaBookOpen className="stat-icon" />
             </div>
             <h3 className="stat-number">
-              <span className="count-up" data-target="8">0</span>
+              <span className="count-up" data-target="8">7</span>
             </h3>
-            <p className="stat-label">Academic Programs</p>
+            <p className="stat-label">Grades Offered</p>
           </div>
           <div className={`stat-card ${animatedStats ? 'animate' : ''}`}>
             <div className="stat-icon-wrapper">
@@ -145,7 +144,7 @@ const HomePage = () => {
             <h3 className="stat-number">
               <span className="count-up" data-target="200">0</span>+
             </h3>
-            <p className="stat-label">Students Enrolled</p>
+            <p className="stat-label">Pupils Enrolled</p>
           </div>
           <div className={`stat-card ${animatedStats ? 'animate' : ''}`}>
             <div className="stat-icon-wrapper">
@@ -154,7 +153,7 @@ const HomePage = () => {
             <h3 className="stat-number">
               <span className="count-up" data-target="100">0</span>%
             </h3>
-            <p className="stat-label">University Placement</p>
+            <p className="stat-label">School Placement</p>
           </div>
         </div>
       </section>

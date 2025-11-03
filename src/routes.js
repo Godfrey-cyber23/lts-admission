@@ -25,6 +25,7 @@ import ProfilePage from './pages/admins/ProfilePage';
 import AcademicPage from './pages/admins/AcademicPage';
 import FinancePage from './pages/admins/FinancePage';
 import MessagesPage from './pages/admins/MessagesPage';
+import PagesManagement from './pages/admins/PagesManagement'; 
 
 const AppRoutes = () => {
   return (
@@ -54,7 +55,7 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardHome />} /> {/* Fixed this line */}
+        <Route path="dashboard" element={<DashboardHome />} />
         <Route path="admissions" element={<AdmissionsPage />} />
         <Route path="students" element={<StudentsPage />} />
         <Route path="staff" element={<StaffPage />} />
@@ -65,6 +66,7 @@ const AppRoutes = () => {
         <Route path="academic" element={<AcademicPage />} />
         <Route path="finance" element={<FinancePage />} />
         <Route path="messages" element={<MessagesPage />} />
+        <Route path="pages" element={<PagesManagement />} /> 
       </Route>
 
       {/* Redirect any unknown routes to home */}

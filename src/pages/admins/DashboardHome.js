@@ -307,7 +307,6 @@ const DashboardHome = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -315,7 +314,7 @@ const DashboardHome = () => {
         // Use the correct API endpoints
         const [statsResponse, admissionsResponse] = await Promise.all([
           api.get('/dashboard/stats'), // Fixed route
-          api.get('/admissions?limit=5&sort=createdAt.desc'), // Fixed route
+          api.get('/admissions?limit=5&sort=createdAt.desc'), 
         ]);
 
         console.log('Dashboard stats response:', statsResponse.data);
@@ -817,7 +816,7 @@ const DashboardHome = () => {
                   <CardContent sx={{ p: 2 }}>
                     {dashboardData?.recentAdmissions && dashboardData.recentAdmissions.length > 0 ? (
                       <Box>
-                        {dashboardData.recentAdmissions.map((admission, index) => (
+                        {dashboardData.recentAdmissions.map((admission) => (
                           <Accordion key={admission.id} sx={{ mb: 1, backgroundColor: 'transparent' }}>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                               <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>

@@ -428,7 +428,7 @@ const PagesManagement = () => {
         </Typography>
         <Grid container spacing={2}>
           {predefinedPages.map((page, index) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
               <Button
                 variant="outlined"
                 fullWidth
@@ -456,7 +456,7 @@ const PagesManagement = () => {
 
       {/* Search and Filter */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
             placeholder="Search pages..."
@@ -467,7 +467,7 @@ const PagesManagement = () => {
             }}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <FormControl fullWidth>
             <InputLabel>Status</InputLabel>
             <Select
@@ -482,7 +482,7 @@ const PagesManagement = () => {
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <Button
             fullWidth
             variant="outlined"
@@ -498,7 +498,7 @@ const PagesManagement = () => {
       {/* Pages Grid */}
       <Grid container spacing={3}>
         {filteredPages.map((page) => (
-          <Grid item xs={12} md={6} lg={4} key={page.id}>
+          <Grid key={page.id} size={{ xs: 12, md: 6, lg: 4 }}>
             <StyledCard>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
@@ -671,8 +671,8 @@ const PagesManagement = () => {
           {editingPage ? 'Edit Page' : 'Create New Page'}
         </DialogTitle>
         <DialogContent sx={{ minHeight: '600px' }}>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={6}>
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Page Title"

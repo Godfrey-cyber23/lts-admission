@@ -251,11 +251,12 @@ const PagesManagement = () => {
       category: formData.category
     };
 
+    console.log('📤 Sending page data:', pageData);
+    console.log('📝 Editing page ID:', editingPage?.id);
+
     let response;
     if (editingPage) {
-      // FIX: Use the identifier endpoint (works with both ID and slug)
       response = await api.put(`/pages/${editingPage.id}`, pageData);
-      
       const updatedPage = response.data.data || response.data;
       setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
       setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
@@ -268,9 +269,22 @@ const PagesManagement = () => {
     
     setOpenDialog(false);
   } catch (error) {
-    console.error('Error saving page:', error);
-    console.error('Error details:', error.response?.data);
-    setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
+    console.error('❌ Error saving page:', error);
+    console.error('🔍 Error response:', error.response);
+    console.error('📊 Error data:', error.response?.data);
+    console.error('🚨 Error message:', error.message);
+    
+    // Try to extract more specific error message
+    let errorMessage = 'Failed to save page';
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    setSnackbar({ open: true, message: errorMessage, severity: 'error' });
   }
 };
 

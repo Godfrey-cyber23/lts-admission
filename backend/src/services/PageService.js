@@ -15,6 +15,62 @@ export class PageService {
       .replace(/ +/g, '-');
   }
 
+  // Convert frontend field names to database field names
+  static convertToDatabaseFields(pageData) {
+    const dbFields = {
+      title: pageData.title,
+      slug: pageData.slug,
+      content: pageData.content,
+      status: pageData.status,
+      meta_title: pageData.metaTitle || pageData.meta_title,
+      meta_description: pageData.metaDescription || pageData.meta_description,
+      is_home_page: pageData.isHomePage || pageData.is_home_page || false,
+      is_published: pageData.isPublished || pageData.is_published || false,
+      published_at: pageData.publishedAt || pageData.published_at,
+      template: pageData.template || 'default',
+      featured_image: pageData.featuredImage || pageData.featured_image,
+      author_id: pageData.authorId || pageData.author_id,
+      category: pageData.category || 'general',
+      seo_data: pageData.seoData || pageData.seo_data || {},
+      updated_at: new Date().toISOString()
+    };
+
+    // Remove undefined values
+    Object.keys(dbFields).forEach(key => {
+      if (dbFields[key] === undefined) {
+        delete dbFields[key];
+      }
+    });
+
+    return dbFields;
+  }
+
+  // Convert database field names to frontend field names
+  static convertToFrontendFields(pageData) {
+    if (!pageData) return null;
+    
+    return {
+      id: pageData.id,
+      title: pageData.title,
+      slug: pageData.slug,
+      content: pageData.content,
+      status: pageData.status,
+      metaTitle: pageData.meta_title,
+      metaDescription: pageData.meta_description,
+      isHomePage: pageData.is_home_page,
+      isPublished: pageData.is_published,
+      publishedAt: pageData.published_at,
+      template: pageData.template,
+      featuredImage: pageData.featured_image,
+      authorId: pageData.author_id,
+      author: pageData.author_id, // For compatibility
+      category: pageData.category,
+      seoData: pageData.seo_data,
+      createdAt: pageData.created_at,
+      updatedAt: pageData.updated_at
+    };
+  }
+
   // Get all pages
   static async getAllPages() {
     const { data, error } = await supabase
@@ -23,7 +79,7 @@ export class PageService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data.map(page => this.convertToFrontendFields(page));
   }
 
   // Get published pages only
@@ -36,7 +92,7 @@ export class PageService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data.map(page => this.convertToFrontendFields(page));
   }
 
   // Get page by slug
@@ -48,7 +104,7 @@ export class PageService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.convertToFrontendFields(data);
   }
 
   // Get published page by slug
@@ -62,7 +118,7 @@ export class PageService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.convertToFrontendFields(data);
   }
 
   // Get home page
@@ -75,7 +131,7 @@ export class PageService {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
-    return data;
+    return this.convertToFrontendFields(data);
   }
 
   // Get page by ID
@@ -87,38 +143,42 @@ export class PageService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.convertToFrontendFields(data);
   }
 
   // Create new page
   static async createPage(pageData) {
+    const dbData = this.convertToDatabaseFields(pageData);
+    
     // Auto-generate slug if not provided
-    if (!pageData.slug && pageData.title) {
-      pageData.slug = this.generateSlug(pageData.title);
+    if (!dbData.slug && dbData.title) {
+      dbData.slug = this.generateSlug(dbData.title);
     }
 
     // Ensure only one home page exists
-    if (pageData.is_home_page) {
+    if (dbData.is_home_page) {
       await supabase
         .from('pages')
         .update({ is_home_page: false })
-        .neq('id', pageData.id || '');
+        .neq('id', dbData.id || '');
     }
 
     const { data, error } = await supabase
       .from('pages')
-      .insert([pageData])
+      .insert([dbData])
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return this.convertToFrontendFields(data);
   }
 
   // Update page by ID
   static async updatePageById(id, pageData) {
+    const dbData = this.convertToDatabaseFields(pageData);
+
     // Ensure only one home page exists
-    if (pageData.is_home_page) {
+    if (dbData.is_home_page) {
       await supabase
         .from('pages')
         .update({ is_home_page: false })
@@ -127,13 +187,13 @@ export class PageService {
 
     const { data, error } = await supabase
       .from('pages')
-      .update(pageData)
+      .update(dbData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return this.convertToFrontendFields(data);
   }
 
   // Update page by slug
@@ -173,9 +233,9 @@ export const getPublishedPageBySlug = PageService.getPublishedPageBySlug;
 export const getHomePage = PageService.getHomePage;
 export const getPageById = PageService.getPageById;
 export const createPage = PageService.createPage;
-export const updatePage = PageService.updatePageById; // Default to update by ID
+export const updatePage = PageService.updatePageById;
 export const updatePageBySlug = PageService.updatePageBySlug;
-export const deletePage = PageService.deletePageById; // Default to delete by ID
+export const deletePage = PageService.deletePageById;
 export const deletePageBySlug = PageService.deletePageBySlug;
 
 export default PageService;

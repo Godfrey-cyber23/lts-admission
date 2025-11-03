@@ -63,16 +63,17 @@ export const createPage = catchAsync(async (req, res, next) => {
     slug: req.body.slug,
     content: req.body.content,
     status: req.body.status || 'draft',
-    meta_title: req.body.metaTitle || req.body.meta_title,
-    meta_description: req.body.metaDescription || req.body.meta_description,
-    is_home_page: req.body.isHomePage || req.body.is_home_page || false,
-    is_published: req.body.isPublished || req.body.is_published || false,
-    published_at: req.body.publishedAt || req.body.published_at,
+    metaTitle: req.body.metaTitle,
+    metaDescription: req.body.metaDescription,
+    isHomePage: req.body.isHomePage || false,
+    isPublished: req.body.isPublished || false,
+    publishedAt: req.body.publishedAt,
     template: req.body.template || 'default',
-    featured_image: req.body.featuredImage || req.body.featured_image,
-    author_id: req.body.authorId || req.body.author_id,
+    featuredImage: req.body.featuredImage,
+    authorId: req.body.authorId,
+    author: req.body.author, // For compatibility
     category: req.body.category || 'general',
-    seo_data: req.body.seoData || req.body.seo_data || {}
+    seoData: req.body.seoData || {}
   };
 
   const newPage = await PageService.createPage(pageData);

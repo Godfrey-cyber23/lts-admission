@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -28,7 +28,6 @@ import {
   Link,
   Avatar,
   Menu,
-  MenuItem as MenuItemComponent,
   ListItemIcon,
   ListItemText
 } from '@mui/material';
@@ -58,6 +57,7 @@ import {
 import { styled } from '@mui/material/styles';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import api from '../../api/api';
 
 // Styled components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -81,7 +81,7 @@ const StyledFab = styled(Fab)(({ theme }) => ({
   },
 }));
 
-const PageStatusChip = styled(Chip)(({ theme, status }) => ({
+const PageStatusChip = styled(Chip)(({ status }) => ({
   backgroundColor: 
     status === 'published' ? '#4caf50' :
     status === 'draft' ? '#ff9800' :
@@ -170,137 +170,10 @@ const PagesManagement = () => {
   const fetchPages = async () => {
     setLoading(true);
     try {
-      // Simulate API call - replace with actual API
-      const mockPages = [
-        {
-          id: 1,
-          title: 'Home Page',
-          slug: 'home',
-          content: '<p>Welcome to Literacy Tree School...</p>',
-          status: 'published',
-          metaTitle: 'Literacy Tree School - Home',
-          metaDescription: 'Welcome to Literacy Tree School',
-          isHomePage: true,
-          isPublished: true,
-          publishedAt: '2024-01-15T10:00:00Z',
-          template: 'home',
-          featuredImage: '/images/home-hero.jpg',
-          author: 'Admin',
-          category: 'general',
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-01-20T14:30:00Z'
-        },
-        {
-          id: 2,
-          title: 'About Us',
-          slug: 'about',
-          content: '<p>Learn about our school...</p>',
-          status: 'published',
-          metaTitle: 'About Us - Literacy Tree School',
-          metaDescription: 'Learn about Literacy Tree School',
-          isHomePage: false,
-          isPublished: true,
-          publishedAt: '2024-01-16T11:00:00Z',
-          template: 'about',
-          featuredImage: '/images/about-us.jpg',
-          author: 'Admin',
-          category: 'general',
-          createdAt: '2024-01-16T11:00:00Z',
-          updatedAt: '2024-01-18T16:45:00Z'
-        },
-        {
-          id: 3,
-          title: 'Contact Us',
-          slug: 'contact',
-          content: '<p>Get in touch with us...</p>',
-          status: 'published',
-          metaTitle: 'Contact Us - Literacy Tree School',
-          metaDescription: 'Contact information for Literacy Tree School',
-          isHomePage: false,
-          isPublished: true,
-          publishedAt: '2024-01-17T09:00:00Z',
-          template: 'contact',
-          featuredImage: '/images/contact-us.jpg',
-          author: 'Admin',
-          category: 'general',
-          createdAt: '2024-01-17T09:00:00Z',
-          updatedAt: '2024-01-19T13:20:00Z'
-        },
-        {
-          id: 4,
-          title: 'Admissions',
-          slug: 'admissions',
-          content: '<p>Join our school...</p>',
-          status: 'published',
-          metaTitle: 'Admissions - Literacy Tree School',
-          metaDescription: 'Admission information for Literacy Tree School',
-          isHomePage: false,
-          isPublished: true,
-          publishedAt: '2024-01-18T10:00:00Z',
-          template: 'admissions',
-          featuredImage: '/images/admissions.jpg',
-          author: 'Admin',
-          category: 'admissions',
-          createdAt: '2024-01-18T10:00:00Z',
-          updatedAt: '2024-01-20T11:30:00Z'
-        },
-        {
-          id: 5,
-          title: 'Programs',
-          slug: 'programs',
-          content: '<p>Explore our programs...</p>',
-          status: 'published',
-          metaTitle: 'Programs - Literacy Tree School',
-          metaDescription: 'Academic programs at Literacy Tree School',
-          isHomePage: false,
-          isPublished: true,
-          publishedAt: '2024-01-19T10:00:00Z',
-          template: 'programs',
-          featuredImage: '/images/programs.jpg',
-          author: 'Admin',
-          category: 'academic',
-          createdAt: '2024-01-19T10:00:00Z',
-          updatedAt: '2024-01-21T14:30:00Z'
-        },
-        {
-          id: 6,
-          title: 'Enroll Now',
-          slug: 'enroll',
-          content: '<p>Start your enrollment process...</p>',
-          status: 'published',
-          metaTitle: 'Enroll Now - Literacy Tree School',
-          metaDescription: 'Enrollment information for Literacy Tree School',
-          isHomePage: false,
-          isPublished: true,
-          publishedAt: '2024-01-20T10:00:00Z',
-          template: 'enroll',
-          featuredImage: '/images/enroll.jpg',
-          author: 'Admin',
-          category: 'admissions',
-          createdAt: '2024-01-20T10:00:00Z',
-          updatedAt: '2024-01-22T09:15:00Z'
-        },
-        {
-          id: 7,
-          title: 'Login',
-          slug: 'login',
-          content: '<p>Login to your account...</p>',
-          status: 'published',
-          metaTitle: 'Login - Literacy Tree School',
-          metaDescription: 'Login to Literacy Tree School portal',
-          isHomePage: false,
-          isPublished: true,
-          publishedAt: '2024-01-21T10:00:00Z',
-          template: 'login',
-          featuredImage: '/images/login.jpg',
-          author: 'Admin',
-          category: 'general',
-          createdAt: '2024-01-21T10:00:00Z',
-          updatedAt: '2024-01-23T16:45:00Z'
-        }
-      ];
-      setPages(mockPages);
+      const response = await api.get('/pages');
+      setPages(response.data.data || response.data);
     } catch (error) {
+      console.error('Error fetching pages:', error);
       setSnackbar({ open: true, message: 'Failed to fetch pages', severity: 'error' });
     } finally {
       setLoading(false);
@@ -321,7 +194,7 @@ const PagesManagement = () => {
       publishedAt: null,
       template: 'default',
       featuredImage: '',
-      author: 'Admin',
+      author: '',
       category: 'general'
     });
     setOpenDialog(true);
@@ -329,8 +202,21 @@ const PagesManagement = () => {
 
   const handleEditPage = (page) => {
     setEditingPage(page);
+    
+    // Parse the content if it's a structured page (like home page)
+    let parsedContent = page.content;
+    if (page.template === 'home' && typeof page.content === 'string') {
+      try {
+        parsedContent = JSON.parse(page.content);
+      } catch (e) {
+        console.error('Error parsing content:', e);
+        parsedContent = page.content; // Fallback to original content
+      }
+    }
+    
     setFormData({
       ...page,
+      content: parsedContent,
       publishedAt: page.publishedAt ? new Date(page.publishedAt).toISOString().slice(0, 16) : ''
     });
     setOpenDialog(true);
@@ -338,37 +224,55 @@ const PagesManagement = () => {
 
   const handleSavePage = async () => {
     try {
-      // Simulate API call - replace with actual API
-      const newPage = {
-        ...formData,
-        id: editingPage ? editingPage.id : Date.now(),
-        createdAt: editingPage ? editingPage.createdAt : new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isPublished: formData.status === 'published'
+      // Convert content to JSON if it's a structured page
+      let contentToSave = formData.content;
+      if (formData.template === 'home' && typeof formData.content === 'object') {
+        contentToSave = JSON.stringify(formData.content);
+      }
+      
+      const pageData = {
+        title: formData.title,
+        slug: formData.slug,
+        content: contentToSave,
+        status: formData.status,
+        metaTitle: formData.metaTitle,
+        metaDescription: formData.metaDescription,
+        isHomePage: formData.isHomePage,
+        isPublished: formData.status === 'published',
+        publishedAt: formData.publishedAt,
+        template: formData.template,
+        featuredImage: formData.featuredImage,
+        author: formData.author,
+        category: formData.category
       };
 
+      let response;
       if (editingPage) {
-        setPages(pages.map(p => p.id === editingPage.id ? newPage : p));
+        response = await api.put(`/pages/${editingPage.id}`, pageData);
+        setPages(pages.map(p => p.id === editingPage.id ? response.data.data || response.data : p));
         setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
       } else {
-        setPages([...pages, newPage]);
+        response = await api.post('/pages', pageData);
+        setPages([...pages, response.data.data || response.data]);
         setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
       }
 
       setOpenDialog(false);
     } catch (error) {
+      console.error('Error saving page:', error);
       setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
     }
   };
 
   const handleDeletePage = async () => {
     try {
-      // Simulate API call - replace with actual API
+      await api.delete(`/pages/${selectedPage.id}`);
       setPages(pages.filter(p => p.id !== selectedPage.id));
       setSnackbar({ open: true, message: 'Page deleted successfully', severity: 'success' });
       setDeleteDialogOpen(false);
       setSelectedPage(null);
     } catch (error) {
+      console.error('Error deleting page:', error);
       setSnackbar({ open: true, message: 'Failed to delete page', severity: 'error' });
     }
   };
@@ -383,13 +287,22 @@ const PagesManagement = () => {
     setSelectedPage(null);
   };
 
-  const handleStatusChange = (pageId, newStatus) => {
-    setPages(pages.map(page => 
-      page.id === pageId 
-        ? { ...page, status: newStatus, isPublished: newStatus === 'published' }
-        : page
-    ));
-    setSnackbar({ open: true, message: 'Page status updated', severity: 'success' });
+  const handleStatusChange = async (pageId, newStatus) => {
+    try {
+      const page = pages.find(p => p.id === pageId);
+      if (page) {
+        const response = await api.put(`/pages/${pageId}`, {
+          ...page,
+          status: newStatus,
+          isPublished: newStatus === 'published'
+        });
+        setPages(pages.map(p => p.id === pageId ? response.data.data || response.data : p));
+        setSnackbar({ open: true, message: 'Page status updated', severity: 'success' });
+      }
+    } catch (error) {
+      console.error('Error updating page status:', error);
+      setSnackbar({ open: true, message: 'Failed to update page status', severity: 'error' });
+    }
   };
 
   const generateSlug = (title) => {
@@ -455,7 +368,7 @@ const PagesManagement = () => {
       publishedAt: null,
       template: predefinedPage.template,
       featuredImage: '',
-      author: 'Admin',
+      author: '',
       category: predefinedPage.category
     });
     setOpenDialog(true);
@@ -597,7 +510,10 @@ const PagesManagement = () => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {page.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                  {typeof page.content === 'string' 
+                    ? page.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...'
+                    : JSON.stringify(page.content).substring(0, 100) + '...'
+                  }
                 </Typography>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -690,7 +606,7 @@ const PagesManagement = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItemComponent onClick={() => {
+        <MenuItem onClick={() => {
           if (selectedPage) {
             handleEditPage(selectedPage);
           }
@@ -698,8 +614,8 @@ const PagesManagement = () => {
         }}>
           <ListItemIcon><EditIcon /></ListItemIcon>
           <ListItemText>Edit</ListItemText>
-        </MenuItemComponent>
-        <MenuItemComponent onClick={() => {
+        </MenuItem>
+        <MenuItem onClick={() => {
           if (selectedPage) {
             setSelectedPage(selectedPage);
             setViewDialogOpen(true);
@@ -708,8 +624,8 @@ const PagesManagement = () => {
         }}>
           <ListItemIcon><ViewIcon /></ListItemIcon>
           <ListItemText>View</ListItemText>
-        </MenuItemComponent>
-        <MenuItemComponent onClick={() => {
+        </MenuItem>
+        <MenuItem onClick={() => {
           if (selectedPage) {
             const newStatus = selectedPage.status === 'published' ? 'draft' : 'published';
             handleStatusChange(selectedPage.id, newStatus);
@@ -722,9 +638,9 @@ const PagesManagement = () => {
           <ListItemText>
             {selectedPage?.status === 'published' ? 'Unpublish' : 'Publish'}
           </ListItemText>
-        </MenuItemComponent>
+        </MenuItem>
         <Divider />
-        <MenuItemComponent onClick={() => {
+        <MenuItem onClick={() => {
           if (selectedPage) {
             setDeleteDialogOpen(true);
           }
@@ -732,7 +648,7 @@ const PagesManagement = () => {
         }} sx={{ color: 'error.main' }}>
           <ListItemIcon><DeleteIcon /></ListItemIcon>
           <ListItemText>Delete</ListItemText>
-        </MenuItemComponent>
+        </MenuItem>
       </Menu>
 
       {/* Create/Edit Dialog */}
@@ -799,15 +715,26 @@ const PagesManagement = () => {
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Content
               </Typography>
-              <Box sx={{ border: '1px solid #ddd', borderRadius: 1 }}>
-                <ReactQuill
-                  value={formData.content}
-                  onChange={(value) => setFormData({ ...formData, content: value })}
-                  modules={quillModules}
-                  formats={quillFormats}
-                  style={{ height: '200px' }}
-                />
-              </Box>
+              {formData.template === 'home' ? (
+                <Box sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2, mb: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    This is the home page with structured content. The content is stored as JSON and will be rendered dynamically on the frontend.
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    For advanced editing, you may want to use a dedicated JSON editor or update the content directly in the database.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ border: '1px solid #ddd', borderRadius: 1 }}>
+                  <ReactQuill
+                    value={typeof formData.content === 'string' ? formData.content : ''}
+                    onChange={(value) => setFormData({ ...formData, content: value })}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    style={{ height: '200px' }}
+                  />
+                </Box>
+              )}
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -908,13 +835,24 @@ const PagesManagement = () => {
                 </Typography>
               </Box>
               <Divider sx={{ my: 2 }} />
-              <Box
-                dangerouslySetInnerHTML={{ __html: selectedPage.content }}
-                sx={{ 
-                  '& img': { maxWidth: '100%', height: 'auto' },
-                  '& a': { color: '#2e7d32' }
-                }}
-              />
+              {typeof selectedPage.content === 'string' ? (
+                <Box
+                  dangerouslySetInnerHTML={{ __html: selectedPage.content }}
+                  sx={{ 
+                    '& img': { maxWidth: '100%', height: 'auto' },
+                    '& a': { color: '#2e7d32' }
+                  }}
+                />
+              ) : (
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    This page contains structured content (JSON format) that is rendered dynamically on the frontend.
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    To view the actual rendered content, please visit the live site.
+                  </Typography>
+                </Box>
+              )}
             </Box>
           )}
         </DialogContent>

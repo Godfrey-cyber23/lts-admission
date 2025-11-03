@@ -1,3 +1,4 @@
+// routes/pages.js
 import express from 'express';
 import {
   getPages,
@@ -6,36 +7,32 @@ import {
   getPublishedPage,
   createPage,
   updatePage,
-  deletePage
-} from '../../controllers/pageController.js';
-import { protect, authorize } from '../../middleware/auth.js';
+  deletePage,
+  getPageById,
+  updatePageById,
+  deletePageById
+} from '../controllers/pageController.js';
+import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Public routes
-router.get('/', getPages);
+router.get('/published', getPublishedPages);
+router.get('/home', getPublishedPage); // This should be a separate controller for home page
 router.get('/:slug', getPage);
 
 // Protect all following routes
 router.use(protect);
 
-// Admin routes
-router.post('/', 
-  authorize('admin', 'editor'), 
-  createPage
-);
+// Admin routes for slug-based operations
+router.get('/', authorize('admin', 'editor'), getPages);
+router.post('/', authorize('admin', 'editor'), createPage);
+router.put('/:slug', authorize('admin', 'editor'), updatePage);
+router.delete('/:slug', authorize('admin', 'editor'), deletePage);
 
-router.put('/:slug', 
-  authorize('admin', 'editor'), 
-  updatePage
-);
-
-router.delete('/:slug', 
-  authorize('admin', 'editor'), 
-  deletePage
-);
-
-router.get('/', getPublishedPages);
-router.get('/:slug', getPublishedPage);
+// ID-based operations (optional)
+router.get('/id/:id', authorize('admin', 'editor'), getPageById);
+router.put('/id/:id', authorize('admin', 'editor'), updatePageById);
+router.delete('/id/:id', authorize('admin', 'editor'), deletePageById);
 
 export default router;

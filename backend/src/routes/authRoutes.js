@@ -3,7 +3,6 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/db.js';
-import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
 
 const router = express.Router();

@@ -82,17 +82,17 @@ const StyledFab = styled(Fab)(({ theme }) => ({
 }));
 
 const PageStatusChip = styled(Chip)(({ status }) => ({
-  backgroundColor: 
+  backgroundColor:
     status === 'published' ? '#4caf50' :
-    status === 'draft' ? '#ff9800' :
-    status === 'scheduled' ? '#2196f3' :
-    '#9e9e9e',
+      status === 'draft' ? '#ff9800' :
+        status === 'scheduled' ? '#2196f3' :
+          '#9e9e9e',
   color: 'white',
   fontWeight: 500,
 }));
 
 const PagesManagement = () => {
-  const [pages, setPages] = useState([]);
+  const [pages, setPages] = useState([]); // Initial state is an empty array, which is correct.
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -148,8 +148,8 @@ const PagesManagement = () => {
       [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
       ['bold', 'italic', 'underline', 'strike'],
       [{ 'color': [] }, { 'background': [] }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'indent': '-1' }, { 'indent': '+1' }],
       [{ 'align': [] }],
       ['link', 'image', 'video'],
       ['clean']
@@ -170,10 +170,16 @@ const PagesManagement = () => {
   const fetchPages = async () => {
     setLoading(true);
     try {
+      console.log('Fetching pages...');
+      console.log('Current token:', localStorage.getItem('token'));
+
       const response = await api.get('/pages');
+      console.log('Pages API response:', response);
+
       setPages(response.data.data || response.data);
     } catch (error) {
       console.error('Error fetching pages:', error);
+      console.error('Error response:', error.response);
       setSnackbar({ open: true, message: 'Failed to fetch pages', severity: 'error' });
     } finally {
       setLoading(false);
@@ -202,7 +208,7 @@ const PagesManagement = () => {
 
   const handleEditPage = (page) => {
     setEditingPage(page);
-    
+
     // Parse the content if it's a structured page (like home page)
     let parsedContent = page.content;
     if (page.template === 'home' && typeof page.content === 'string') {
@@ -213,7 +219,7 @@ const PagesManagement = () => {
         parsedContent = page.content; // Fallback to original content
       }
     }
-    
+
     setFormData({
       ...page,
       content: parsedContent,
@@ -229,7 +235,7 @@ const PagesManagement = () => {
       if (formData.template === 'home' && typeof formData.content === 'object') {
         contentToSave = JSON.stringify(formData.content);
       }
-      
+
       const pageData = {
         title: formData.title,
         slug: formData.slug,
@@ -249,11 +255,15 @@ const PagesManagement = () => {
       let response;
       if (editingPage) {
         response = await api.put(`/pages/${editingPage.id}`, pageData);
-        setPages(pages.map(p => p.id === editingPage.id ? response.data.data || response.data : p));
+        // --- FIX 2: Ensure we update the state with an array ---
+        const updatedPage = response.data.data || response.data;
+        setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
         setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
       } else {
         response = await api.post('/pages', pageData);
-        setPages([...pages, response.data.data || response.data]);
+        // --- FIX 2 (continued): Ensure we add to an array ---
+        const newPage = response.data.data || response.data;
+        setPages(prevPages => [...prevPages, newPage]);
         setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
       }
 
@@ -296,7 +306,9 @@ const PagesManagement = () => {
           status: newStatus,
           isPublished: newStatus === 'published'
         });
-        setPages(pages.map(p => p.id === pageId ? response.data.data || response.data : p));
+        // --- FIX 2 (continued): Ensure we update the state with an array ---
+        const updatedPage = response.data.data || response.data;
+        setPages(prevPages => prevPages.map(p => p.id === pageId ? updatedPage : p));
         setSnackbar({ open: true, message: 'Page status updated', severity: 'success' });
       }
     } catch (error) {
@@ -322,12 +334,14 @@ const PagesManagement = () => {
     });
   };
 
-  const filteredPages = pages.filter(page => {
+  // --- FIX 3: Defensive check before filtering ---
+  // This is the most direct fix for the error message.
+  const filteredPages = Array.isArray(pages) ? pages.filter(page => {
     const matchesSearch = page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         page.slug.toLowerCase().includes(searchTerm.toLowerCase());
+      page.slug.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || page.status === filterStatus;
     return matchesSearch && matchesStatus;
-  });
+  }) : []; // If pages is not an array, return an empty array
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -420,7 +434,7 @@ const PagesManagement = () => {
                 fullWidth
                 startIcon={getTemplateIcon(page.template)}
                 onClick={() => handleCreatePredefinedPage(page)}
-                sx={{ 
+                sx={{
                   justifyContent: 'flex-start',
                   py: 1.5,
                   borderColor: '#2e7d32',
@@ -510,7 +524,7 @@ const PagesManagement = () => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {typeof page.content === 'string' 
+                  {typeof page.content === 'string'
                     ? page.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...'
                     : JSON.stringify(page.content).substring(0, 100) + '...'
                   }
@@ -573,7 +587,7 @@ const PagesManagement = () => {
             No pages found
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {searchTerm || filterStatus !== 'all' 
+            {searchTerm || filterStatus !== 'all'
               ? 'Try adjusting your search or filters'
               : 'Create your first page to get started'
             }
@@ -838,7 +852,7 @@ const PagesManagement = () => {
               {typeof selectedPage.content === 'string' ? (
                 <Box
                   dangerouslySetInnerHTML={{ __html: selectedPage.content }}
-                  sx={{ 
+                  sx={{
                     '& img': { maxWidth: '100%', height: 'auto' },
                     '& a': { color: '#2e7d32' }
                   }}

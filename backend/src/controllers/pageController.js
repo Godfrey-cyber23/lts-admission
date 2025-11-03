@@ -165,6 +165,27 @@ export const getPageById = catchAsync(async (req, res, next) => {
   });
 });
 
+export const deletePageById = catchAsync(async (req, res, next) => {
+  const pageId = parseInt(req.params.id, 10);
+  
+  if (isNaN(pageId)) {
+    return next(new AppError('Invalid page ID', 400));
+  }
+
+  const page = await PageService.getPageById(pageId);
+  
+  if (!page) {
+    return next(new AppError('No page found with that ID', 404));
+  }
+
+  await PageService.deletePageById(pageId);
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
 export const updatePageByIdentifier = catchAsync(async (req, res, next) => {
   const { identifier } = req.params;
   const pageData = { ...req.body };
@@ -248,6 +269,7 @@ const pageController = {
   updatePage,
   deletePage,
   getPageById,
+  deletePageById,
   updatePageById,
   updatePageByIdentifier,
   deletePageByIdentifier,

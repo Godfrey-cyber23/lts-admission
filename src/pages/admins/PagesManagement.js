@@ -229,51 +229,76 @@ const PagesManagement = () => {
   };
 
   const handleSavePage = async () => {
-    try {
+  try {
+    // Create a minimal update object with only changed fields
+    const updateData = {};
+    
+    // Only include fields that have actually changed
+    if (editingPage) {
+      if (formData.title !== editingPage.title) updateData.title = formData.title;
+      if (formData.slug !== editingPage.slug) updateData.slug = formData.slug;
+      if (formData.status !== editingPage.status) updateData.status = formData.status;
+      if (formData.metaTitle !== editingPage.metaTitle) updateData.metaTitle = formData.metaTitle || '';
+      if (formData.metaDescription !== editingPage.metaDescription) updateData.metaDescription = formData.metaDescription || '';
+      if (formData.isHomePage !== editingPage.isHomePage) updateData.isHomePage = formData.isHomePage;
+      if (formData.template !== editingPage.template) updateData.template = formData.template;
+      if (formData.featuredImage !== editingPage.featuredImage) updateData.featuredImage = formData.featuredImage || '';
+      if (formData.category !== editingPage.category) updateData.category = formData.category;
+      
+      // Handle content specially - only update if it changed
       let contentToSave = formData.content;
       if (formData.template === 'home' && typeof formData.content === 'object') {
         contentToSave = JSON.stringify(formData.content);
       }
-
-      // Use database column names
-      const pageData = {
-        title: formData.title,
-        slug: formData.slug,
-        content: contentToSave,
-        status: formData.status,
-        metaTitle: formData.metaTitle, // This gets mapped to seo_title
-        metaDescription: formData.metaDescription, // This gets mapped to seo_description
-        isHomePage: formData.isHomePage,
-        isPublished: formData.status === 'published',
-        publishedAt: formData.publishedAt,
-        template: formData.template,
-        featuredImage: formData.featuredImage,
-        authorId: formData.author,
-        category: formData.category,
-        seoData: formData.seoData || {}
-      };
-      console.log('📤 Sending page data:', pageData);
-
-      let response;
-      if (editingPage) {
-        response = await api.put(`/pages/${editingPage.id}`, pageData);
-        const updatedPage = response.data.data || response.data;
-        setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
-        setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
-      } else {
-        response = await api.post('/pages', pageData);
-        const newPage = response.data.data || response.data;
-        setPages(prevPages => [...prevPages, newPage]);
-        setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
+      
+      const originalContent = typeof editingPage.content === 'string' 
+        ? editingPage.content 
+        : JSON.stringify(editingPage.content);
+        
+      if (contentToSave !== originalContent) {
+        updateData.content = contentToSave;
       }
-
-      setOpenDialog(false);
-    } catch (error) {
-      console.error('❌ Error saving page:', error);
-      console.error('🔍 Error response:', error.response);
-      setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
+    } else {
+      // For new pages, include all necessary fields
+      let contentToSave = formData.content;
+      if (formData.template === 'home' && typeof formData.content === 'object') {
+        contentToSave = JSON.stringify(formData.content);
+      }
+      
+      updateData.title = formData.title;
+      updateData.slug = formData.slug;
+      updateData.content = contentToSave;
+      updateData.status = formData.status;
+      updateData.metaTitle = formData.metaTitle || formData.title || '';
+      updateData.metaDescription = formData.metaDescription || '';
+      updateData.isHomePage = formData.isHomePage;
+      updateData.template = formData.template;
+      updateData.featuredImage = formData.featuredImage || '';
+      updateData.category = formData.category;
     }
-  };
+
+    console.log('📤 Sending partial update:', updateData);
+
+    let response;
+    if (editingPage) {
+      response = await api.put(`/pages/${editingPage.id}`, updateData);
+      const updatedPage = response.data.data || response.data;
+      setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
+      setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
+    } else {
+      response = await api.post('/pages', updateData);
+      const newPage = response.data.data || response.data;
+      setPages(prevPages => [...prevPages, newPage]);
+      setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
+    }
+    
+    setOpenDialog(false);
+  } catch (error) {
+    console.error('❌ Error saving page:', error);
+    console.error('🔍 Error response:', error.response?.data);
+    setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
+  }
+};
 
   const handleDeletePage = async () => {
     try {

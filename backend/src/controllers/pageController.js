@@ -190,54 +190,39 @@ export const deletePageById = catchAsync(async (req, res, next) => {
 export const updatePageByIdentifier = catchAsync(async (req, res, next) => {
   try {
     const { identifier } = req.params;
-    console.log('🔍 UPDATE REQUEST STARTED ====================');
+    console.log('🔍 PARTIAL UPDATE REQUEST ====================');
     console.log('📝 Identifier:', identifier);
-    console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
-    console.log('👤 User ID:', req.user.id);
+    console.log('📦 Fields being updated:', Object.keys(req.body));
 
+    // Clean the page data - convert null to empty strings
     const pageData = { ...req.body };
-    console.log('📄 Page data received:', pageData);
-
-    // Remove undefined values
     Object.keys(pageData).forEach(key => {
-      if (pageData[key] === undefined) {
-        console.log(`🗑️ Removing undefined field: ${key}`);
-        delete pageData[key];
+      if (pageData[key] === null) {
+        pageData[key] = '';
       }
     });
 
-    console.log('🧹 Cleaned page data:', pageData);
+    console.log('🧹 Cleaned update data:', pageData);
 
     let page;
     if (!isNaN(identifier)) {
-      console.log(`🆔 Updating by ID: ${identifier}`);
       page = await PageService.updatePageById(parseInt(identifier, 10), pageData);
-      console.log('✅ PageService.updatePageById completed');
     } else {
-      console.log(`🔗 Updating by slug: ${identifier}`);
       page = await PageService.updatePageBySlug(identifier, pageData);
-      console.log('✅ PageService.updatePageBySlug completed');
     }
     
     if (!page) {
-      console.log('❌ No page found');
       return next(new AppError('No page found with that ID or slug', 404));
     }
 
-    console.log('✅ Update successful, page:', page.id);
-    console.log('🔚 UPDATE REQUEST COMPLETED ==================');
+    console.log('✅ Partial update successful');
     
     res.status(200).json({
       status: 'success',
       data: { page }
     });
   } catch (error) {
-    console.error('💥 UPDATE ERROR ===========================');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('Full error object:', error);
-    console.error('💥 END ERROR =============================');
+    console.error('💥 UPDATE ERROR:', error.message);
     next(error);
   }
 });

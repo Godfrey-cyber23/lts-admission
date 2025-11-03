@@ -229,56 +229,64 @@ const PagesManagement = () => {
   };
 
   const handleSavePage = async () => {
-    try {
-      let contentToSave = formData.content;
-      if (formData.template === 'home' && typeof formData.content === 'object') {
-        contentToSave = JSON.stringify(formData.content);
-      }
-      const pageData = {
-        title: formData.title,
-        slug: formData.slug,
-        content: contentToSave,
-        status: formData.status,
-        metaTitle: formData.metaTitle,
-        metaDescription: formData.metaDescription,
-        isHomePage: formData.isHomePage,
-        isPublished: formData.status === 'published',
-        publishedAt: formData.publishedAt,
-        template: formData.template,
-        featuredImage: formData.featuredImage,
-        author: formData.author,
-        category: formData.category
-      };
-      if (editingPage) {
-        const response = await api.put(`/pages/id/${editingPage.id}`, pageData);
-        const updatedPage = response.data.data || response.data;
-        setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
-        setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
-      } else {
-        const response = await api.post('/pages', pageData);
-        const newPage = response.data.data || response.data;
-        setPages(prevPages => [...prevPages, newPage]);
-        setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
-      }
-      setOpenDialog(false);
-    } catch (error) {
-      console.error('Error saving page:', error);
-      setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
+  try {
+    let contentToSave = formData.content;
+    if (formData.template === 'home' && typeof formData.content === 'object') {
+      contentToSave = JSON.stringify(formData.content);
     }
-  };
+    
+    const pageData = {
+      title: formData.title,
+      slug: formData.slug,
+      content: contentToSave,
+      status: formData.status,
+      metaTitle: formData.metaTitle,
+      metaDescription: formData.metaDescription,
+      isHomePage: formData.isHomePage,
+      isPublished: formData.status === 'published',
+      publishedAt: formData.publishedAt,
+      template: formData.template,
+      featuredImage: formData.featuredImage,
+      author: formData.author,
+      category: formData.category
+    };
+
+    let response;
+    if (editingPage) {
+      // FIX: Use the identifier endpoint (works with both ID and slug)
+      response = await api.put(`/pages/${editingPage.id}`, pageData);
+      
+      const updatedPage = response.data.data || response.data;
+      setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
+      setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
+    } else {
+      response = await api.post('/pages', pageData);
+      const newPage = response.data.data || response.data;
+      setPages(prevPages => [...prevPages, newPage]);
+      setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
+    }
+    
+    setOpenDialog(false);
+  } catch (error) {
+    console.error('Error saving page:', error);
+    console.error('Error details:', error.response?.data);
+    setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
+  }
+};
 
   const handleDeletePage = async () => {
-    try {
-      await api.delete(`/pages/${selectedPage.id}`);
-      setPages(pages.filter(p => p.id !== selectedPage.id));
-      setSnackbar({ open: true, message: 'Page deleted successfully', severity: 'success' });
-      setDeleteDialogOpen(false);
-      setSelectedPage(null);
-    } catch (error) {
-      console.error('Error deleting page:', error);
-      setSnackbar({ open: true, message: 'Failed to delete page', severity: 'error' });
-    }
-  };
+  try {
+    // FIX: Use the identifier endpoint
+    await api.delete(`/pages/${selectedPage.id}`);
+    setPages(pages.filter(p => p.id !== selectedPage.id));
+    setSnackbar({ open: true, message: 'Page deleted successfully', severity: 'success' });
+    setDeleteDialogOpen(false);
+    setSelectedPage(null);
+  } catch (error) {
+    console.error('Error deleting page:', error);
+    setSnackbar({ open: true, message: 'Failed to delete page', severity: 'error' });
+  }
+};
 
   const handleMenuClick = (event, page) => {
     setAnchorEl(event.currentTarget);
@@ -291,19 +299,24 @@ const PagesManagement = () => {
   };
 
   const handleStatusChange = async (pageId, newStatus) => {
-    try {
-      const page = pages.find(p => p.id === pageId);
-      if (page) {
-        const response = await api.put(`/pages/${pageId}`, { ...page, status: newStatus, isPublished: newStatus === 'published' });
-        const updatedPage = response.data.data || response.data;
-        setPages(prevPages => prevPages.map(p => p.id === pageId ? updatedPage : p));
-        setSnackbar({ open: true, message: 'Page status updated', severity: 'success' });
-      }
-    } catch (error) {
-      console.error('Error updating page status:', error);
-      setSnackbar({ open: true, message: 'Failed to update page status', severity: 'error' });
+  try {
+    const page = pages.find(p => p.id === pageId);
+    if (page) {
+      // FIX: Use the identifier endpoint
+      const response = await api.put(`/pages/${page.id}`, { 
+        ...page, 
+        status: newStatus, 
+        isPublished: newStatus === 'published' 
+      });
+      const updatedPage = response.data.data || response.data;
+      setPages(prevPages => prevPages.map(p => p.id === pageId ? updatedPage : p));
+      setSnackbar({ open: true, message: 'Page status updated', severity: 'success' });
     }
-  };
+  } catch (error) {
+    console.error('Error updating page status:', error);
+    setSnackbar({ open: true, message: 'Failed to update page status', severity: 'error' });
+  }
+};
 
   const generateSlug = (title) => {
     return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

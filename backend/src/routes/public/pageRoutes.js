@@ -25,14 +25,14 @@ router.get('/:slug', getPage);
 router.use(protect);
 
 // Admin routes for slug-based operations
-router.get('/', authorize('admin', 'editor'), getPages);
-router.post('/', authorize('admin', 'editor'), createPage);
-router.put('/:slug', authorize('admin', 'editor'), updatePage);
-router.delete('/:slug', authorize('admin', 'editor'), deletePage);
+router.get('/', authorize('admin', 'editor', 'staff'), getPages);
+router.post('/', authorize('admin', 'editor', 'staff'), createPage);
+router.put('/:slug', authorize('admin', 'editor', 'staff'), updatePage);
+router.delete('/:slug', authorize('admin', 'editor', 'staff'), deletePage);
 
 // ID-based operations (optional)
-router.get('/id/:id', authorize('admin', 'editor'), getPageById);
-router.put('/id/:id', authorize('admin', 'editor'), updatePageById);
-router.delete('/id/:id', authorize('admin', 'editor'), deletePageById);
+router.get('/id/:id', authorize('admin', 'editor', 'staff'), getPageById);
+router.put('/id/:id', authorize('admin', 'editor', 'staff'), updatePageById);
+router.delete('/id/:id', authorize('admin', 'editor', 'staff'), deletePageById);
 
 export default router;

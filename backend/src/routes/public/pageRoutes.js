@@ -11,8 +11,8 @@ import {
   getPageById,
   updatePageById,
   deletePageById
-} from '../controllers/pageController.js';
-import { protect, authorize } from '../middleware/auth.js';
+} from '../../controllers/pageController.js';
+import { protect, authorize } from '../../middleware/auth.js';
 
 const router = express.Router();
 

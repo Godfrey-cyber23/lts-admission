@@ -29,7 +29,10 @@ import {
   Avatar,
   Menu,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -52,12 +55,17 @@ import {
   Event as EventIcon,
   Description as DescriptionIcon,
   HowToReg as EnrollIcon,
-  Login as LoginIcon
+  Login as LoginIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../../api/api';
+
+// Import the JsonEditor and its schema
+import JsonEditor from '../../components/JsonEditor';
+import { homePageSchema } from '../../components/JsonEditor';
 
 // Styled components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -92,7 +100,7 @@ const PageStatusChip = styled(Chip)(({ status }) => ({
 }));
 
 const PagesManagement = () => {
-  const [pages, setPages] = useState([]); // Initial state is an empty array, which is correct.
+  const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -170,18 +178,11 @@ const PagesManagement = () => {
   const fetchPages = async () => {
     setLoading(true);
     try {
-      console.log('Fetching pages...');
       const response = await api.get('/pages');
-      console.log('Pages API response:', response);
-
-      // FIX: Properly extract the pages array from the nested structure
       const pagesData = response.data.data?.pages || response.data.pages || [];
-      console.log('Extracted pages data:', pagesData);
-
       setPages(pagesData);
     } catch (error) {
       console.error('Error fetching pages:', error);
-      console.error('Error response:', error.response);
       setSnackbar({ open: true, message: 'Failed to fetch pages', severity: 'error' });
     } finally {
       setLoading(false);
@@ -210,18 +211,15 @@ const PagesManagement = () => {
 
   const handleEditPage = (page) => {
     setEditingPage(page);
-
-    // Parse the content if it's a structured page (like home page)
     let parsedContent = page.content;
     if (page.template === 'home' && typeof page.content === 'string') {
       try {
         parsedContent = JSON.parse(page.content);
       } catch (e) {
         console.error('Error parsing content:', e);
-        parsedContent = page.content; // Fallback to original content
+        parsedContent = { hero: { title: "Error parsing content" } };
       }
     }
-
     setFormData({
       ...page,
       content: parsedContent,
@@ -232,12 +230,10 @@ const PagesManagement = () => {
 
   const handleSavePage = async () => {
     try {
-      // Convert content to JSON if it's a structured page
       let contentToSave = formData.content;
       if (formData.template === 'home' && typeof formData.content === 'object') {
         contentToSave = JSON.stringify(formData.content);
       }
-
       const pageData = {
         title: formData.title,
         slug: formData.slug,
@@ -253,22 +249,17 @@ const PagesManagement = () => {
         author: formData.author,
         category: formData.category
       };
-
-      let response;
       if (editingPage) {
-        response = await api.put(`/pages/${editingPage.id}`, pageData);
-        // --- FIX 2: Ensure we update the state with an array ---
+        const response = await api.put(`/pages/id/${editingPage.id}`, pageData);
         const updatedPage = response.data.data || response.data;
         setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
         setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
       } else {
-        response = await api.post('/pages', pageData);
-        // --- FIX 2 (continued): Ensure we add to an array ---
+        const response = await api.post('/pages', pageData);
         const newPage = response.data.data || response.data;
         setPages(prevPages => [...prevPages, newPage]);
         setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
       }
-
       setOpenDialog(false);
     } catch (error) {
       console.error('Error saving page:', error);
@@ -303,12 +294,7 @@ const PagesManagement = () => {
     try {
       const page = pages.find(p => p.id === pageId);
       if (page) {
-        const response = await api.put(`/pages/${pageId}`, {
-          ...page,
-          status: newStatus,
-          isPublished: newStatus === 'published'
-        });
-        // --- FIX 2 (continued): Ensure we update the state with an array ---
+        const response = await api.put(`/pages/${pageId}`, { ...page, status: newStatus, isPublished: newStatus === 'published' });
         const updatedPage = response.data.data || response.data;
         setPages(prevPages => prevPages.map(p => p.id === pageId ? updatedPage : p));
         setSnackbar({ open: true, message: 'Page status updated', severity: 'success' });
@@ -320,38 +306,22 @@ const PagesManagement = () => {
   };
 
   const generateSlug = (title) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+    return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
   const handleTitleChange = (e) => {
     const title = e.target.value;
-    setFormData({
-      ...formData,
-      title,
-      slug: formData.slug || generateSlug(title),
-      metaTitle: formData.metaTitle || title
-    });
+    setFormData({ ...formData, title, slug: formData.slug || generateSlug(title), metaTitle: formData.metaTitle || title });
   };
 
-  // --- FIX 3: Defensive check before filtering ---
-  // This is the most direct fix for the error message.
   const filteredPages = Array.isArray(pages) ? pages.filter(page => {
-    const matchesSearch = page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      page.slug.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = page.title.toLowerCase().includes(searchTerm.toLowerCase()) || page.slug.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || page.status === filterStatus;
     return matchesSearch && matchesStatus;
-  }) : []; // If pages is not an array, return an empty array
+  }) : [];
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case 'published': return <PublicIcon />;
-      case 'draft': return <DraftIcon />;
-      case 'scheduled': return <ScheduleIcon />;
-      default: return <DraftIcon />;
-    }
+    switch (status) { case 'published': return <PublicIcon />; case 'draft': return <DraftIcon />; case 'scheduled': return <ScheduleIcon />; default: return <DraftIcon />; }
   };
 
   const getTemplateIcon = (template) => {
@@ -359,7 +329,6 @@ const PagesManagement = () => {
     return templateObj ? templateObj.icon : <DescriptionIcon />;
   };
 
-  // Predefined page options for quick creation
   const predefinedPages = [
     { title: 'Home Page', slug: 'home', template: 'home', category: 'general' },
     { title: 'About Us', slug: 'about', template: 'about', category: 'general' },
@@ -370,32 +339,124 @@ const PagesManagement = () => {
     { title: 'Login', slug: 'login', template: 'login', category: 'general' }
   ];
 
+  // Add this function to your PagesManagement component
+const getDefaultHomeContent = () => ({
+  hero: {
+    title: "Welcome To Literacy Tree School",
+    subtitle: "Nurturing young minds for a brighter future through quality education and holistic development.",
+    images: [
+      { src: "/school-building.jpg", alt: "School campus with modern facilities" },
+      { src: "/classroom.jpg", alt: "Students engaged in classroom learning" },
+      { src: "/pre-school.jpg", alt: "Children playing in school playground" },
+      { src: "/graduation.jpg", alt: "Graduation ceremony at our school" }
+    ],
+    buttons: [
+      { text: "Apply Now", link: "/admission", icon: "arrow" },
+      { text: "Our Programs", link: "/programs", icon: "graduation" }
+    ]
+  },
+  stats: [
+    { number: "15", label: "Years Experience", icon: "graduation" },
+    { number: "7", label: "Grades Offered", icon: "book" },
+    { number: "200", label: "Pupils Enrolled", icon: "users" },
+    { number: "100", label: "School Placement", icon: "chart", suffix: "%" }
+  ],
+  about: {
+    title: "About Our School",
+    description: "Literacy Tree School is a premier educational institution located in Lusaka, Zambia, offering quality education from early childhood through upper primary levels. We believe that each child is an individual with his/her own unique temperament, needs, interests and abilities.",
+    image: "/school-building.jpg",
+    linkText: "Learn more about us",
+    link: "/about"
+  },
+  programs: {
+    title: "Our Academic Programs",
+    subtitle: "Tailored education for every stage of development",
+    items: [
+      {
+        title: "Nursery Section",
+        description: "Play-based learning for ages 3-6 focusing on foundational skills",
+        icon: "👶",
+        image: "/classroom-2.jpg"
+      },
+      {
+        title: "Lower Primary Section",
+        description: "Comprehensive curriculum for Grades 1-7 with STEM emphasis",
+        icon: "✏️",
+        image: "/pre-school.jpg"
+      },
+      {
+        title: "Upper Primary Section",
+        description: "Preparation for international examinations and university",
+        icon: "🎓",
+        image: "/classroom.jpg"
+      }
+    ]
+  },
+  testimonials: {
+    title: "What Parents Say",
+    subtitle: "Hear from our school community",
+    items: [
+      {
+        quote: "Literacy Tree has transformed my child's learning experience. The teachers are exceptional.",
+        author: "Mrs. Banda, Parent",
+        role: "Grade 3 Parent"
+      }
+    ]
+  },
+  cta: {
+    title: "Ready to Join Our Community?",
+    subtitle: "Applications for the 2025-2026 academic year are now open. Limited spaces available.",
+    buttons: [
+      { text: "Start Application", link: "/admission" },
+      { text: "Contact Admissions", link: "/contact" }
+    ]
+  }
+});
+
   const handleCreatePredefinedPage = (predefinedPage) => {
     setEditingPage(null);
     setFormData({
-      title: predefinedPage.title,
-      slug: predefinedPage.slug,
-      content: '',
-      status: 'draft',
-      metaTitle: predefinedPage.title,
-      metaDescription: '',
-      isHomePage: predefinedPage.slug === 'home',
-      isPublished: false,
-      publishedAt: null,
-      template: predefinedPage.template,
-      featuredImage: '',
-      author: '',
-      category: predefinedPage.category
+      title: predefinedPage.title, slug: predefinedPage.slug, content: '', status: 'draft',
+      metaTitle: predefinedPage.title, metaDescription: '', isHomePage: predefinedPage.slug === 'home',
+      isPublished: false, publishedAt: null, template: predefinedPage.template,
+      featuredImage: '', author: '', category: predefinedPage.category
     });
     setOpenDialog(true);
   };
 
-  if (loading) {
+  // Helper to render structured content for the View dialog
+  const renderStructuredContent = (content) => {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box>
+        {Object.entries(content).map(([key, value]) => (
+          <Accordion key={key} sx={{ mb: 1 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6" sx={{ textTransform: 'capitalize' }}>{key}</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {Array.isArray(value) ? (
+                <Box>
+                  {value.map((item, index) => (
+                    <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #eee', borderRadius: 1 }}>
+                      <Typography variant="subtitle2">Item {index + 1}</Typography>
+                      {renderStructuredContent(item)}
+                    </Box>
+                  ))}
+                </Box>
+              ) : typeof value === 'object' && value !== null ? (
+                renderStructuredContent(value)
+              ) : (
+                <Typography variant="body2">{value}</Typography>
+              )}
+            </AccordionDetails>
+          </Accordion>
+        ))}
       </Box>
     );
+  };
+
+  if (loading) {
+    return <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px"><CircularProgress /></Box>;
   }
 
   return (
@@ -403,52 +464,19 @@ const PagesManagement = () => {
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Typography variant="h4" sx={{ mb: 1, color: '#2e7d32', fontWeight: 600 }}>
-            Pages Management
-          </Typography>
-          <Breadcrumbs aria-label="breadcrumb">
-            <Link color="inherit" href="/admin">
-              Dashboard
-            </Link>
-            <Typography color="text.primary">Pages</Typography>
-          </Breadcrumbs>
+          <Typography variant="h4" sx={{ mb: 1, color: '#2e7d32', fontWeight: 600 }}>Pages Management</Typography>
+          <Breadcrumbs aria-label="breadcrumb"><Link color="inherit" href="/admin">Dashboard</Link><Typography color="text.primary">Pages</Typography></Breadcrumbs>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreatePage}
-          sx={{ backgroundColor: '#2e7d32', '&:hover': { backgroundColor: '#1b5e20' } }}
-        >
-          Create Page
-        </Button>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreatePage} sx={{ backgroundColor: '#2e7d32', '&:hover': { backgroundColor: '#1b5e20' } }}>Create Page</Button>
       </Box>
 
       {/* Predefined Pages Section */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2, color: '#2e7d32' }}>
-          Quick Create Standard Pages
-        </Typography>
+        <Typography variant="h6" sx={{ mb: 2, color: '#2e7d32' }}>Quick Create Standard Pages</Typography>
         <Grid container spacing={2}>
           {predefinedPages.map((page, index) => (
             <Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={getTemplateIcon(page.template)}
-                onClick={() => handleCreatePredefinedPage(page)}
-                sx={{
-                  justifyContent: 'flex-start',
-                  py: 1.5,
-                  borderColor: '#2e7d32',
-                  color: '#2e7d32',
-                  '&:hover': {
-                    backgroundColor: '#e8f5e9',
-                    borderColor: '#1b5e20',
-                  }
-                }}
-              >
-                {page.title}
-              </Button>
+              <Button variant="outlined" fullWidth startIcon={getTemplateIcon(page.template)} onClick={() => handleCreatePredefinedPage(page)} sx={{ justifyContent: 'flex-start', py: 1.5, borderColor: '#2e7d32', color: '#2e7d32', '&:hover': { backgroundColor: '#e8f5e9', borderColor: '#1b5e20' } }}>{page.title}</Button>
             </Grid>
           ))}
         </Grid>
@@ -459,41 +487,13 @@ const PagesManagement = () => {
       {/* Search and Filter */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            fullWidth
-            placeholder="Search pages..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
-            }}
-          />
+          <TextField fullWidth placeholder="Search pages..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> }} />
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              label="Status"
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="published">Published</MenuItem>
-              <MenuItem value="draft">Draft</MenuItem>
-              <MenuItem value="scheduled">Scheduled</MenuItem>
-            </Select>
-          </FormControl>
+          <FormControl fullWidth><InputLabel>Status</InputLabel><Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} label="Status"><MenuItem value="all">All Status</MenuItem><MenuItem value="published">Published</MenuItem><MenuItem value="draft">Draft</MenuItem><MenuItem value="scheduled">Scheduled</MenuItem></Select></FormControl>
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={fetchPages}
-            sx={{ height: '56px' }}
-          >
-            Refresh
-          </Button>
+          <Button fullWidth variant="outlined" startIcon={<RefreshIcon />} onClick={fetchPages} sx={{ height: '56px' }}>Refresh</Button>
         </Grid>
       </Grid>
 
@@ -505,76 +505,21 @@ const PagesManagement = () => {
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Avatar sx={{ bgcolor: '#2e7d32' }}>
-                      {getTemplateIcon(page.template)}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {page.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        /{page.slug}
-                      </Typography>
-                    </Box>
+                    <Avatar sx={{ bgcolor: '#2e7d32' }}>{getTemplateIcon(page.template)}</Avatar>
+                    <Box><Typography variant="h6" sx={{ fontWeight: 600 }}>{page.title}</Typography><Typography variant="body2" color="text.secondary">/{page.slug}</Typography></Box>
                   </Box>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleMenuClick(e, page)}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
+                  <IconButton size="small" onClick={(e) => handleMenuClick(e, page)}><MoreVertIcon /></IconButton>
                 </Box>
-
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {typeof page.content === 'string'
-                    ? page.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...'
-                    : JSON.stringify(page.content).substring(0, 100) + '...'
-                  }
-                </Typography>
-
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{typeof page.content === 'string' ? page.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...' : JSON.stringify(page.content).substring(0, 100) + '...'}</Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <PageStatusChip
-                    size="small"
-                    icon={getStatusIcon(page.status)}
-                    label={page.status}
-                    status={page.status}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(page.updatedAt).toLocaleDateString()}
-                  </Typography>
+                  <PageStatusChip size="small" icon={getStatusIcon(page.status)} label={page.status} status={page.status} />
+                  <Typography variant="caption" color="text.secondary">{new Date(page.updatedAt).toLocaleDateString()}</Typography>
                 </Box>
-
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<ViewIcon />}
-                    onClick={() => {
-                      setSelectedPage(page);
-                      setViewDialogOpen(true);
-                    }}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<EditIcon />}
-                    onClick={() => handleEditPage(page)}
-                  >
-                    Edit
-                  </Button>
+                  <Button size="small" variant="outlined" startIcon={<ViewIcon />} onClick={() => { setSelectedPage(page); setViewDialogOpen(true); }}>View</Button>
+                  <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => handleEditPage(page)}>Edit</Button>
                 </Box>
-
-                {page.isHomePage && (
-                  <Chip
-                    size="small"
-                    icon={<HomeIcon />}
-                    label="Home Page"
-                    color="primary"
-                    sx={{ mt: 1 }}
-                  />
-                )}
+                {page.isHomePage && <Chip size="small" icon={<HomeIcon />} label="Home Page" color="primary" sx={{ mt: 1 }} />}
               </CardContent>
             </StyledCard>
           </Grid>
@@ -585,335 +530,241 @@ const PagesManagement = () => {
       {filteredPages.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <DescriptionIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-            No pages found
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {searchTerm || filterStatus !== 'all'
-              ? 'Try adjusting your search or filters'
-              : 'Create your first page to get started'
-            }
-          </Typography>
-          {!searchTerm && filterStatus === 'all' && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleCreatePage}
-              sx={{ backgroundColor: '#2e7d32', '&:hover': { backgroundColor: '#1b5e20' } }}
-            >
-              Create Page
-            </Button>
-          )}
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>No pages found</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{searchTerm || filterStatus !== 'all' ? 'Try adjusting your search or filters' : 'Create your first page to get started'}</Typography>
+          {!searchTerm && filterStatus === 'all' && <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreatePage} sx={{ backgroundColor: '#2e7d32', '&:hover': { backgroundColor: '#1b5e20' } }}>Create Page</Button>}
         </Box>
       )}
 
       {/* Floating Action Button */}
-      <StyledFab
-        color="primary"
-        aria-label="add"
-        onClick={handleCreatePage}
-      >
-        <AddIcon />
-      </StyledFab>
+      <StyledFab color="primary" aria-label="add" onClick={handleCreatePage}><AddIcon /></StyledFab>
 
       {/* Context Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={() => {
-          if (selectedPage) {
-            handleEditPage(selectedPage);
-          }
-          handleMenuClose();
-        }}>
-          <ListItemIcon><EditIcon /></ListItemIcon>
-          <ListItemText>Edit</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => {
-          if (selectedPage) {
-            setSelectedPage(selectedPage);
-            setViewDialogOpen(true);
-          }
-          handleMenuClose();
-        }}>
-          <ListItemIcon><ViewIcon /></ListItemIcon>
-          <ListItemText>View</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => {
-          if (selectedPage) {
-            const newStatus = selectedPage.status === 'published' ? 'draft' : 'published';
-            handleStatusChange(selectedPage.id, newStatus);
-          }
-          handleMenuClose();
-        }}>
-          <ListItemIcon>
-            {selectedPage?.status === 'published' ? <DraftIcon /> : <PublishIcon />}
-          </ListItemIcon>
-          <ListItemText>
-            {selectedPage?.status === 'published' ? 'Unpublish' : 'Publish'}
-          </ListItemText>
-        </MenuItem>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={() => { if (selectedPage) { handleEditPage(selectedPage); } handleMenuClose(); }}><ListItemIcon><EditIcon /></ListItemIcon><ListItemText>Edit</ListItemText></MenuItem>
+        <MenuItem onClick={() => { if (selectedPage) { setSelectedPage(selectedPage); setViewDialogOpen(true); } handleMenuClose(); }}><ListItemIcon><ViewIcon /></ListItemIcon><ListItemText>View</ListItemText></MenuItem>
+        <MenuItem onClick={() => { if (selectedPage) { const newStatus = selectedPage.status === 'published' ? 'draft' : 'published'; handleStatusChange(selectedPage.id, newStatus); } handleMenuClose(); }}><ListItemIcon>{selectedPage?.status === 'published' ? <DraftIcon /> : <PublishIcon />}</ListItemIcon><ListItemText>{selectedPage?.status === 'published' ? 'Unpublish' : 'Publish'}</ListItemText></MenuItem>
         <Divider />
-        <MenuItem onClick={() => {
-          if (selectedPage) {
-            setDeleteDialogOpen(true);
-          }
-          handleMenuClose();
-        }} sx={{ color: 'error.main' }}>
-          <ListItemIcon><DeleteIcon /></ListItemIcon>
-          <ListItemText>Delete</ListItemText>
-        </MenuItem>
+        <MenuItem onClick={() => { if (selectedPage) { setDeleteDialogOpen(true); } handleMenuClose(); }} sx={{ color: 'error.main' }}><ListItemIcon><DeleteIcon /></ListItemIcon><ListItemText>Delete</ListItemText></MenuItem>
       </Menu>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>
-          {editingPage ? 'Edit Page' : 'Create New Page'}
-        </DialogTitle>
-        <DialogContent sx={{ minHeight: '600px' }}>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Page Title"
-                value={formData.title}
-                onChange={handleTitleChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="URL Slug"
-                value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                helperText="This will be used in the URL"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Template</InputLabel>
-                <Select
-                  value={formData.template}
-                  onChange={(e) => setFormData({ ...formData, template: e.target.value })}
-                  label="Template"
-                >
-                  {pageTemplates.map((template) => (
-                    <MenuItem key={template.value} value={template.value}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {template.icon}
-                        {template.label}
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  label="Category"
-                >
-                  {pageCategories.map((category) => (
-                    <MenuItem key={category.value} value={category.value}>
-                      {category.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Content
-              </Typography>
-              {formData.template === 'home' ? (
-                <Box sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2, mb: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 2 }}>
-                    This is the home page with structured content. The content is stored as JSON and will be rendered dynamically on the frontend.
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    For advanced editing, you may want to use a dedicated JSON editor or update the content directly in the database.
-                  </Typography>
-                </Box>
-              ) : (
-                <Box sx={{ border: '1px solid #ddd', borderRadius: 1 }}>
-                  <ReactQuill
-                    value={typeof formData.content === 'string' ? formData.content : ''}
-                    onChange={(value) => setFormData({ ...formData, content: value })}
-                    modules={quillModules}
-                    formats={quillFormats}
-                    style={{ height: '200px' }}
-                  />
-                </Box>
-              )}
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Featured Image URL"
-                value={formData.featuredImage}
-                onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
-                helperText="Optional: URL to the featured image"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Meta Title"
-                value={formData.metaTitle}
-                onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                helperText="SEO meta title (optional)"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Meta Description"
-                value={formData.metaDescription}
-                onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                helperText="SEO meta description (optional)"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  label="Status"
-                >
-                  <MenuItem value="draft">Draft</MenuItem>
-                  <MenuItem value="published">Published</MenuItem>
-                  <MenuItem value="scheduled">Scheduled</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Author"
-                value={formData.author}
-                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.isHomePage}
-                    onChange={(e) => setFormData({ ...formData, isHomePage: e.target.checked })}
-                  />
-                }
-                label="Set as Home Page"
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setOpenDialog(false)} startIcon={<CancelIcon />}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSavePage}
-            variant="contained"
-            startIcon={<SaveIcon />}
-            sx={{ backgroundColor: '#2e7d32', '&:hover': { backgroundColor: '#1b5e20' } }}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}>
+  <DialogTitle>
+    {editingPage ? 'Edit Page' : 'Create New Page'}
+    {formData.template === 'home' && (
+      <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+        Home Page - Using JSON Editor
+      </Typography>
+    )}
+  </DialogTitle>
+  <DialogContent sx={{ minHeight: '400px', overflow: 'hidden' }}>
+    <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField
+          fullWidth
+          label="Page Title"
+          value={formData.title}
+          onChange={handleTitleChange}
+          required
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="URL Slug"
+          value={formData.slug}
+          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+          helperText="This will be used in the URL"
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth>
+          <InputLabel>Template</InputLabel>
+          <Select
+            value={formData.template}
+            onChange={(e) => setFormData({ ...formData, template: e.target.value })}
+            label="Template"
           >
-            {editingPage ? 'Update' : 'Create'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            {pageTemplates.map((template) => (
+              <MenuItem key={template.value} value={template.value}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {template.icon}
+                  {template.label}
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth>
+          <InputLabel>Category</InputLabel>
+          <Select
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            label="Category"
+          >
+            {pageCategories.map((category) => (
+              <MenuItem key={category.value} value={category.value}>
+                {category.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+      
+      {/* Content Section - Updated for JSON Editor */}
+      <Grid item xs={12}>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          Content
+        </Typography>
+        {formData.template === 'home' ? (
+          <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1, p: 2, mb: 2, maxHeight: '500px', overflow: 'auto' }}>
+            <Typography variant="body2" sx={{ mb: 2, color: 'primary.main' }}>
+              Home Page Editor - Edit structured content using the form below
+            </Typography>
+            
+            {/* JSON Editor for Home Page */}
+            <JsonEditor
+              value={typeof formData.content === 'object' ? formData.content : getDefaultHomeContent()}
+              onChange={(newContent) => setFormData({ ...formData, content: newContent })}
+              schema={homePageSchema}
+            />
+            
+            <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                <strong>Note:</strong> This content will be saved as JSON and rendered dynamically on the home page.
+                Changes made here will immediately reflect on the live site.
+              </Typography>
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1 }}>
+            <ReactQuill
+              value={typeof formData.content === 'string' ? formData.content : ''}
+              onChange={(value) => setFormData({ ...formData, content: value })}
+              modules={quillModules}
+              formats={quillFormats}
+              style={{ height: '200px' }}
+            />
+          </Box>
+        )}
+      </Grid>
+      
+      <Grid item xs={12}>
+        <TextField
+          fullWidth
+          label="Featured Image URL"
+          value={formData.featuredImage}
+          onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
+          helperText="Optional: URL to the featured image"
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Meta Title"
+          value={formData.metaTitle}
+          onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+          helperText="SEO meta title (optional)"
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Meta Description"
+          value={formData.metaDescription}
+          onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+          helperText="SEO meta description (optional)"
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+            label="Status"
+          >
+            <MenuItem value="draft">Draft</MenuItem>
+            <MenuItem value="published">Published</MenuItem>
+            <MenuItem value="scheduled">Scheduled</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Author"
+          value={formData.author}
+          onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+        />
+      </Grid>
+      <Grid item xs={12}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={formData.isHomePage}
+              onChange={(e) => setFormData({ ...formData, isHomePage: e.target.checked })}
+            />
+          }
+          label="Set as Home Page"
+        />
+      </Grid>
+    </Grid>
+  </DialogContent>
+  <DialogActions sx={{ p: 3 }}>
+    <Button onClick={() => setOpenDialog(false)} startIcon={<CancelIcon />}>
+      Cancel
+    </Button>
+    <Button
+      onClick={handleSavePage}
+      variant="contained"
+      startIcon={<SaveIcon />}
+      sx={{ backgroundColor: '#2e7d32', '&:hover': { backgroundColor: '#1b5e20' } }}
+    >
+      {editingPage ? 'Update' : 'Create'}
+    </Button>
+  </DialogActions>
+</Dialog>
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {selectedPage?.title}
-        </DialogTitle>
+        <DialogTitle>{selectedPage?.title}</DialogTitle>
         <DialogContent>
           {selectedPage && (
             <Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  URL: /{selectedPage.slug}
-                </Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Status: <PageStatusChip
-                    size="small"
-                    icon={getStatusIcon(selectedPage.status)}
-                    label={selectedPage.status}
-                    status={selectedPage.status}
-                  />
-                </Typography>
+                <Typography variant="subtitle2" color="text.secondary">URL: /{selectedPage.slug}</Typography>
+                <Typography variant="subtitle2" color="text.secondary">Status: <PageStatusChip size="small" icon={getStatusIcon(selectedPage.status)} label={selectedPage.status} status={selectedPage.status} /></Typography>
               </Box>
               <Divider sx={{ my: 2 }} />
-              {typeof selectedPage.content === 'string' ? (
-                <Box
-                  dangerouslySetInnerHTML={{ __html: selectedPage.content }}
-                  sx={{
-                    '& img': { maxWidth: '100%', height: 'auto' },
-                    '& a': { color: '#2e7d32' }
-                  }}
-                />
-              ) : (
+              {selectedPage.template === 'home' && typeof selectedPage.content === 'string' ? (
                 <Box>
-                  <Typography variant="body2" sx={{ mb: 2 }}>
-                    This page contains structured content (JSON format) that is rendered dynamically on the frontend.
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    To view the actual rendered content, please visit the live site.
-                  </Typography>
+                  {renderStructuredContent(JSON.parse(selectedPage.content))}
                 </Box>
+              ) : (
+                <Box dangerouslySetInnerHTML={{ __html: selectedPage.content }} sx={{ '& img': { maxWidth: '100%', height: 'auto' }, '& a': { color: '#2e7d32' } }} />
               )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>
-            Close
-          </Button>
+          <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Delete Page</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete "{selectedPage?.title}"? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeletePage}
-            color="error"
-            variant="contained"
-          >
-            Delete
-          </Button>
-        </DialogActions>
+        <DialogContent><Typography>Are you sure you want to delete "{selectedPage?.title}"? This action cannot be undone.</Typography></DialogContent>
+        <DialogActions><Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button><Button onClick={handleDeletePage} color="error" variant="contained">Delete</Button></DialogActions>
       </Dialog>
 
       {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
   );

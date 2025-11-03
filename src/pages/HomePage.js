@@ -11,13 +11,13 @@ const HomePage = () => {
   const [animatedStats, setAnimatedStats] = useState(false);
   const [pageContent, setPageContent] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     // Scroll event listener for section highlighting
     const handleScroll = () => {
       const sections = ['hero', 'stats', 'about', 'programs', 'testimonials', 'cta'];
       const scrollPosition = window.scrollY + 150;
-      
+
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element && scrollPosition >= element.offsetTop) {
@@ -25,11 +25,11 @@ const HomePage = () => {
         }
       }
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-  
+
   useEffect(() => {
     // Intersection Observer for stats animation
     const observer = new IntersectionObserver(
@@ -42,83 +42,81 @@ const HomePage = () => {
       },
       { threshold: 0.5 }
     );
-    
+
     const statsSection = document.getElementById('stats');
     if (statsSection) observer.observe(statsSection);
-    
+
     return () => {
       if (statsSection) observer.unobserve(statsSection);
     };
   }, []);
 
   // Fetch home page content from API
-useEffect(() => {
-  const fetchHomePageContent = async () => {
-    try {
-      setLoading(true);
-      console.log('🔍 Fetching home page content...');
-      
-      const response = await api.get('/pages/home');
-      console.log('📦 Full API response:', response);
-      console.log('📊 Response data:', response.data);
-      
-      // Extract the page data correctly
-      let pageData;
-      
-      if (response.data.data) {
-        // Structure: { data: { ...page data... } }
-        pageData = response.data.data;
-        console.log('✅ Using response.data.data structure');
-      } else if (response.data.pages) {
-        // Structure: { pages: [...] }
-        pageData = response.data.pages[0];
-        console.log('✅ Using response.data.pages structure');
-      } else {
-        // Structure: { ...page data directly... }
-        pageData = response.data;
-        console.log('✅ Using response.data directly');
-      }
-      
-      console.log('📄 Extracted page data:', pageData);
-      console.log('📝 Page content type:', typeof pageData.content);
-      console.log('📝 Page content value:', pageData.content);
-      
-      // Parse the content - it should already be a JSON object from your database
-      let parsedContent;
-      
-      if (pageData.content && typeof pageData.content === 'string') {
-        try {
-          parsedContent = JSON.parse(pageData.content);
-          console.log('✅ Successfully parsed JSON string');
-        } catch (e) {
-          console.error('❌ JSON parse error:', e);
-          console.log('Using default content due to parse error');
+  useEffect(() => {
+    const fetchHomePageContent = async () => {
+      try {
+        setLoading(true);
+        console.log('🔍 Fetching home page content...');
+
+        const response = await api.get('/pages/home');
+        console.log('📦 Full API response:', response);
+
+        // Extract the page data correctly
+        let pageData;
+
+        if (response.data.data && response.data.data.page) {
+          pageData = response.data.data.page;
+          console.log('✅ Using response.data.data.page structure');
+        } else if (response.data.pages) {
+          pageData = response.data.pages[0];
+          console.log('✅ Using response.data.pages structure');
+        } else {
+          pageData = response.data;
+          console.log('✅ Using response.data directly');
+        }
+
+        console.log('📄 Extracted page data:', pageData);
+        console.log('📝 Page content type:', typeof pageData.content);
+        console.log('📝 Page content value:', pageData.content);
+
+        let parsedContent;
+
+        if (pageData.content && typeof pageData.content === 'string') {
+          try {
+            parsedContent = JSON.parse(pageData.content);
+            console.log('✅ Successfully parsed JSON string');
+          } catch (e) {
+            console.error('❌ JSON parse error:', e);
+            console.log('Using default content due to parse error');
+            parsedContent = getDefaultContent();
+          }
+        } else if (pageData.content && typeof pageData.content === 'object') {
+          parsedContent = pageData.content;
+          console.log('✅ Content is already an object');
+        } else {
+          console.log('❌ No valid content found, using default');
           parsedContent = getDefaultContent();
         }
-      } else if (pageData.content && typeof pageData.content === 'object') {
-        // Content is already an object (this should be your case)
-        parsedContent = pageData.content;
-        console.log('✅ Content is already an object');
-      } else {
-        console.log('❌ No valid content found, using default');
-        parsedContent = getDefaultContent();
+
+        console.log('🎯 Final parsed content to display:', parsedContent);
+        setPageContent(parsedContent);
+
+      } catch (error) {
+        // FIX: Add proper error handling
+        console.error('❌ Error fetching home page:', error);
+        console.error('Error details:', error.response?.data || error.message);
+
+        // Use default content when API fails
+        console.log('🔄 Using default content due to API error');
+        setPageContent(getDefaultContent());
+      } finally {
+        // FIX: Always set loading to false
+        setLoading(false);
       }
-      
-      console.log('🎯 Final parsed content to display:', parsedContent);
-      setPageContent(parsedContent);
-      
-    } catch (error) {
-      console.error('❌ Error fetching home page:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      // Set fallback content if API call fails
-      setPageContent(getDefaultContent());
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  fetchHomePageContent();
-}, []);
+    };
+
+    fetchHomePageContent();
+  }, []);
 
   // Default content function
   const getDefaultContent = () => ({
@@ -145,7 +143,7 @@ useEffect(() => {
     about: {
       title: "About Our School",
       description: "Literacy Tree School is a premier educational institution located in Lusaka, Zambia, offering quality education from early childhood through upper primary levels. We believe that each child is an individual with his/her own unique temperament, needs, interests and abilities. We try to be aware of the uniqueness of each child in encouraging their interests, fostering their abilities and in meeting their needs for integral growth.",
-      image: "/school-building.jpg",
+      image: "/school-building.jpg", // Changed from "/images/about-school.jpg"
       linkText: "Learn more about us",
       link: "/about"
     },
@@ -157,19 +155,19 @@ useEffect(() => {
           title: "Nursery Section",
           description: "Play-based learning for ages 3-6 focusing on foundational skills",
           icon: "👶",
-          image: "/classroom-2.jpg"
+          image: "/classroom-2.jpg" // Changed from "/images/nursery.jpg"
         },
         {
           title: "Lower Primary Section",
           description: "Comprehensive curriculum for Grades 1-7 with STEM emphasis",
           icon: "✏️",
-          image: "/pre-school.jpg"
+          image: "/pre-school.jpg" // Changed from "/images/primary.jpg"
         },
         {
           title: "Upper Primary Section",
           description: "Preparation for international examinations and university",
           icon: "🎓",
-          image: "/classroom.jpg"
+          image: "/classroom.jpg" // Changed from "/images/primary.jpg"
         }
       ]
     },
@@ -238,7 +236,7 @@ useEffect(() => {
       {/* Navigation Dots */}
       <div className="navigation-dots">
         {['hero', 'stats', 'about', 'programs', 'testimonials', 'cta'].map((section) => (
-          <a 
+          <a
             key={section}
             href={`#${section}`}
             className={`dot ${activeSection === section ? 'active' : ''}`}
@@ -246,33 +244,33 @@ useEffect(() => {
           />
         ))}
       </div>
-      
+
       {/* Hero Section */}
       <section id="hero" className="homepage-hero-section">
         <div className="particles-container" id="particles-js"></div>
-        
+
         <Carousel
-  showThumbs={false}
-  showStatus={false}
-  infiniteLoop
-  autoPlay
-  interval={5000}
-  className="hero-carousel"
->
-  {pageContent.hero.images.map((image, index) => (
-    <div key={index} className="carousel-slide">
-      <img
-        src={image.src}
-        alt={image.alt}
-        className="carousel-image"
-        onError={(e) => {
-          console.warn(`Image failed to load: ${image.src}`);
-          e.target.src = '/images/placeholder.jpg'; // Add a fallback image
-        }}
-      />
-    </div>
-  ))}
-</Carousel>
+          showThumbs={false}
+          showStatus={false}
+          infiniteLoop
+          autoPlay
+          interval={5000}
+          className="hero-carousel"
+        >
+          {pageContent.hero.images.map((image, index) => (
+            <div key={index} className="carousel-slide">
+              <img
+                src={image.src}
+                alt={image.alt}
+                className="carousel-image"
+                onError={(e) => {
+                  console.warn(`Image failed to load: ${image.src}`);
+                  e.target.src = '/placeholder.webp'; // Add a fallback image
+                }}
+              />
+            </div>
+          ))}
+        </Carousel>
 
         <div className="homepage-hero-content">
           <h1 className="homepage-hero-title">{pageContent.hero.title}</h1>
@@ -318,14 +316,14 @@ useEffect(() => {
           <div className="about-media">
             <div className="image-container">
               <img
-  src={pageContent.about.image}
-  alt="Literacy Tree School Campus"
-  className="about-image"
-  onError={(e) => {
-    console.warn(`About image failed to load: ${pageContent.about.image}`);
-    e.target.src = '/images/placeholder.jpg';
-  }}
-/>
+                src={pageContent.about.image}
+                alt="Literacy Tree School Campus"
+                className="about-image"
+                onError={(e) => {
+                  console.warn(`About image failed to load: ${pageContent.about.image}`);
+                  e.target.src = '/placeholder.webp';
+                }}
+              />
               <div className="image-overlay"></div>
             </div>
           </div>
@@ -351,22 +349,22 @@ useEffect(() => {
           <h2 className="home-section-title">{pageContent.programs.title}</h2>
           <p className="section-subtitle">{pageContent.programs.subtitle}</p>
         </div>
-        
+
         <div className="programs-grid">
           {pageContent.programs.items.map((program, index) => (
             <div key={index} className="program-card">
               <div className="program-image-container">
-      <img
-        src={program.image}
-        alt={program.title}
-        className="program-image"
-        onError={(e) => {
-          console.warn(`Program image failed to load: ${program.image}`);
-          e.target.src = '/images/placeholder.jpg';
-        }}
-      />
-      <div className="program-icon">{program.icon}</div>
-    </div>
+                <img
+                  src={program.image}
+                  alt={program.title}
+                  className="program-image"
+                  onError={(e) => {
+                    console.warn(`Program image failed to load: ${program.image}`);
+                    e.target.src = '/placeholder.webp';
+                  }}
+                />
+                <div className="program-icon">{program.icon}</div>
+              </div>
               <div className="program-content">
                 <h3 className="program-title">{program.title}</h3>
                 <p className="program-description">{program.description}</p>
@@ -389,7 +387,7 @@ useEffect(() => {
           <h2 className="home-section-title">{pageContent.testimonials.title}</h2>
           <p className="section-subtitle">{pageContent.testimonials.subtitle}</p>
         </div>
-        
+
         <div className="testimonials-grid">
           {pageContent.testimonials.items.map((testimonial, index) => (
             <div key={index} className="testimonial-card">

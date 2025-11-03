@@ -223,7 +223,7 @@ const JsonEditor = ({ value, onChange, schema }) => {
 };
 
 // Define the schema for the home page content
-const homePageSchema = {
+export const homePageSchema = {
   fields: {
     hero: {
       type: 'object',

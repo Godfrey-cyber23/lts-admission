@@ -165,6 +165,55 @@ export const getPageById = catchAsync(async (req, res, next) => {
   });
 });
 
+export const updatePageByIdentifier = catchAsync(async (req, res, next) => {
+  const { identifier } = req.params;
+  const pageData = { ...req.body };
+
+  // Remove undefined values
+  Object.keys(pageData).forEach(key => {
+    if (pageData[key] === undefined) {
+      delete pageData[key];
+    }
+  });
+
+  let page;
+  // Check if the identifier is a number (ID) or a string (slug)
+  if (!isNaN(identifier)) {
+    // It's an ID
+    page = await PageService.updatePageById(parseInt(identifier, 10), pageData);
+  } else {
+    // It's a slug
+    page = await PageService.updatePageBySlug(identifier, pageData);
+  }
+  
+  if (!page) {
+    return next(new AppError('No page found with that ID or slug', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      page
+    }
+  });
+});
+
+export const deletePageByIdentifier = catchAsync(async (req, res, next) => {
+  const { identifier } = req.params;
+
+  if (!isNaN(identifier)) {
+    await PageService.deletePageById(parseInt(identifier, 10));
+  } else {
+    await PageService.deletePageBySlug(identifier);
+  }
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
+
 export const updatePageById = catchAsync(async (req, res, next) => {
   const pageData = { ...req.body };
   
@@ -189,15 +238,6 @@ export const updatePageById = catchAsync(async (req, res, next) => {
   });
 });
 
-export const deletePageById = catchAsync(async (req, res, next) => {
-  await PageService.deletePageById(req.params.id);
-
-  res.status(204).json({
-    status: 'success',
-    data: null
-  });
-});
-
 const pageController = {
   getPages,
   getPublishedPages,
@@ -209,7 +249,8 @@ const pageController = {
   deletePage,
   getPageById,
   updatePageById,
-  deletePageById
+  updatePageByIdentifier,
+  deletePageByIdentifier,
 };
 
 export default pageController;

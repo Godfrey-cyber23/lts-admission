@@ -4,14 +4,10 @@ import {
   getPages,
   getPublishedPages,
   getPage,
-  getPublishedPage,
   createPage,
-  updatePage,
-  deletePage,
-  getPageById,
-  updatePageById,
-  deletePageById,
-  getHomePage // Make sure this is imported
+  getHomePage,
+  deletePageByIdentifier,
+  updatePageByIdentifier
 } from '../../controllers/pageController.js';
 import { protect, authorize } from '../../middleware/auth.js';
 
@@ -28,12 +24,8 @@ router.use(protect);
 // Admin routes for slug-based operations
 router.get('/', authorize('admin', 'editor', 'staff'), getPages);
 router.post('/', authorize('admin', 'editor', 'staff'), createPage);
-router.put('/:slug', authorize('admin', 'editor', 'staff'), updatePage);
-router.delete('/:slug', authorize('admin', 'editor', 'staff'), deletePage);
+router.delete('/:identifier', authorize('admin', 'editor', 'staff'), deletePageByIdentifier);
 
-// ID-based operations (optional)
-router.get('/id/:id', authorize('admin', 'editor', 'staff'), getPageById);
-router.put('/id/:id', authorize('admin', 'editor', 'staff'), updatePageById);
-router.delete('/id/:id', authorize('admin', 'editor', 'staff'), deletePageById);
+router.put('/:identifier', authorize('admin', 'editor', 'staff'), updatePageByIdentifier);
 
 export default router;

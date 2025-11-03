@@ -17,46 +17,40 @@ export class PageService {
 
   // Convert frontend field names to database field names
   static convertToDatabaseFields(pageData) {
-  const dbFields = {
-    title: pageData.title,
-    slug: pageData.slug,
-    content: pageData.content,
-    status: pageData.status,
-    
-    // Handle both naming conventions for these fields
-    meta_title: pageData.metaTitle || pageData.meta_title,
-    meta_description: pageData.metaDescription || pageData.meta_description,
-    
-    // Handle the mixed camelCase/snake_case fields
-    seoTitle: pageData.metaTitle || pageData.meta_title, // Map to camelCase field
-    seoDescription: pageData.metaDescription || pageData.meta_description, // Map to camelCase field
-    
-    is_home_page: pageData.isHomePage || pageData.is_home_page || false,
-    is_published: pageData.isPublished || pageData.is_published || pageData.status === 'published',
-    isPublished: pageData.isPublished || pageData.is_published || pageData.status === 'published', // Map to camelCase field
-    
-    published_at: pageData.publishedAt || pageData.published_at,
-    template: pageData.template || 'default',
-    featured_image: pageData.featuredImage || pageData.featured_image,
-    author_id: pageData.authorId || pageData.author_id,
-    category: pageData.category || 'general',
-    seo_data: pageData.seoData || pageData.seo_data || {},
-    
-    // Map updated timestamp to both fields
-    updatedAt: new Date(),
-    updated_at: new Date().toISOString()
-  };
+    const dbFields = {
+      title: pageData.title,
+      slug: pageData.slug,
+      content: pageData.content,
+      status: pageData.status,
+      
+      // Map to actual database column names
+      seo_title: pageData.metaTitle || pageData.seo_title,
+      seo_description: pageData.metaDescription || pageData.seo_description,
+      
+      is_home_page: pageData.isHomePage || pageData.is_home_page || false,
+      is_published: pageData.isPublished || pageData.is_published || pageData.status === 'published',
+      
+      published_at: pageData.publishedAt || pageData.published_at,
+      template: pageData.template || 'default',
+      featured_image: pageData.featuredImage || pageData.featured_image,
+      author_id: pageData.authorId || pageData.author_id,
+      category: pageData.category || 'general',
+      seo_data: pageData.seoData || pageData.seo_data || {},
+      
+      // Timestamps
+      updated_at: new Date().toISOString()
+    };
 
-  // Remove undefined values
-  Object.keys(dbFields).forEach(key => {
-    if (dbFields[key] === undefined) {
-      delete dbFields[key];
-    }
-  });
+    // Remove undefined values
+    Object.keys(dbFields).forEach(key => {
+      if (dbFields[key] === undefined) {
+        delete dbFields[key];
+      }
+    });
 
-  console.log('🗃️ Final database fields:', dbFields);
-  return dbFields;
-}
+    console.log('🗃️ Final database fields:', dbFields);
+    return dbFields;
+  }
 
   // Convert database field names to frontend field names
   static convertToFrontendFields(pageData) {
@@ -68,8 +62,8 @@ export class PageService {
       slug: pageData.slug,
       content: pageData.content,
       status: pageData.status,
-      metaTitle: pageData.meta_title,
-      metaDescription: pageData.meta_description,
+      metaTitle: pageData.seo_title, // Map from seo_title
+      metaDescription: pageData.seo_description, // Map from seo_description
       isHomePage: pageData.is_home_page,
       isPublished: pageData.is_published,
       publishedAt: pageData.published_at,
@@ -168,6 +162,9 @@ export class PageService {
       dbData.slug = this.generateSlug(dbData.title);
     }
 
+    // Add created_at timestamp
+    dbData.created_at = new Date().toISOString();
+
     // Ensure only one home page exists
     if (dbData.is_home_page) {
       await supabase
@@ -182,7 +179,10 @@ export class PageService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Supabase insert error:', error);
+      throw error;
+    }
     return this.convertToFrontendFields(data);
   }
 
@@ -205,7 +205,10 @@ export class PageService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Supabase update error:', error);
+      throw error;
+    }
     return this.convertToFrontendFields(data);
   }
 

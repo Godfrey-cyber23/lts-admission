@@ -19,85 +19,99 @@ import {
 const JsonEditor = ({ value, onChange, schema }) => {
   const [jsonError, setJsonError] = useState('');
   
-  const handleChange = (field, newValue, parentPath = []) => {
-    const updatedValue = { ...value };
-    
-    // Navigate to the correct nested object
-    let current = updatedValue;
-    for (const path of parentPath) {
-      if (!current[path]) {
-        current[path] = {};
+  // Deep clone function to avoid mutation issues
+  const deepClone = (obj) => {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (obj instanceof Date) return new Date(obj);
+    if (obj instanceof Array) return obj.map(item => deepClone(item));
+    if (obj instanceof Object) {
+      const clonedObj = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          clonedObj[key] = deepClone(obj[key]);
+        }
       }
-      current = current[path];
+      return clonedObj;
+    }
+  };
+
+  // Get nested value safely
+  const getNestedValue = (obj, path) => {
+    return path.reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : undefined;
+    }, obj);
+  };
+
+  // Set nested value immutably
+  const setNestedValue = (obj, path, value) => {
+    const newObj = deepClone(obj);
+    let current = newObj;
+    
+    for (let i = 0; i < path.length - 1; i++) {
+      const key = path[i];
+      if (current[key] === undefined || typeof current[key] !== 'object') {
+        current[key] = {};
+      }
+      current = current[key];
     }
     
-    current[field] = newValue;
+    current[path[path.length - 1]] = value;
+    return newObj;
+  };
+
+  const handleChange = (field, newValue, parentPath = []) => {
+    const fullPath = [...parentPath, field];
+    const updatedValue = setNestedValue(value, fullPath, newValue);
     onChange(updatedValue);
   };
   
   const handleArrayChange = (arrayIndex, field, newValue, parentPath = []) => {
-    const updatedValue = { ...value };
+    const arrayPath = [...parentPath];
+    const currentArray = getNestedValue(value, arrayPath) || [];
     
-    // Navigate to the correct nested object
-    let current = updatedValue;
-    for (const path of parentPath) {
-      if (!current[path]) {
-        current[path] = {};
+    if (!Array.isArray(currentArray)) {
+      console.error('Expected array at path:', arrayPath);
+      return;
+    }
+    
+    const updatedArray = currentArray.map((item, index) => {
+      if (index === arrayIndex) {
+        return { ...item, [field]: newValue };
       }
-      current = current[path];
-    }
+      return item;
+    });
     
-    if (!Array.isArray(current[field])) {
-      current[field] = [];
-    }
-    
-    current[field][arrayIndex] = { ...current[field][arrayIndex], [field]: newValue };
+    const updatedValue = setNestedValue(value, arrayPath, updatedArray);
     onChange(updatedValue);
   };
   
-  const handleAddArrayItem = (field, newItem, parentPath = []) => {
-    const updatedValue = { ...value };
+  const handleAddArrayItem = (field, defaultItem, parentPath = []) => {
+    const fullPath = [...parentPath, field];
+    const currentArray = getNestedValue(value, fullPath) || [];
     
-    // Navigate to the correct nested object
-    let current = updatedValue;
-    for (const path of parentPath) {
-      if (!current[path]) {
-        current[path] = {};
-      }
-      current = current[path];
-    }
+    const newItem = typeof defaultItem === 'object' 
+      ? deepClone(defaultItem)
+      : defaultItem;
     
-    if (!Array.isArray(current[field])) {
-      current[field] = [];
-    }
-    
-    current[field] = [...current[field], newItem];
+    const updatedArray = [...currentArray, newItem];
+    const updatedValue = setNestedValue(value, fullPath, updatedArray);
     onChange(updatedValue);
   };
   
   const handleDeleteArrayItem = (field, index, parentPath = []) => {
-    const updatedValue = { ...value };
+    const fullPath = [...parentPath, field];
+    const currentArray = getNestedValue(value, fullPath) || [];
     
-    // Navigate to the correct nested object
-    let current = updatedValue;
-    for (const path of parentPath) {
-      if (!current[path]) {
-        current[path] = {};
-      }
-      current = current[path];
+    if (Array.isArray(currentArray)) {
+      const updatedArray = currentArray.filter((_, i) => i !== index);
+      const updatedValue = setNestedValue(value, fullPath, updatedArray);
+      onChange(updatedValue);
     }
-    
-    if (Array.isArray(current[field])) {
-      current[field] = current[field].filter((_, i) => i !== index);
-    }
-    
-    onChange(updatedValue);
   };
   
   const renderField = (field, label, type = 'text', parentPath = []) => {
-    const fieldValue = parentPath.length > 0 
-      ? parentPath.reduce((obj, path) => obj?.[path] || {}, value)[field]
-      : value[field];
+    const fullPath = [...parentPath, field];
+    const fieldValue = getNestedValue(value, fullPath);
     
     switch (type) {
       case 'text':
@@ -128,11 +142,21 @@ const JsonEditor = ({ value, onChange, schema }) => {
   };
   
   const renderArrayField = (field, label, itemSchema, parentPath = []) => {
-    const fieldValue = parentPath.length > 0 
-      ? parentPath.reduce((obj, path) => obj?.[path] || {}, value)[field]
-      : value[field];
-    
+    const fullPath = [...parentPath, field];
+    const fieldValue = getNestedValue(value, fullPath);
     const items = Array.isArray(fieldValue) ? fieldValue : [];
+    
+    // Create default item based on schema
+    const createDefaultItem = () => {
+      if (typeof itemSchema === 'object') {
+        const defaultItem = {};
+        Object.keys(itemSchema).forEach(key => {
+          defaultItem[key] = '';
+        });
+        return defaultItem;
+      }
+      return '';
+    };
     
     return (
       <Box sx={{ mb: 2 }}>
@@ -141,7 +165,7 @@ const JsonEditor = ({ value, onChange, schema }) => {
           <Button
             startIcon={<AddIcon />}
             size="small"
-            onClick={() => handleAddArrayItem(field, itemSchema, parentPath)}
+            onClick={() => handleAddArrayItem(field, createDefaultItem(), parentPath)}
           >
             Add Item
           </Button>
@@ -150,7 +174,9 @@ const JsonEditor = ({ value, onChange, schema }) => {
         {items.map((item, index) => (
           <Accordion key={index} sx={{ mb: 1 }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography>Item {index + 1}</Typography>
+              <Typography>
+                {item.title || item.text || item.label || `Item ${index + 1}`}
+              </Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
@@ -161,25 +187,43 @@ const JsonEditor = ({ value, onChange, schema }) => {
                   <DeleteIcon />
                 </IconButton>
               </Box>
-              {Object.entries(itemSchema).map(([key, schema]) => (
-                <div key={key}>
-                  {typeof schema === 'object' 
-                    ? renderObjectField(key, schema, [...parentPath, field, index])
-                    : renderField(key, schema.label || key, schema.type || 'text', [...parentPath, field, index])
-                  }
-                </div>
-              ))}
+              
+              {typeof itemSchema === 'object' ? (
+                Object.entries(itemSchema).map(([key, schema]) => (
+                  <div key={key}>
+                    {renderField(key, schema.label || key, schema.type || 'text', [...parentPath, field, index])}
+                  </div>
+                ))
+              ) : (
+                <TextField
+                  fullWidth
+                  label={label}
+                  value={item || ''}
+                  onChange={(e) => {
+                    const updatedArray = [...items];
+                    updatedArray[index] = e.target.value;
+                    const updatedValue = setNestedValue(value, fullPath, updatedArray);
+                    onChange(updatedValue);
+                  }}
+                  margin="normal"
+                />
+              )}
             </AccordionDetails>
           </Accordion>
         ))}
+        
+        {items.length === 0 && (
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+            No items added yet. Click "Add Item" to create one.
+          </Typography>
+        )}
       </Box>
     );
   };
   
   const renderObjectField = (field, schema, parentPath = []) => {
-    const fieldValue = parentPath.length > 0 
-      ? parentPath.reduce((obj, path) => obj?.[path] || {}, value)[field]
-      : value[field];
+    const fullPath = [...parentPath, field];
+    const fieldValue = getNestedValue(value, fullPath) || {};
     
     return (
       <Accordion sx={{ mb: 2 }}>
@@ -200,6 +244,32 @@ const JsonEditor = ({ value, onChange, schema }) => {
       </Accordion>
     );
   };
+  
+  // Initialize with default values if value is empty
+  React.useEffect(() => {
+    if (!value || Object.keys(value).length === 0) {
+      const initializeWithDefaults = (schemaObj, currentValue = {}) => {
+        if (!schemaObj.fields) return currentValue;
+        
+        Object.entries(schemaObj.fields).forEach(([key, fieldSchema]) => {
+          if (fieldSchema.type === 'object') {
+            currentValue[key] = initializeWithDefaults(fieldSchema, currentValue[key] || {});
+          } else if (fieldSchema.type === 'array') {
+            currentValue[key] = currentValue[key] || [];
+          } else {
+            currentValue[key] = currentValue[key] || '';
+          }
+        });
+        
+        return currentValue;
+      };
+      
+      if (schema) {
+        const initializedValue = initializeWithDefaults(schema, {});
+        onChange(initializedValue);
+      }
+    }
+  }, [value, schema, onChange]);
   
   return (
     <Box>

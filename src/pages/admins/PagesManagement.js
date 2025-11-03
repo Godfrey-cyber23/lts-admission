@@ -229,66 +229,65 @@ const PagesManagement = () => {
   };
 
   const handleSavePage = async () => {
-  try {
-    let contentToSave = formData.content;
-    if (formData.template === 'home' && typeof formData.content === 'object') {
-      contentToSave = JSON.stringify(formData.content);
-    }
-    
-    // Use consistent field names that match your database
-    const pageData = {
-      title: formData.title,
-      slug: formData.slug,
-      content: contentToSave,
-      status: formData.status,
-      metaTitle: formData.metaTitle, // This maps to seoTitle in database
-      metaDescription: formData.metaDescription, // This maps to seoDescription in database
-      isHomePage: formData.isHomePage,
-      isPublished: formData.status === 'published', // This maps to both isPublished and is_published
-      publishedAt: formData.publishedAt,
-      template: formData.template,
-      featuredImage: formData.featuredImage,
-      authorId: formData.author,
-      category: formData.category,
-      seoData: formData.seoData || {}
-    };
+    try {
+      let contentToSave = formData.content;
+      if (formData.template === 'home' && typeof formData.content === 'object') {
+        contentToSave = JSON.stringify(formData.content);
+      }
 
-    console.log('📤 Sending page data:', pageData);
+      // Use database column names
+      const pageData = {
+        title: formData.title,
+        slug: formData.slug,
+        content: contentToSave,
+        status: formData.status,
+        metaTitle: formData.metaTitle, // This gets mapped to seo_title
+        metaDescription: formData.metaDescription, // This gets mapped to seo_description
+        isHomePage: formData.isHomePage,
+        isPublished: formData.status === 'published',
+        publishedAt: formData.publishedAt,
+        template: formData.template,
+        featuredImage: formData.featuredImage,
+        authorId: formData.author,
+        category: formData.category,
+        seoData: formData.seoData || {}
+      };
+      console.log('📤 Sending page data:', pageData);
 
-    let response;
-    if (editingPage) {
-      response = await api.put(`/pages/${editingPage.id}`, pageData);
-      const updatedPage = response.data.data || response.data;
-      setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
-      setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
-    } else {
-      response = await api.post('/pages', pageData);
-      const newPage = response.data.data || response.data;
-      setPages(prevPages => [...prevPages, newPage]);
-      setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
+      let response;
+      if (editingPage) {
+        response = await api.put(`/pages/${editingPage.id}`, pageData);
+        const updatedPage = response.data.data || response.data;
+        setPages(prevPages => prevPages.map(p => p.id === editingPage.id ? updatedPage : p));
+        setSnackbar({ open: true, message: 'Page updated successfully', severity: 'success' });
+      } else {
+        response = await api.post('/pages', pageData);
+        const newPage = response.data.data || response.data;
+        setPages(prevPages => [...prevPages, newPage]);
+        setSnackbar({ open: true, message: 'Page created successfully', severity: 'success' });
+      }
+
+      setOpenDialog(false);
+    } catch (error) {
+      console.error('❌ Error saving page:', error);
+      console.error('🔍 Error response:', error.response);
+      setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
     }
-    
-    setOpenDialog(false);
-  } catch (error) {
-    console.error('❌ Error saving page:', error);
-    console.error('🔍 Error response:', error.response);
-    setSnackbar({ open: true, message: 'Failed to save page', severity: 'error' });
-  }
-};
+  };
 
   const handleDeletePage = async () => {
-  try {
-    // FIX: Use the identifier endpoint
-    await api.delete(`/pages/${selectedPage.id}`);
-    setPages(pages.filter(p => p.id !== selectedPage.id));
-    setSnackbar({ open: true, message: 'Page deleted successfully', severity: 'success' });
-    setDeleteDialogOpen(false);
-    setSelectedPage(null);
-  } catch (error) {
-    console.error('Error deleting page:', error);
-    setSnackbar({ open: true, message: 'Failed to delete page', severity: 'error' });
-  }
-};
+    try {
+      // FIX: Use the identifier endpoint
+      await api.delete(`/pages/${selectedPage.id}`);
+      setPages(pages.filter(p => p.id !== selectedPage.id));
+      setSnackbar({ open: true, message: 'Page deleted successfully', severity: 'success' });
+      setDeleteDialogOpen(false);
+      setSelectedPage(null);
+    } catch (error) {
+      console.error('Error deleting page:', error);
+      setSnackbar({ open: true, message: 'Failed to delete page', severity: 'error' });
+    }
+  };
 
   const handleMenuClick = (event, page) => {
     setAnchorEl(event.currentTarget);
@@ -301,24 +300,24 @@ const PagesManagement = () => {
   };
 
   const handleStatusChange = async (pageId, newStatus) => {
-  try {
-    const page = pages.find(p => p.id === pageId);
-    if (page) {
-      // FIX: Use the identifier endpoint
-      const response = await api.put(`/pages/${page.id}`, { 
-        ...page, 
-        status: newStatus, 
-        isPublished: newStatus === 'published' 
-      });
-      const updatedPage = response.data.data || response.data;
-      setPages(prevPages => prevPages.map(p => p.id === pageId ? updatedPage : p));
-      setSnackbar({ open: true, message: 'Page status updated', severity: 'success' });
+    try {
+      const page = pages.find(p => p.id === pageId);
+      if (page) {
+        // FIX: Use the identifier endpoint
+        const response = await api.put(`/pages/${page.id}`, {
+          ...page,
+          status: newStatus,
+          isPublished: newStatus === 'published'
+        });
+        const updatedPage = response.data.data || response.data;
+        setPages(prevPages => prevPages.map(p => p.id === pageId ? updatedPage : p));
+        setSnackbar({ open: true, message: 'Page status updated', severity: 'success' });
+      }
+    } catch (error) {
+      console.error('Error updating page status:', error);
+      setSnackbar({ open: true, message: 'Failed to update page status', severity: 'error' });
     }
-  } catch (error) {
-    console.error('Error updating page status:', error);
-    setSnackbar({ open: true, message: 'Failed to update page status', severity: 'error' });
-  }
-};
+  };
 
   const generateSlug = (title) => {
     return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -355,78 +354,78 @@ const PagesManagement = () => {
   ];
 
   // Add this function to your PagesManagement component
-const getDefaultHomeContent = () => ({
-  hero: {
-    title: "Welcome To Literacy Tree School",
-    subtitle: "Nurturing young minds for a brighter future through quality education and holistic development.",
-    images: [
-      { src: "/school-building.jpg", alt: "School campus with modern facilities" },
-      { src: "/classroom.jpg", alt: "Students engaged in classroom learning" },
-      { src: "/pre-school.jpg", alt: "Children playing in school playground" },
-      { src: "/graduation.jpg", alt: "Graduation ceremony at our school" }
+  const getDefaultHomeContent = () => ({
+    hero: {
+      title: "Welcome To Literacy Tree School",
+      subtitle: "Nurturing young minds for a brighter future through quality education and holistic development.",
+      images: [
+        { src: "/school-building.jpg", alt: "School campus with modern facilities" },
+        { src: "/classroom.jpg", alt: "Students engaged in classroom learning" },
+        { src: "/pre-school.jpg", alt: "Children playing in school playground" },
+        { src: "/graduation.jpg", alt: "Graduation ceremony at our school" }
+      ],
+      buttons: [
+        { text: "Apply Now", link: "/admission", icon: "arrow" },
+        { text: "Our Programs", link: "/programs", icon: "graduation" }
+      ]
+    },
+    stats: [
+      { number: "15", label: "Years Experience", icon: "graduation" },
+      { number: "7", label: "Grades Offered", icon: "book" },
+      { number: "200", label: "Pupils Enrolled", icon: "users" },
+      { number: "100", label: "School Placement", icon: "chart", suffix: "%" }
     ],
-    buttons: [
-      { text: "Apply Now", link: "/admission", icon: "arrow" },
-      { text: "Our Programs", link: "/programs", icon: "graduation" }
-    ]
-  },
-  stats: [
-    { number: "15", label: "Years Experience", icon: "graduation" },
-    { number: "7", label: "Grades Offered", icon: "book" },
-    { number: "200", label: "Pupils Enrolled", icon: "users" },
-    { number: "100", label: "School Placement", icon: "chart", suffix: "%" }
-  ],
-  about: {
-    title: "About Our School",
-    description: "Literacy Tree School is a premier educational institution located in Lusaka, Zambia, offering quality education from early childhood through upper primary levels. We believe that each child is an individual with his/her own unique temperament, needs, interests and abilities.",
-    image: "/school-building.jpg",
-    linkText: "Learn more about us",
-    link: "/about"
-  },
-  programs: {
-    title: "Our Academic Programs",
-    subtitle: "Tailored education for every stage of development",
-    items: [
-      {
-        title: "Nursery Section",
-        description: "Play-based learning for ages 3-6 focusing on foundational skills",
-        icon: "👶",
-        image: "/classroom-2.jpg"
-      },
-      {
-        title: "Lower Primary Section",
-        description: "Comprehensive curriculum for Grades 1-7 with STEM emphasis",
-        icon: "✏️",
-        image: "/pre-school.jpg"
-      },
-      {
-        title: "Upper Primary Section",
-        description: "Preparation for international examinations and university",
-        icon: "🎓",
-        image: "/classroom.jpg"
-      }
-    ]
-  },
-  testimonials: {
-    title: "What Parents Say",
-    subtitle: "Hear from our school community",
-    items: [
-      {
-        quote: "Literacy Tree has transformed my child's learning experience. The teachers are exceptional.",
-        author: "Mrs. Banda, Parent",
-        role: "Grade 3 Parent"
-      }
-    ]
-  },
-  cta: {
-    title: "Ready to Join Our Community?",
-    subtitle: "Applications for the 2025-2026 academic year are now open. Limited spaces available.",
-    buttons: [
-      { text: "Start Application", link: "/admission" },
-      { text: "Contact Admissions", link: "/contact" }
-    ]
-  }
-});
+    about: {
+      title: "About Our School",
+      description: "Literacy Tree School is a premier educational institution located in Lusaka, Zambia, offering quality education from early childhood through upper primary levels. We believe that each child is an individual with his/her own unique temperament, needs, interests and abilities.",
+      image: "/school-building.jpg",
+      linkText: "Learn more about us",
+      link: "/about"
+    },
+    programs: {
+      title: "Our Academic Programs",
+      subtitle: "Tailored education for every stage of development",
+      items: [
+        {
+          title: "Nursery Section",
+          description: "Play-based learning for ages 3-6 focusing on foundational skills",
+          icon: "👶",
+          image: "/classroom-2.jpg"
+        },
+        {
+          title: "Lower Primary Section",
+          description: "Comprehensive curriculum for Grades 1-7 with STEM emphasis",
+          icon: "✏️",
+          image: "/pre-school.jpg"
+        },
+        {
+          title: "Upper Primary Section",
+          description: "Preparation for international examinations and university",
+          icon: "🎓",
+          image: "/classroom.jpg"
+        }
+      ]
+    },
+    testimonials: {
+      title: "What Parents Say",
+      subtitle: "Hear from our school community",
+      items: [
+        {
+          quote: "Literacy Tree has transformed my child's learning experience. The teachers are exceptional.",
+          author: "Mrs. Banda, Parent",
+          role: "Grade 3 Parent"
+        }
+      ]
+    },
+    cta: {
+      title: "Ready to Join Our Community?",
+      subtitle: "Applications for the 2025-2026 academic year are now open. Limited spaces available.",
+      buttons: [
+        { text: "Start Application", link: "/admission" },
+        { text: "Contact Admissions", link: "/contact" }
+      ]
+    }
+  });
 
   const handleCreatePredefinedPage = (predefinedPage) => {
     setEditingPage(null);
@@ -565,184 +564,184 @@ const getDefaultHomeContent = () => ({
 
       {/* Create/Edit Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}>
-  <DialogTitle>
-    {editingPage ? 'Edit Page' : 'Create New Page'}
-    {formData.template === 'home' && (
-      <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-        Home Page - Using JSON Editor
-      </Typography>
-    )}
-  </DialogTitle>
-  <DialogContent sx={{ minHeight: '400px', overflow: 'hidden' }}>
-    <Grid container spacing={2} sx={{ mb: 3 }}>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <TextField
-          fullWidth
-          label="Page Title"
-          value={formData.title}
-          onChange={handleTitleChange}
-          required
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="URL Slug"
-          value={formData.slug}
-          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-          helperText="This will be used in the URL"
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <FormControl fullWidth>
-          <InputLabel>Template</InputLabel>
-          <Select
-            value={formData.template}
-            onChange={(e) => setFormData({ ...formData, template: e.target.value })}
-            label="Template"
-          >
-            {pageTemplates.map((template) => (
-              <MenuItem key={template.value} value={template.value}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {template.icon}
-                  {template.label}
-                </Box>
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <FormControl fullWidth>
-          <InputLabel>Category</InputLabel>
-          <Select
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            label="Category"
-          >
-            {pageCategories.map((category) => (
-              <MenuItem key={category.value} value={category.value}>
-                {category.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Grid>
-      
-      {/* Content Section - Updated for JSON Editor */}
-      <Grid item xs={12}>
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-          Content
-        </Typography>
-        {formData.template === 'home' ? (
-          <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1, p: 2, mb: 2, maxHeight: '500px', overflow: 'auto' }}>
-            <Typography variant="body2" sx={{ mb: 2, color: 'primary.main' }}>
-              Home Page Editor - Edit structured content using the form below
+        <DialogTitle>
+          {editingPage ? 'Edit Page' : 'Create New Page'}
+          {formData.template === 'home' && (
+            <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+              Home Page - Using JSON Editor
             </Typography>
-            
-            {/* JSON Editor for Home Page */}
-            <JsonEditor
-              value={typeof formData.content === 'object' ? formData.content : getDefaultHomeContent()}
-              onChange={(newContent) => setFormData({ ...formData, content: newContent })}
-              schema={homePageSchema}
-            />
-            
-            <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                <strong>Note:</strong> This content will be saved as JSON and rendered dynamically on the home page.
-                Changes made here will immediately reflect on the live site.
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ minHeight: '400px', overflow: 'hidden' }}>
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="Page Title"
+                value={formData.title}
+                onChange={handleTitleChange}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="URL Slug"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                helperText="This will be used in the URL"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Template</InputLabel>
+                <Select
+                  value={formData.template}
+                  onChange={(e) => setFormData({ ...formData, template: e.target.value })}
+                  label="Template"
+                >
+                  {pageTemplates.map((template) => (
+                    <MenuItem key={template.value} value={template.value}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {template.icon}
+                        {template.label}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  label="Category"
+                >
+                  {pageCategories.map((category) => (
+                    <MenuItem key={category.value} value={category.value}>
+                      {category.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Content Section - Updated for JSON Editor */}
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Content
               </Typography>
-            </Box>
-          </Box>
-        ) : (
-          <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <ReactQuill
-              value={typeof formData.content === 'string' ? formData.content : ''}
-              onChange={(value) => setFormData({ ...formData, content: value })}
-              modules={quillModules}
-              formats={quillFormats}
-              style={{ height: '200px' }}
-            />
-          </Box>
-        )}
-      </Grid>
-      
-      <Grid item xs={12}>
-        <TextField
-          fullWidth
-          label="Featured Image URL"
-          value={formData.featuredImage}
-          onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
-          helperText="Optional: URL to the featured image"
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Meta Title"
-          value={formData.metaTitle}
-          onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-          helperText="SEO meta title (optional)"
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Meta Description"
-          value={formData.metaDescription}
-          onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-          helperText="SEO meta description (optional)"
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <FormControl fullWidth>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            label="Status"
+              {formData.template === 'home' ? (
+                <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1, p: 2, mb: 2, maxHeight: '500px', overflow: 'auto' }}>
+                  <Typography variant="body2" sx={{ mb: 2, color: 'primary.main' }}>
+                    Home Page Editor - Edit structured content using the form below
+                  </Typography>
+
+                  {/* JSON Editor for Home Page */}
+                  <JsonEditor
+                    value={typeof formData.content === 'object' ? formData.content : getDefaultHomeContent()}
+                    onChange={(newContent) => setFormData({ ...formData, content: newContent })}
+                    schema={homePageSchema}
+                  />
+
+                  <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      <strong>Note:</strong> This content will be saved as JSON and rendered dynamically on the home page.
+                      Changes made here will immediately reflect on the live site.
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                  <ReactQuill
+                    value={typeof formData.content === 'string' ? formData.content : ''}
+                    onChange={(value) => setFormData({ ...formData, content: value })}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    style={{ height: '200px' }}
+                  />
+                </Box>
+              )}
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Featured Image URL"
+                value={formData.featuredImage}
+                onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
+                helperText="Optional: URL to the featured image"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Meta Title"
+                value={formData.metaTitle}
+                onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                helperText="SEO meta title (optional)"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Meta Description"
+                value={formData.metaDescription}
+                onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                helperText="SEO meta description (optional)"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  label="Status"
+                >
+                  <MenuItem value="draft">Draft</MenuItem>
+                  <MenuItem value="published">Published</MenuItem>
+                  <MenuItem value="scheduled">Scheduled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Author"
+                value={formData.author}
+                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.isHomePage}
+                    onChange={(e) => setFormData({ ...formData, isHomePage: e.target.checked })}
+                  />
+                }
+                label="Set as Home Page"
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setOpenDialog(false)} startIcon={<CancelIcon />}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSavePage}
+            variant="contained"
+            startIcon={<SaveIcon />}
+            sx={{ backgroundColor: '#2e7d32', '&:hover': { backgroundColor: '#1b5e20' } }}
           >
-            <MenuItem value="draft">Draft</MenuItem>
-            <MenuItem value="published">Published</MenuItem>
-            <MenuItem value="scheduled">Scheduled</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Author"
-          value={formData.author}
-          onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={formData.isHomePage}
-              onChange={(e) => setFormData({ ...formData, isHomePage: e.target.checked })}
-            />
-          }
-          label="Set as Home Page"
-        />
-      </Grid>
-    </Grid>
-  </DialogContent>
-  <DialogActions sx={{ p: 3 }}>
-    <Button onClick={() => setOpenDialog(false)} startIcon={<CancelIcon />}>
-      Cancel
-    </Button>
-    <Button
-      onClick={handleSavePage}
-      variant="contained"
-      startIcon={<SaveIcon />}
-      sx={{ backgroundColor: '#2e7d32', '&:hover': { backgroundColor: '#1b5e20' } }}
-    >
-      {editingPage ? 'Update' : 'Create'}
-    </Button>
-  </DialogActions>
-</Dialog>
+            {editingPage ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>

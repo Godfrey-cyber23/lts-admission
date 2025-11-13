@@ -91,7 +91,7 @@ const Login = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: "url(/pre-school.jpg)",
+          backgroundImage: "url(/_MG_4539.JPG)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",

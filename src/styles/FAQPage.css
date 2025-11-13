@@ -67,7 +67,7 @@
 
 .hero-content h1 {
   font-size: 3rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--color-white);
   margin-bottom: 1.5rem;
   font-family: var(--font-heading);
@@ -131,11 +131,6 @@
 }
 
 /* Hero Slider */
-.hero-slider {
-  position: relative;
-  height: 70vh;
-  min-height: 500px;
-}
 
 .testimonial-slider .testimonial-heading {
   font-size: 2.5rem;
@@ -239,6 +234,7 @@
 
 .faq-text p {
   color: var(--color-text-light);
+  text-justify: distribute;
   line-height: 1.6;
 }
 

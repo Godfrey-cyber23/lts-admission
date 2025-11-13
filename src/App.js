@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Link, useLocation } from 'react-router-dom';
-import useTawkTo from './hooks/useTawkTo';
+import CustomChat from './components/CustomChat';
+import useTawkTo from './hooks/useTawkTo'; // Make sure this is the updated hook
 import { ThemeProvider } from './styles/themes';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Footer from './components/Footer';
@@ -11,7 +12,7 @@ import { FaBars, FaTimes } from 'react-icons/fa';
 
 // Create a wrapper component that uses the router hooks
 function AppContent() {
-  const { isChatReady, isChatLoading, toggleChat } = useTawkTo();
+  const { isChatReady, isChatLoading, isChatOpen, toggleChat, closeChat } = useTawkTo();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
@@ -93,7 +94,7 @@ function AppContent() {
                   <NavLink to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</NavLink>
                   <NavLink to="/about" onClick={() => setIsMobileMenuOpen(false)}>About Us</NavLink>
                   <NavLink to="/programs" onClick={() => setIsMobileMenuOpen(false)}>Programs</NavLink>
-                  <NavLink to="/faq" onClick={() => setIsMobileMenuOpen(false)}>Admissions</NavLink>
+                  <NavLink to="/faq" onClick={() => setIsMobileMenuOpen(false)}>FAQs</NavLink>
                   <NavLink to="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</NavLink>
                   <NavLink to="/admission" className="enroll-btn" onClick={() => setIsMobileMenuOpen(false)}>Enroll Now</NavLink>
                   <NavLink to="/login" className="login-btn" onClick={() => setIsMobileMenuOpen(false)}>Login</NavLink>
@@ -110,19 +111,23 @@ function AppContent() {
 
       {/* Conditionally render chat button - don't show on admin or dashboard routes */}
       {isChatReady && shouldShowUI && (
-        <button
-          className="chat-button pulse"
-          onClick={toggleChat}
-          disabled={isChatLoading}
-          aria-label="Live chat support"
-        >
-          {isChatLoading ? 'Loading...' : (
-            <div className="chat-content">
-              <span className="chat-bubble">💬</span>
-              <span className="chat-text">Need help?</span>
-            </div>
-          )}
-        </button>
+        <>
+          <button
+            className="chat-button pulse"
+            onClick={toggleChat}
+            disabled={isChatLoading}
+            aria-label="Live chat support"
+          >
+            {isChatLoading ? 'Loading...' : (
+              <div className="chat-content">
+                <span className="chat-bubble">💬</span>
+                <span className="chat-text">Need help?</span>
+              </div>
+            )}
+          </button>
+          
+          <CustomChat isOpen={isChatOpen} onClose={closeChat} />
+        </>
       )}
 
       {/* Conditionally render footer - don't show on admin or dashboard routes */}

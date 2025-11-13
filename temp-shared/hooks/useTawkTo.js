@@ -30,8 +30,18 @@ const useTawkTo = () => {
         attempts++;
 
         if (window.Tawk_API?.getStatus && window.Tawk_API.getStatus() !== 'offline') {
-          // Configure widget appearance
+          // Hide the widget completely - this is the key change
           window.Tawk_API.hideWidget();
+          
+          // Additional hiding attempts
+          if (window.Tawk_API.maximize) {
+            // Don't allow maximize
+            window.Tawk_API.maximize = () => {
+              window.Tawk_API.hideWidget();
+            };
+          }
+          
+          // Configure widget appearance
           window.Tawk_API.setAttributes({
             'theme': 'default',
             'color': '#2c5e3a',
@@ -50,7 +60,7 @@ const useTawkTo = () => {
         } else if (attempts < maxAttempts) {
           setTimeout(checkInitialized, 300);
         } else {
-          // Don't reject as an error, the chat might just be offline
+          // Don't reject as an error, chat might just be offline
           console.warn('Tawk.to initialization timed out or is offline.');
           setIsChatReady(true); // Consider it "ready" even if offline
           resolve();
@@ -75,11 +85,17 @@ const useTawkTo = () => {
     script.async = true;
     script.src = `${tawkToConfig.embedUrl}/${tawkToConfig.propertyId}/${tawkToConfig.widgetId}`;
     script.charset = 'UTF-8';
-    script.crossOrigin = 'anonymous'; // You already had this, which is correct!
+    script.crossOrigin = 'anonymous'; 
 
     script.onload = () => {
       initializeTawk()
-        .then(() => setIsChatLoading(false))
+        .then(() => {
+          // Ensure the widget is hidden after initialization
+          if (window.Tawk_API && window.Tawk_API.hideWidget) {
+            window.Tawk_API.hideWidget();
+          }
+          setIsChatLoading(false);
+        })
         .catch(error => {
           console.error('Tawk initialization failed:', error);
           setChatError(error);
@@ -101,6 +117,12 @@ const useTawkTo = () => {
     // If Tawk_API is already available (e.g., from a previous hot-reload), just initialize it
     if (window.Tawk_API) {
       initializeTawk()
+        .then(() => {
+          // Ensure the widget is hidden
+          if (window.Tawk_API && window.Tawk_API.hideWidget) {
+            window.Tawk_API.hideWidget();
+          }
+        })
         .catch(error => {
           console.error('Tawk initialization on re-render failed:', error);
           setChatError(error);
@@ -113,30 +135,12 @@ const useTawkTo = () => {
   }, [initializeTawk, loadTawkScript]);
 
   const toggleChat = useCallback(() => {
-    if (window.Tawk_API?.toggle) {
-      try {
-        // Update visitor info if available
-        const userData = JSON.parse(localStorage.getItem('admissionFormData'));
-        if (userData) {
-          window.Tawk_API.setAttributes({
-            'name': `${userData.studentInfo.firstName} ${userData.studentInfo.lastName}`,
-            'email': userData.parentInfo.email,
-            'phone': userData.parentInfo.phone
-          }, function(error) {
-              if(error) {
-                  console.error('Tawk setAttributes error:', error);
-              }
-          });
-        }
-
-        window.Tawk_API.toggle();
-      } catch (error) {
-        console.error('Error toggling chat:', error);
-      }
-    } else {
-      const error = new Error('Chat not available');
-      setChatError(error);
-    }
+    // Instead of toggling the Tawk.to widget, we'll use our custom chat
+    // This function can be repurposed to open a custom chat modal
+    console.log('Custom chat button clicked');
+    
+    // You could implement a custom modal here
+    // For now, we'll just log the click
   }, []);
 
   return {

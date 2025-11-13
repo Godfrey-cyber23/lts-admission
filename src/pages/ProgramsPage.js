@@ -142,7 +142,7 @@ const ProgramsPage = () => {
                                 className="hero-image"
                                 loading={index === 0 ? "eager" : "lazy"}
                             />
-                            <div className="hero-overlay"></div>
+                            {/* <div className="hero-overlay"></div> */}
                         </div>
                     ))}
                 </Carousel>
@@ -273,7 +273,7 @@ const ProgramsPage = () => {
                 <div className="container text-center">
                     <h2 className="cta-title mb-6">Ready to Enroll Your Child?</h2>
                     <p className="cta-subtitle mb-8">
-                        Limited spaces available for the 2025 academic year. Schedule a tour to learn more about our programs.
+                        Limited spaces available for the 2026 academic year. Schedule a tour to learn more about our programs.
                     </p>
                     <div className="cta-buttons">
                         <a href="/admissions" className="btn btn-light">

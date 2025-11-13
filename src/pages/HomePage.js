@@ -4,13 +4,93 @@ import { FaArrowRight, FaGraduationCap, FaBookOpen, FaUsers, FaChartLine, FaQuot
 import { Carousel } from 'react-responsive-carousel';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import '../styles/Homepage.css';
-import api from '../api/api';
 
 const HomePage = () => {
   const [activeSection, setActiveSection] = useState('hero');
   const [animatedStats, setAnimatedStats] = useState(false);
-  const [pageContent, setPageContent] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  // Default content object
+  const pageContent = {
+    hero: {
+      title: "Welcome To Literacy Tree School",
+      subtitle: "Nurturing young minds for a brighter future through quality education and holistic development.",
+      images: [
+        { src: "/school-building.jpg", alt: "School campus with modern facilities" },
+        { src: "/classroom.jpg", alt: "Students engaged in classroom learning" },
+        { src: "/pre-school.jpg", alt: "Children playing in school playground" },
+        { src: "/graduation.jpg", alt: "Graduation ceremony at our school" }
+      ],
+      buttons: [
+        { text: "Apply Now", link: "/admission", icon: "arrow" },
+        { text: "Our Programs", link: "/programs", icon: "graduation" }
+      ]
+    },
+    stats: [
+      { number: "15", label: "Years Experience", icon: "graduation" },
+      { number: "7", label: "Grades Offered", icon: "book" },
+      { number: "200", label: "Pupils Enrolled", icon: "users" },
+    ],
+    about: {
+      title: "About Our School",
+      description: "Literacy Tree School is a premier educational institution located in Lusaka, Zambia, offering quality education from early childhood through upper primary levels. We believe that each child is an individual with his/her own unique temperament, needs, interests and abilities. We try to be aware of the uniqueness of each child in encouraging their interests, fostering their abilities and in meeting their needs for integral growth.",
+      image: "/school-building.jpg",
+      linkText: "Learn more about us",
+      link: "/about"
+    },
+    programs: {
+      title: "Our Academic Programs",
+      subtitle: "Tailored education for every stage of development",
+      items: [
+        {
+          title: "Nursery Section",
+          description: "Play-based learning for ages 3-6 focusing on foundational skills",
+          icon: "👶",
+          image: "/classroom-2.jpg"
+        },
+        {
+          title: "Lower Primary Section",
+          description: "Comprehensive curriculum for Grades 1-7 with STEM emphasis",
+          icon: "✏️",
+          image: "/pre-school.jpg"
+        },
+        {
+          title: "Upper Primary Section",
+          description: "Preparation for international examinations and university",
+          icon: "🎓",
+          image: "/classroom.jpg"
+        }
+      ]
+    },
+    testimonials: {
+      title: "What Parents Say",
+      subtitle: "Hear from our school community",
+      items: [
+        {
+          quote: "Literacy Tree has transformed my child's learning experience. The teachers are exceptional.",
+          author: "Mrs. Banda, Parent",
+          role: "Grade 3 Parent"
+        },
+        {
+          quote: "The holistic approach to education here is exactly what we were looking for.",
+          author: "Mr. Mwila, Parent",
+          role: "Grade 7 Parent"
+        },
+        {
+          quote: "My daughter has flourished both academically and socially since joining.",
+          author: "Dr. Ngoma, Parent",
+          role: "Form 2 Parent"
+        }
+      ]
+    },
+    cta: {
+      title: "Ready to Join Our Community?",
+      subtitle: "Applications for the 2026 academic year are now open. Limited spaces available.",
+      buttons: [
+        { text: "Start Application", link: "/admission" },
+        { text: "Contact Admissions", link: "/contact" }
+      ]
+    }
+  };
 
   useEffect(() => {
     // Scroll event listener for section highlighting
@@ -51,157 +131,6 @@ const HomePage = () => {
     };
   }, []);
 
-  // Fetch home page content from API
-  useEffect(() => {
-    const fetchHomePageContent = async () => {
-      try {
-        setLoading(true);
-        console.log('🔍 Fetching home page content...');
-
-        const response = await api.get('/pages/home');
-        console.log('📦 Full API response:', response);
-
-        // Extract the page data correctly
-        let pageData;
-
-        if (response.data.data && response.data.data.page) {
-          pageData = response.data.data.page;
-          console.log('✅ Using response.data.data.page structure');
-        } else if (response.data.pages) {
-          pageData = response.data.pages[0];
-          console.log('✅ Using response.data.pages structure');
-        } else {
-          pageData = response.data;
-          console.log('✅ Using response.data directly');
-        }
-
-        console.log('📄 Extracted page data:', pageData);
-        console.log('📝 Page content type:', typeof pageData.content);
-        console.log('📝 Page content value:', pageData.content);
-
-        let parsedContent;
-
-        if (pageData.content && typeof pageData.content === 'string') {
-          try {
-            parsedContent = JSON.parse(pageData.content);
-            console.log('✅ Successfully parsed JSON string');
-          } catch (e) {
-            console.error('❌ JSON parse error:', e);
-            console.log('Using default content due to parse error');
-            parsedContent = getDefaultContent();
-          }
-        } else if (pageData.content && typeof pageData.content === 'object') {
-          parsedContent = pageData.content;
-          console.log('✅ Content is already an object');
-        } else {
-          console.log('❌ No valid content found, using default');
-          parsedContent = getDefaultContent();
-        }
-
-        console.log('🎯 Final parsed content to display:', parsedContent);
-        setPageContent(parsedContent);
-
-      } catch (error) {
-        // FIX: Add proper error handling
-        console.error('❌ Error fetching home page:', error);
-        console.error('Error details:', error.response?.data || error.message);
-
-        // Use default content when API fails
-        console.log('🔄 Using default content due to API error');
-        setPageContent(getDefaultContent());
-      } finally {
-        // FIX: Always set loading to false
-        setLoading(false);
-      }
-    };
-
-    fetchHomePageContent();
-  }, []);
-
-  // Default content function
-  const getDefaultContent = () => ({
-    hero: {
-      title: "Welcome To Literacy Tree School",
-      subtitle: "Nurturing young minds for a brighter future through quality education and holistic development.",
-      images: [
-        { src: "/school-building.jpg", alt: "School campus with modern facilities" },
-        { src: "/classroom.jpg", alt: "Students engaged in classroom learning" },
-        { src: "/pre-school.jpg", alt: "Children playing in school playground" },
-        { src: "/graduation.jpg", alt: "Graduation ceremony at our school" }
-      ],
-      buttons: [
-        { text: "Apply Now", link: "/admission", icon: "arrow" },
-        { text: "Our Programs", link: "/programs", icon: "graduation" }
-      ]
-    },
-    stats: [
-      { number: "15", label: "Years Experience", icon: "graduation" },
-      { number: "7", label: "Grades Offered", icon: "book" },
-      { number: "200", label: "Pupils Enrolled", icon: "users" },
-      { number: "100", label: "School Placement", icon: "chart", suffix: "%" }
-    ],
-    about: {
-      title: "About Our School",
-      description: "Literacy Tree School is a premier educational institution located in Lusaka, Zambia, offering quality education from early childhood through upper primary levels. We believe that each child is an individual with his/her own unique temperament, needs, interests and abilities. We try to be aware of the uniqueness of each child in encouraging their interests, fostering their abilities and in meeting their needs for integral growth.",
-      image: "/school-building.jpg", // Changed from "/images/about-school.jpg"
-      linkText: "Learn more about us",
-      link: "/about"
-    },
-    programs: {
-      title: "Our Academic Programs",
-      subtitle: "Tailored education for every stage of development",
-      items: [
-        {
-          title: "Nursery Section",
-          description: "Play-based learning for ages 3-6 focusing on foundational skills",
-          icon: "👶",
-          image: "/classroom-2.jpg" // Changed from "/images/nursery.jpg"
-        },
-        {
-          title: "Lower Primary Section",
-          description: "Comprehensive curriculum for Grades 1-7 with STEM emphasis",
-          icon: "✏️",
-          image: "/pre-school.jpg" // Changed from "/images/primary.jpg"
-        },
-        {
-          title: "Upper Primary Section",
-          description: "Preparation for international examinations and university",
-          icon: "🎓",
-          image: "/classroom.jpg" // Changed from "/images/primary.jpg"
-        }
-      ]
-    },
-    testimonials: {
-      title: "What Parents Say",
-      subtitle: "Hear from our school community",
-      items: [
-        {
-          quote: "Literacy Tree has transformed my child's learning experience. The teachers are exceptional.",
-          author: "Mrs. Banda, Parent",
-          role: "Grade 3 Parent"
-        },
-        {
-          quote: "The holistic approach to education here is exactly what we were looking for.",
-          author: "Mr. Mwila, Parent",
-          role: "Grade 7 Parent"
-        },
-        {
-          quote: "My daughter has flourished both academically and socially since joining.",
-          author: "Dr. Ngoma, Parent",
-          role: "Form 2 Parent"
-        }
-      ]
-    },
-    cta: {
-      title: "Ready to Join Our Community?",
-      subtitle: "Applications for the 2025-2026 academic year are now open. Limited spaces available.",
-      buttons: [
-        { text: "Start Application", link: "/admission" },
-        { text: "Contact Admissions", link: "/contact" }
-      ]
-    }
-  });
-
   // Function to get the appropriate icon component
   const getIcon = (iconName) => {
     switch (iconName) {
@@ -213,23 +142,6 @@ const HomePage = () => {
       default: return null;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading content...</p>
-      </div>
-    );
-  }
-
-  if (!pageContent) {
-    return (
-      <div className="error-container">
-        <p>Failed to load page content. Please try again later.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="homepage">
@@ -265,7 +177,7 @@ const HomePage = () => {
                 className="carousel-image"
                 onError={(e) => {
                   console.warn(`Image failed to load: ${image.src}`);
-                  e.target.src = '/placeholder.webp'; // Add a fallback image
+                  e.target.src = '/placeholder.webp'; 
                 }}
               />
             </div>

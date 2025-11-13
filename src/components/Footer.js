@@ -1,5 +1,4 @@
-import { FaHome, FaCalendarAlt, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCopyright } from 'react-icons/fa';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaArrowRight } from 'react-icons/fa';
+import { FaHome, FaCalendarAlt, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCopyright, FaFacebook, FaTwitter, FaInstagram, FaTiktok, FaYoutube, FaArrowRight } from 'react-icons/fa';
 import { IoMdSchool } from 'react-icons/io';
 import '../styles/Footer.css';
 
@@ -22,8 +21,8 @@ const Footer = () => {
                                 </a>
                             </li>
                             <li>
-                                <a href="/admissions">
-                                    <IoMdSchool /> Admissions
+                                <a href="/faq">
+                                    <IoMdSchool /> FAQs
                                 </a>
                             </li>
                             <li>
@@ -88,14 +87,14 @@ const Footer = () => {
                             <a href="https://facebook.com" aria-label="Facebook">
                                 <FaFacebook />
                             </a>
-                            <a href="https://twitter.com" aria-label="Twitter">
-                                <FaTwitter />
+                            <a href="https://tiktok.com" aria-label="TikTok">
+                                <FaTiktok />
                             </a>
                             <a href="https://instagram.com" aria-label="Instagram">
                                 <FaInstagram />
                             </a>
-                            <a href="https://linkedin.com" aria-label="LinkedIn">
-                                <FaLinkedin />
+                            <a href="https://youtube.com" aria-label="Youtube">
+                                < FaYoutube />
                             </a>
                         </div>
 

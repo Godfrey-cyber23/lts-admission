@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaFacebook, FaTwitter, FaInstagram, FaPaperPlane } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaFacebook, FaInstagram, FaPaperPlane, FaTiktok, FaYoutube } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import '../styles/ContactUs.css';
 
@@ -122,19 +122,29 @@ const ContactPage = () => {
               >
                 <FaFacebook />
               </motion.a>
+
               <motion.a
-                href="https://twitter.com"
+                href="https://tiktok.com"
                 whileHover={{ scale: 1.1 }}
-                className="social-icon twitter"
+                className="social-icon tiktok"
               >
-                <FaTwitter />
+                <FaTiktok />
               </motion.a>
+
               <motion.a
                 href="https://instagram.com"
                 whileHover={{ scale: 1.1 }}
                 className="social-icon instagram"
               >
                 <FaInstagram />
+              </motion.a>
+
+              <motion.a
+                href="https://youtube.com"
+                whileHover={{ scale: 1.1 }}
+                className="social-icon youtube"
+              >
+                <FaYoutube />
               </motion.a>
             </div>
           </div>

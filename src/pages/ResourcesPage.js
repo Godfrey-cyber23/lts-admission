@@ -34,7 +34,7 @@ const ResourcesPage = () => {
     // Primary school focused resources
     const featuredResources = [
         {
-            title: "2024-2025 School Calendar",
+            title: "2026 School Calendar",
             type: "PDF",
             icon: <FaFilePdf className="file-icon" />,
             url: "/downloads/academic-calendar-2024.pdf",
@@ -57,7 +57,7 @@ const ResourcesPage = () => {
             grades: "For Home Learning"
         },
         {
-            title: "2024-2025 School Calendar",
+            title: "2026 School Calendar",
             type: "PDF",
             icon: <FaFilePdf className="file-icon" />,
             url: "/downloads/academic-calendar-2024.pdf",

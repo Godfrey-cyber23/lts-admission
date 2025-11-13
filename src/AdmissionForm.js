@@ -309,6 +309,7 @@ const AdmissionForm = () => {
                     <h1 style={{
                         fontFamily: theme.fonts.heading,
                         margin: 0,
+                        color:'white',
                         fontSize: '1.8rem'
                     }}>
                         Literacy Tree School Admission Form
@@ -318,7 +319,7 @@ const AdmissionForm = () => {
                         fontWeight: 600,
                         opacity: 0.9
                     }}>
-                        2025-2026 Academic Year - {getFormStage(currentStep).replace('_', ' ').toUpperCase()}
+                        2026 Academic Year - {getFormStage(currentStep).replace('_', ' ').toUpperCase()}
                     </p>
 
                     <div style={{
@@ -583,7 +584,7 @@ const AdmissionForm = () => {
                                         id="signatureCanvas"
                                         width={300}
                                         height={150}
-                                        style={{ border: `1px solid ${theme.colors.border}`, borderRadius: theme.sizes.borderRadius.small }}
+                                        style={{ border: `1px solid ${theme.colors.border}`, alignContent:'center', borderRadius: theme.sizes.borderRadius.small }}
                                     ></canvas>
                                     <button
                                         type="button"

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.1.2",
@@ -22,6 +23,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "firebase": "^12.5.0",
     "framer-motion": "^12.18.1",
     "google-adsense": "^1.1.7",
     "helmet": "^8.1.0",

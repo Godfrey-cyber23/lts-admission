@@ -93,8 +93,6 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 100%;
-  max-width: 1200px;
-  padding: 0 20px;
   z-index: 10;
   color: var(--color-white);
 }
@@ -102,8 +100,6 @@
 .about-hero-title {
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 800;
-  margin-top: 8rem;
-  margin-bottom: 1.5rem;
   text-align: center;
   width: 100%;
   font-family: var(--font-heading);
@@ -231,6 +227,7 @@
   font-size: 1.1rem;
   line-height: 1.8;
   margin-bottom: 1.5rem;
+  text-justify: distribute;
   color: var(--color-text);
   text-align: justify;
 }
@@ -559,6 +556,7 @@
   color: var(--color-primary);
   font-style: italic;
   padding: 20px;
+  text-justify: distribute;
   border-left: 4px solid var(--color-accent);
   background-color: var(--color-primary-light);
   border-radius: 0 var(--border-radius) var(--border-radius) 0;
@@ -634,6 +632,7 @@
 .value-name {
   font-size: 1.25rem;
   font-weight: 700;
+  text-align: center;
   margin-bottom: 10px;
   color: var(--color-primary);
 }

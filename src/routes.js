@@ -13,6 +13,7 @@ import ResourcesPage from './pages/ResourcesPage';
 import FaqPage from './pages/FAQPage';
 import Register from './pages/Register';
 import DashboardHome from './pages/admins/DashboardHome';
+import AdminChatDashboard from './pages/admins/AdminChatDashboard';
 import SiteMap from './components/Sitemap';
 import StudentsPage from './pages/admins/StudentsPage';
 import StaffPage from './pages/admins/StaffPage';
@@ -67,6 +68,7 @@ const AppRoutes = () => {
         <Route path="finance" element={<FinancePage />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="pages" element={<PagesManagement />} /> 
+        <Route path="chat" element={<AdminChatDashboard />} />
       </Route>
 
       {/* Redirect any unknown routes to home */}

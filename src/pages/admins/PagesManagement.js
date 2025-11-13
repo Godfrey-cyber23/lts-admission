@@ -394,8 +394,7 @@ const PagesManagement = () => {
     stats: [
       { number: "15", label: "Years Experience", icon: "graduation" },
       { number: "7", label: "Grades Offered", icon: "book" },
-      { number: "200", label: "Pupils Enrolled", icon: "users" },
-      { number: "100", label: "School Placement", icon: "chart", suffix: "%" }
+      { number: "200", label: "Pupils Enrolled", icon: "users" }
     ],
     about: {
       title: "About Our School",
@@ -441,7 +440,7 @@ const PagesManagement = () => {
     },
     cta: {
       title: "Ready to Join Our Community?",
-      subtitle: "Applications for the 2025-2026 academic year are now open. Limited spaces available.",
+      subtitle: "Applications for the 2026 academic year are now open. Limited spaces available.",
       buttons: [
         { text: "Start Application", link: "/admission" },
         { text: "Contact Admissions", link: "/contact" }

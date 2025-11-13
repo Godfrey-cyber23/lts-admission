@@ -100,11 +100,10 @@
   text-align: center;
 }
 
-.program-hero-title {
+.program-hero-content h1 {
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 800;
-  margin-top: 8rem;
-  margin-bottom: 1.3rem;
+  margin-bottom: 1.2rem;
   color: var(--color-white);
   font-family: var(--font-heading);
   line-height: 1.2;
@@ -181,6 +180,8 @@
 
 .approach-grid {
   display: flex;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
   flex-direction: column;
   gap: 40px;
 }
@@ -210,11 +211,13 @@
   font-size: 1.1rem;
   line-height: 1.7;
   margin-bottom: 1.5rem;
+  text-justify: distribute;
   color: var(--color-text);
 }
 
 .approach-image {
   flex: 1;
+  display: flex;
   border-radius: var(--border-radius);
   overflow: hidden;
   box-shadow: var(--shadow-medium);
@@ -233,6 +236,7 @@
 /* Main Programs */
 .main-programs {
   background-color: var(--color-gray);
+  padding-bottom: 3rem;
 }
 
 .programs-grid {
@@ -271,7 +275,7 @@
 }
 
 .program-image-container {
-  height: 180px; 
+  height: 180px;
   position: relative;
   overflow: hidden;
 }
@@ -385,6 +389,7 @@
 /* Special Programs */
 .special-programs {
   background-color: var(--color-white);
+  padding-bottom: 3rem;
 }
 
 .special-programs-grid {

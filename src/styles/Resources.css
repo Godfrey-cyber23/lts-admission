@@ -172,6 +172,7 @@
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
   transition: all 0.3s ease;
+  color: var(--light);
   text-align: center;
   border: 1px solid rgba(0,0,0,0.05);
 }
@@ -191,11 +192,11 @@
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #000;
+  color: #fff;
 }
 
 .category-card p {
-  color: var(--dark);
+  color: var(--light-gray);
   margin-bottom: 1.5rem;
 }
 

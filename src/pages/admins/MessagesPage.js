@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -42,7 +42,8 @@ import {
   AppBar,
   Toolbar,
   Drawer,
-  Menu} from '@mui/material';
+  Menu
+} from '@mui/material';
 import {
   Add as AddIcon,
   Send as SendIcon,
@@ -59,8 +60,28 @@ import {
   ExpandMore as ExpandMoreIcon,
   Close as CloseIcon,
   Schedule as ScheduleIcon,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  ArrowBack as ArrowBackIcon,
+  MoreVert as MoreVertIcon
 } from '@mui/icons-material';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, push, set, serverTimestamp, off, onDisconnect } from 'firebase/database';
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyC9_p1FA0kxbHpCAyvhukWq2ZqIPDh3Vis",
+  authDomain: "lts-admission-form.firebaseapp.com",
+  databaseURL: "https://lts-admission-form-default-rtdb.firebaseio.com",
+  projectId: "lts-admission-form",
+  storageBucket: "lts-admission-form.firebasestorage.app",
+  messagingSenderId: "469201694810",
+  appId: "1:469201694810:web:c7675449c451b8a7bba863",
+  measurementId: "G-SW94NFJB7Z"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
 // Mock data for messages and notifications
 const mockMessages = [
@@ -188,11 +209,112 @@ const mockNotifications = [
   }
 ];
 
+// Firebase service functions for chat
+const createChatSession = async (sessionId) => {
+  const sessionRef = ref(database, `sessions/${sessionId}`);
+  await set(sessionRef, {
+    createdAt: serverTimestamp(),
+    status: {
+      userOnline: true,
+      agentOnline: false,
+      agentTyping: false
+    },
+    messages: []
+  });
+  
+  // Set up disconnect handler
+  const userStatusRef = ref(database, `sessions/${sessionId}/status/userOnline`);
+  onDisconnect(userStatusRef).set(false);
+  
+  return sessionId;
+};
+
+const sendMessage = async (sessionId, messageText, sender, senderName = null) => {
+  if (!sessionId) {
+    console.error('No session ID available');
+    throw new Error('Session not initialized');
+  }
+
+  const messageData = {
+    text: messageText,
+    sender: sender,
+    senderName: senderName || (sender === 'user' ? 'User' : 'Support Agent'),
+    timestamp: new Date().toISOString(),
+    read: sender === 'agent' // Agent messages are marked as read by default
+  };
+
+  const messagesRef = ref(database, `sessions/${sessionId}/messages`);
+  const newMessageRef = push(messagesRef);
+  await set(newMessageRef, messageData);
+  
+  return messageData;
+};
+
+const listenToSessions = (callback) => {
+  const sessionsRef = ref(database, 'sessions');
+  const unsubscribe = onValue(sessionsRef, (snapshot) => {
+    const data = snapshot.val();
+    callback(data || {});
+  });
+  
+  return unsubscribe;
+};
+
+const listenToSessionMessages = (sessionId, callback) => {
+  const messagesRef = ref(database, `sessions/${sessionId}/messages`);
+  const unsubscribe = onValue(messagesRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const messageList = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+      })).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      callback(messageList);
+    } else {
+      callback([]);
+    }
+  });
+  
+  return unsubscribe;
+};
+
+const listenToSessionStatus = (sessionId, callback) => {
+  const statusRef = ref(database, `sessions/${sessionId}/status`);
+  const unsubscribe = onValue(statusRef, (snapshot) => {
+    const status = snapshot.val();
+    callback(status || {
+      userOnline: false,
+      agentOnline: false,
+      agentTyping: false
+    });
+  });
+  
+  return unsubscribe;
+};
+
+const updateSessionStatus = async (sessionId, statusUpdates) => {
+  const statusRef = ref(database, `sessions/${sessionId}/status`);
+  await set(statusRef, {
+    ...statusUpdates,
+    lastUpdated: serverTimestamp()
+  });
+};
+
+const markMessagesAsRead = async (sessionId, messageIds) => {
+  if (!messageIds || messageIds.length === 0) return;
+  
+  for (const messageId of messageIds) {
+    const messageRef = ref(database, `sessions/${sessionId}/messages/${messageId}/read`);
+    await set(messageRef, true);
+  }
+};
+
 const MessagesPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   
+  // Original MessagesPage state
   const [messages, setMessages] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -222,6 +344,21 @@ const MessagesPage = () => {
     scheduledDate: ''
   });
 
+  // Live Chat state
+  const [sessions, setSessions] = useState({});
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [chatMessage, setChatMessage] = useState("");
+  const [isAgent, setIsAgent] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [agentName, setAgentName] = useState("");
+  const chatMessagesEndRef = useRef(null);
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [sessionFilter, setSessionFilter] = useState('all');
+  const [chatStatus, setChatStatus] = useState('online');
+  const [chatLoading, setChatLoading] = useState(true);
+  const [mobileChatMenuAnchor, setMobileChatMenuAnchor] = useState(null);
+  const [sessionMessages, setSessionMessages] = useState({});
+
   const recipientTypes = [
     { value: 'all', label: 'All Parents', icon: <GroupIcon /> },
     { value: 'grade', label: 'By Grade', icon: <SchoolIcon /> },
@@ -237,15 +374,71 @@ const MessagesPage = () => {
   useEffect(() => {
     fetchMessages();
     fetchNotifications();
+    
+    // Check if user is authenticated as agent
+    const agentStatus = localStorage.getItem('isAgent') === 'true';
+    const savedAgentName = localStorage.getItem('agentName') || 'Support Agent';
+    setIsAgent(agentStatus);
+    setAgentName(savedAgentName);
+    
+    if (agentStatus) {
+      // Listen for active chat sessions
+      const unsubscribe = listenToSessions((data) => {
+        setSessions(data);
+        setChatLoading(false);
+        
+        // Calculate unread counts for each session
+        const counts = {};
+        if (data) {
+          Object.keys(data).forEach(sessionId => {
+            const session = data[sessionId];
+            const userMessages = session.messages ? 
+              Object.values(session.messages).filter(msg => msg.sender === 'user' && !msg.read) : 
+              [];
+            
+            counts[sessionId] = userMessages.length;
+          });
+          setUnreadCounts(counts);
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
   }, []);
+
+  // Listen to messages for the selected session
+  useEffect(() => {
+    if (!selectedSession) return;
+    
+    const unsubscribe = listenToSessionMessages(selectedSession, (messageList) => {
+      setSessionMessages(prev => ({
+        ...prev,
+        [selectedSession]: messageList
+      }));
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [selectedSession]);
 
   useEffect(() => {
     scrollToBottom();
   }, [selectedMessage?.replies]);
 
+  useEffect(() => {
+    scrollToChatBottom();
+  }, [sessionMessages, selectedSession]);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  const scrollToChatBottom = useCallback(() => {
+    chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   const fetchMessages = async () => {
     setLoading(true);
@@ -406,16 +599,79 @@ const MessagesPage = () => {
     setMobileMenuAnchor(null);
   };
 
-  const filteredMessages = messages.filter(message => {
-    const matchesSearch = message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                     message.preview.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                     message.sender.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || message.type === filterType;
-    return matchesSearch && matchesType;
-  });
+  // Live Chat functions
+  const selectSession = (sessionId) => {
+    setSelectedSession(sessionId);
+    setMobileChatMenuAnchor(null);
+    
+    // Mark agent as online for this session
+    updateSessionStatus(sessionId, { agentOnline: true });
+    
+    // Mark all user messages in this session as read
+    if (sessions[sessionId] && sessions[sessionId].messages) {
+      const unreadMessageIds = Object.entries(sessions[sessionId].messages)
+        .filter(([msgId, msg]) => msg.sender === 'user' && !msg.read)
+        .map(([msgId]) => msgId);
+      
+      if (unreadMessageIds.length > 0) {
+        markMessagesAsRead(sessionId, unreadMessageIds);
+      }
+    }
+    
+    // Reset unread count for this session
+    setUnreadCounts(prev => ({
+      ...prev,
+      [sessionId]: 0
+    }));
+  };
 
-  const unreadMessagesCount = messages.filter(msg => msg.unread).length;
-  const unreadNotificationsCount = notifications.filter(notif => !notif.read).length;
+  const sendChatMessage = async () => {
+    if (chatMessage.trim() === "" || !selectedSession) return;
+
+    try {
+      await sendMessage(selectedSession, chatMessage.trim(), "agent", agentName);
+      
+      // Clear typing indicator
+      await updateSessionStatus(selectedSession, { agentTyping: false });
+      
+      setChatMessage("");
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setSnackbar({ open: true, message: 'Failed to send message', severity: 'error' });
+    }
+  };
+
+  const handleChatKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  };
+
+  const handleChatInputChange = (e) => {
+    setChatMessage(e.target.value);
+    
+    if (selectedSession) {
+      updateSessionStatus(selectedSession, { 
+        agentTyping: e.target.value.trim() !== "" 
+      });
+    }
+  };
+
+  const endChatSession = () => {
+    if (selectedSession && window.confirm('Are you sure you want to end this chat session?')) {
+      updateSessionStatus(selectedSession, { agentOnline: false });
+      
+      sendMessage(
+        selectedSession, 
+        `Chat session ended by ${agentName}`, 
+        "system"
+      );
+      
+      setSelectedSession(null);
+      setSnackbar({ open: true, message: 'Chat session ended', severity: 'info' });
+    }
+  };
 
   const formatTime = (timestamp) => {
     const now = new Date();
@@ -434,6 +690,77 @@ const MessagesPage = () => {
     const priorityObj = priorityTypes.find(p => p.value === priority);
     return priorityObj ? priorityObj.color : '#4caf50';
   };
+
+  // Filter sessions based on status
+  const filteredSessions = Object.keys(sessions).filter(sessionId => {
+    const session = sessions[sessionId];
+    if (!session || !session.status) return false;
+    
+    switch (sessionFilter) {
+      case 'all':
+        return true;
+      case 'active':
+        return session.status.userOnline && session.status.agentOnline;
+      case 'waiting':
+        return session.status.userOnline && !session.status.agentOnline;
+      default:
+        return true;
+    }
+  });
+
+  // Get session status text
+  const getSessionStatusText = (sessionId) => {
+    const session = sessions[sessionId];
+    if (!session || !session.status) return 'Offline';
+    
+    if (session.status.userOnline && session.status.agentOnline) return 'Active';
+    if (session.status.userOnline && !session.status.agentOnline) return 'Waiting';
+    return 'Offline';
+  };
+
+  // Get session status color
+  const getSessionStatusColor = (sessionId) => {
+    const status = getSessionStatusText(sessionId);
+    switch (status) {
+      case 'Active': return '#4caf50';
+      case 'Waiting': return '#ff9800';
+      case 'Offline': return '#9e9e9e';
+      default: return '#9e9e9e';
+    }
+  };
+
+  // Handle agent status change
+  const handleStatusChange = (newStatus) => {
+    setChatStatus(newStatus);
+    
+    Object.keys(sessions).forEach(sessionId => {
+      const session = sessions[sessionId];
+      if (session && session.status && session.status.agentOnline) {
+        updateSessionStatus(sessionId, { agentStatus: newStatus });
+      }
+    });
+  };
+
+  // Handle mobile chat menu
+  const handleMobileChatMenuOpen = (event) => {
+    setMobileChatMenuAnchor(event.currentTarget);
+  };
+
+  const handleMobileChatMenuClose = () => {
+    setMobileChatMenuAnchor(null);
+  };
+
+  const filteredMessages = messages.filter(message => {
+    const matchesSearch = message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                     message.preview.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                     message.sender.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === 'all' || message.type === filterType;
+    return matchesSearch && matchesType;
+  });
+
+  const unreadMessagesCount = messages.filter(msg => msg.unread).length;
+  const unreadNotificationsCount = notifications.filter(notif => !notif.read).length;
+  const totalUnreadChats = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
 
   if (loading && messages.length === 0) {
     return (
@@ -735,24 +1062,26 @@ const MessagesPage = () => {
               }
             }}>
               <CardContent sx={{ textAlign: 'center', p: isSmallScreen ? 2 : 3 }}>
-                <Avatar sx={{ 
-                  bgcolor: '#e65100', 
-                  mx: 'auto',
-                  mb: 2,
-                  width: isSmallScreen ? 48 : 56,
-                  height: isSmallScreen ? 48 : 56,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'scale(1.1)'
-                  }
-                }}>
-                  <PersonIcon fontSize={isSmallScreen ? "medium" : "large"} />
-                </Avatar>
+                <Badge badgeContent={totalUnreadChats} color="error">
+                  <Avatar sx={{ 
+                    bgcolor: '#e65100', 
+                    mx: 'auto',
+                    mb: 2,
+                    width: isSmallScreen ? 48 : 56,
+                    height: isSmallScreen ? 48 : 56,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'scale(1.1)'
+                    }
+                  }}>
+                    <PersonIcon fontSize={isSmallScreen ? "medium" : "large"} />
+                  </Avatar>
+                </Badge>
                 <Typography variant={isSmallScreen ? "h5" : "h4"} sx={{ fontWeight: 700, color: '#bf360c' }}>
-                  {messages.filter(m => m.type === 'personal').length}
+                  {Object.keys(sessions).length}
                 </Typography>
                 <Typography variant="body2" color="#bf360c">
-                  Personal Messages
+                  Live Chats
                 </Typography>
               </CardContent>
             </Card>
@@ -797,6 +1126,11 @@ const MessagesPage = () => {
                 <Tab label="Messages" />
                 <Tab label="Notifications" />
                 <Tab label="Announcements" />
+                <Tab label={
+                  <Badge badgeContent={totalUnreadChats} color="error">
+                    Live Chat
+                  </Badge>
+                } />
               </Tabs>
 
               <Collapse in={tabValue === 0}>
@@ -1023,6 +1357,11 @@ const MessagesPage = () => {
               <Tab label="Messages" />
               <Tab label="Notifications" />
               <Tab label="Announcements" />
+              <Tab label={
+                <Badge badgeContent={totalUnreadChats} color="error">
+                  <span>Chat</span>
+                </Badge>
+              } />
             </Tabs>
           </CardContent>
         </Card>
@@ -1354,6 +1693,429 @@ const MessagesPage = () => {
             </CardContent>
           </Card>
         </Fade>
+      )}
+
+      {/* Live Chat Tab */}
+      {tabValue === 3 && (
+        <Box sx={{ display: 'flex', height: isMobile ? 'calc(100vh - 200px)' : '70vh' }}>
+          {/* Sidebar with session list */}
+          <Box sx={{ 
+            width: isMobile && selectedSession ? 0 : (isMobile ? '100%' : 350), 
+            backgroundColor: '#fff',
+            borderRight: '1px solid #e0e0e0',
+            display: 'flex',
+            flexDirection: 'column',
+            position: isMobile ? 'fixed' : 'relative',
+            zIndex: 1,
+            height: '100%',
+            overflow: 'hidden',
+            transition: 'width 0.3s ease'
+          }}>
+            {/* Header */}
+            <Box sx={{ 
+              p: 2, 
+              borderBottom: '1px solid #e0e0e0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Live Chat Sessions
+              </Typography>
+              
+              {!isMobile && (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Chip 
+                    label={chatStatus} 
+                    size="small"
+                    onClick={() => {
+                      const nextStatus = chatStatus === 'online' ? 'away' : 
+                                      chatStatus === 'away' ? 'busy' : 'online';
+                      handleStatusChange(nextStatus);
+                    }}
+                    sx={{
+                      backgroundColor: chatStatus === 'online' ? '#4caf50' : 
+                                     chatStatus === 'away' ? '#ff9800' : '#f44336',
+                      color: 'white',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8
+                      }
+                    }}
+                  />
+                </Box>
+              )}
+              
+              {isMobile && (
+                <IconButton onClick={handleMobileChatMenuOpen}>
+                  <MoreVertIcon />
+                </IconButton>
+              )}
+            </Box>
+            
+            {/* Filter tabs */}
+            <Box sx={{ borderBottom: '1px solid #e0e0e0' }}>
+              <Tabs
+                value={sessionFilter}
+                onChange={(e, newValue) => setSessionFilter(newValue)}
+                variant="fullWidth"
+                size="small"
+              >
+                <Tab label="All" value="all" />
+                <Tab label="Active" value="active" />
+                <Tab label="Waiting" value="waiting" />
+              </Tabs>
+            </Box>
+            
+            {/* Sessions list */}
+            <Box sx={{ flex: 1, overflow: 'auto', p: 1 }}>
+              {filteredSessions.length === 0 ? (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  height: '50%',
+                  pt: 4
+                }}>
+                  <PersonIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                  <Typography variant="body2" color="#ccc" align="center">
+                    {sessionFilter === 'all' ? 'No chat sessions yet' : 
+                     sessionFilter === 'active' ? 'No active sessions' : 'No waiting sessions'}
+                  </Typography>
+                </Box>
+              ) : (
+                filteredSessions.map(sessionId => {
+                  const session = sessions[sessionId];
+                  const lastMessage = session.messages ? 
+                    Object.values(session.messages).pop() : 
+                    null;
+                  
+                  return (
+                    <Box
+                      key={sessionId}
+                      onClick={() => selectSession(sessionId)}
+                      sx={{
+                        p: 2,
+                        cursor: 'pointer',
+                        backgroundColor: selectedSession === sessionId ? '#f5f5f5' : 'transparent',
+                        '&:hover': {
+                          backgroundColor: '#f0f0f0'
+                        },
+                        borderBottom: '1px solid #e0e0e0',
+                        borderRadius: 1,
+                        mb: 1
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Badge 
+                          badgeContent={unreadCounts[sessionId] || 0} 
+                          color="error"
+                          sx={{ mr: 1 }}
+                        >
+                          <Avatar sx={{ 
+                            width: 36, 
+                            height: 36, 
+                            fontSize: 14,
+                            fontWeight: 600,
+                            backgroundColor: getSessionStatusColor(sessionId)
+                          }}>
+                            U
+                          </Avatar>
+                        </Badge>
+                        
+                        <Box sx={{ flex: 1, ml: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            Session {sessionId.substring(0, 8)}...
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#666' }}>
+                            {getSessionStatusText(sessionId)}
+                          </Typography>
+                        </Box>
+                        
+                        {(unreadCounts[sessionId] || 0) > 0 && (
+                          <Chip 
+                            label={unreadCounts[sessionId]} 
+                            size="small"
+                            color="error"
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                      </Box>
+                      
+                      {lastMessage && (
+                        <Typography variant="caption" sx={{ 
+                          color: '#666',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: 'block'
+                        }}>
+                          {lastMessage.sender === 'user' ? 'User: ' : 'You: '}
+                          {lastMessage.text.substring(0, 40)}
+                          {lastMessage.text.length > 40 ? '...' : ''}
+                        </Typography>
+                      )}
+                    </Box>
+                  );
+                })
+              )}
+            </Box>
+          </Box>
+
+          {/* Chat panel */}
+          <Box sx={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column',
+            backgroundColor: '#fff',
+            position: 'relative',
+            height: '100%',
+            opacity: selectedSession ? 1 : 0.7,
+            transition: 'opacity 0.3s ease'
+          }}>
+            {selectedSession ? (
+              <>
+                {/* Chat header */}
+                <Box sx={{ 
+                  p: 2, 
+                  borderBottom: '1px solid #e0e0e0',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  backgroundColor: '#2e7d32',
+                  color: 'white'
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {isMobile && (
+                      <IconButton 
+                        onClick={() => setSelectedSession(null)}
+                        sx={{ color: '#fff', mr: 1 }}
+                      >
+                        <ArrowBackIcon />
+                      </IconButton>
+                    )}
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      Session {selectedSession.substring(0, 8)}...
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#e8f5e9', ml: 1 }}>
+                      {agentName}
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Chip 
+                      label={chatStatus} 
+                      size="small"
+                      onClick={() => {
+                        const nextStatus = chatStatus === 'online' ? 'away' : 
+                                        chatStatus === 'away' ? 'busy' : 'online';
+                        handleStatusChange(nextStatus);
+                      }}
+                      sx={{
+                        backgroundColor: chatStatus === 'online' ? '#4caf50' : 
+                                       chatStatus === 'away' ? '#ff9800' : '#f44336',
+                        color: 'white',
+                        cursor: 'pointer',
+                        mr: 1
+                      }}
+                    />
+                    
+                    <IconButton 
+                      onClick={endChatSession}
+                      sx={{ color: '#fff' }}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+                
+                {/* Messages area */}
+                <Box sx={{ 
+                  flex: 1, 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }}>
+                  <Box sx={{ 
+                    flex: 1, 
+                    overflowY: 'auto', 
+                    p: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2
+                  }}>
+                    {sessionMessages[selectedSession] ? (
+                      sessionMessages[selectedSession].map((message) => (
+                        <Box
+                          key={message.id}
+                          sx={{
+                            alignSelf: message.sender === 'user' ? 'flex-start' : 'flex-end',
+                            maxWidth: '80%',
+                            display: 'flex',
+                            flexDirection: 'column'
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 2,
+                              backgroundColor: message.sender === 'user' ? '#e8f5e9' : '#2e7d32',
+                              color: message.sender === 'user' ? '#333' : '#fff',
+                              wordBreak: 'break-word',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                            }}
+                          >
+                            <Typography variant="body2">
+                              {message.text}
+                            </Typography>
+                          </Box>
+                          
+                          <Typography variant="caption" sx={{ 
+                            color: '#666',
+                            mt: 0.5,
+                            alignSelf: message.sender === 'user' ? 'flex-start' : 'flex-end'
+                          }}>
+                            {message.senderName && `${message.senderName} • `}
+                            {formatTime(message.timestamp)}
+                          </Typography>
+                        </Box>
+                      ))
+                    ) : (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        height: '100%'
+                      }}>
+                        <Typography variant="body2" color="#ccc">
+                          No messages yet. Start the conversation!
+                        </Typography>
+                      </Box>
+                    )}
+                    <div ref={chatMessagesEndRef} />
+                  </Box>
+                  
+                  {/* Typing indicator */}
+                  {sessions[selectedSession]?.status?.userTyping && (
+                    <Box sx={{ 
+                      p: 2, 
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <Box sx={{ 
+                        p: 1.5,
+                        borderRadius: 2,
+                        backgroundColor: '#f5f5f5',
+                        alignSelf: 'flex-start'
+                      }}>
+                        <Typography variant="body2" sx={{ color: '#666', fontStyle: 'italic' }}>
+                          User is typing...
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+                
+                {/* Message input */}
+                <Box sx={{ 
+                  p: 2, 
+                  borderTop: '1px solid #e0e0e0',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 1
+                }}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    maxRows={4}
+                    placeholder="Type your response..."
+                    value={chatMessage}
+                    onChange={handleChatInputChange}
+                    onKeyPress={handleChatKeyPress}
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2
+                      }
+                    }}
+                  />
+                  <Button 
+                    variant="contained" 
+                    endIcon={<SendIcon />}
+                    onClick={sendChatMessage}
+                    disabled={!chatMessage.trim()}
+                    sx={{
+                      backgroundColor: '#2e7d32',
+                      '&:hover': {
+                        backgroundColor: '#1b5e20'
+                      },
+                      '&:disabled': {
+                        backgroundColor: '#ccc'
+                      }
+                    }}
+                  >
+                    Send
+                  </Button>
+                </Box>
+              </>
+            ) : (
+              /* No session selected state */
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                height: '100%',
+                textAlign: 'center',
+                p: 3
+              }}>
+                <GroupIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                <Typography variant="h6" color="#666" gutterBottom>
+                  No Chat Selected
+                </Typography>
+                <Typography variant="body2" color="#999">
+                  {filteredSessions.length > 0 
+                    ? 'Select a chat session from the sidebar to start messaging'
+                    : 'No active chat sessions available'
+                  }
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          
+          {/* Mobile chat menu */}
+          <Menu
+            anchorEl={mobileChatMenuAnchor}
+            open={Boolean(mobileChatMenuAnchor)}
+            onClose={handleMobileChatMenuClose}
+            PaperProps={{
+              sx: { width: 200 }
+            }}
+          >
+            <MenuItem onClick={() => { setSessionFilter('all'); handleMobileChatMenuClose(); }}>
+              All Sessions
+            </MenuItem>
+            <MenuItem onClick={() => { setSessionFilter('active'); handleMobileChatMenuClose(); }}>
+              Active Sessions
+            </MenuItem>
+            <MenuItem onClick={() => { setSessionFilter('waiting'); handleMobileChatMenuClose(); }}>
+              Waiting Sessions
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={() => { handleStatusChange('online'); handleMobileChatMenuClose(); }}>
+              <Chip label="Online" size="small" sx={{ backgroundColor: '#4caf50', color: 'white', mr: 1 }} />
+            </MenuItem>
+            <MenuItem onClick={() => { handleStatusChange('away'); handleMobileChatMenuClose(); }}>
+              <Chip label="Away" size="small" sx={{ backgroundColor: '#ff9800', color: 'white', mr: 1 }} />
+            </MenuItem>
+            <MenuItem onClick={() => { handleStatusChange('busy'); handleMobileChatMenuClose(); }}>
+              <Chip label="Busy" size="small" sx={{ backgroundColor: '#f44336', color: 'white', mr: 1 }} />
+            </MenuItem>
+          </Menu>
+        </Box>
       )}
 
       {/* Compose Message Dialog */}

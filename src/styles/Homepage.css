@@ -974,18 +974,6 @@
   flex-wrap: nowrap !important;
 }
 
-@media (max-width: 280px) {
-  .cta-buttons .btn {
-    min-width: 80px;
-    padding: 5px 8px;
-    font-size: 0.6rem;
-  }
-  
-  .cta-buttons {
-    gap: 5px;
-  }
-}
-
 /* Button hover effects */
 .homepage-hero-buttons .btn:hover {
   transform: translateY(-3px);

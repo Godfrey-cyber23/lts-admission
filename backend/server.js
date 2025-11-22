@@ -4,6 +4,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB, { supabase } from './src/config/db.js';
+import aiAssistantRoutes from './src/api/ai-assistant.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -49,6 +50,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+app.use('/api/ai', aiAssistantRoutes);
 
 // Import and use routes with error handling
 const initializeRoutes = async () => {

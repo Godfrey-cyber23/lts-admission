@@ -65,7 +65,7 @@ const Sitemap = () => {
 
     const contactInfo = {
         address: "St. Bonaventure University, Makeni Area, Lusaka, Zambia",
-        email: "info@literacytree.edu",
+        email: "peggynanfukwe@gmail.com",
         phones: ["+260 977-845317", "+260 966-845317", "+260 971-935653"]
     };
 

@@ -47,11 +47,10 @@
 }
 
 /* Hero Section */
-/* Programs Hero Section with Sliding Background */
 .programs-hero {
   position: relative;
-  height: 90vh;
-  min-height: 600px;
+  height: 70vh;
+  min-height: 500px;
   max-height: 800px;
   overflow: hidden;
 }
@@ -143,107 +142,91 @@
   transform: scale(1.2);
 }
 
-/* Responsive Adjustments */
-@media (max-width: 1024px) {
-  .programs-hero {
-    height: 80vh;
-    min-height: 500px;
-  }
-}
-
-@media (max-width: 768px) {
-  .programs-hero {
-    height: 70vh;
-    min-height: 450px;
-  }
-  
-  .hero-title {
-    margin-bottom: 1rem;
-  }
-  
-  .hero-subtitle {
-    margin-bottom: 2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .programs-hero {
-    height: 65vh;
-    min-height: 400px;
-  }
-}
-
-/* Curriculum Approach */
-.curriculum-approach {
+/* School Brief */
+.school-brief {
   background-color: var(--color-white);
+  padding: 4rem 0;
 }
 
-.approach-grid {
-  display: flex;
-  padding-top: 3rem;
-  padding-bottom: 3rem;
-  flex-direction: column;
-  gap: 40px;
-}
-
-@media (min-width: 992px) {
-  .approach-grid {
-    flex-direction: row;
-    align-items: center;
-  }
-}
-
-.approach-text {
-  flex: 1;
-}
-
-.program-section-title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  padding-top: 50px;
+.brief-content {
+  max-width: 800px;
+  margin: 0 auto;
   text-align: center;
-  color: var(--color-accent);
+}
+
+.brief-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
   margin-bottom: 1.5rem;
   font-family: var(--font-heading);
 }
 
-.approach-description {
+.brief-description {
   font-size: 1.1rem;
   line-height: 1.7;
-  margin-bottom: 1.5rem;
-  text-justify: distribute;
   color: var(--color-text);
 }
 
-.approach-image {
-  flex: 1;
-  display: flex;
-  border-radius: var(--border-radius);
-  overflow: hidden;
-  box-shadow: var(--shadow-medium);
+/* Curriculum Philosophy */
+.curriculum-philosophy {
+  background-color: var(--color-gray);
+  padding: 4rem 0;
 }
 
-.approach-carousel {
-  border-radius: var(--border-radius);
+.philosophy-content {
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-.carousel-image {
-  width: 100%;
-  height: 400px;
-  object-fit: cover;
+.philosophy-description {
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--color-text);
+}
+
+.philosophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.philosophy-item {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow-small);
+  transition: transform var(--transition-medium);
+}
+
+.philosophy-item:hover {
+  transform: translateY(-5px);
+}
+
+.philosophy-item h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.philosophy-item p {
+  font-size: 0.95rem;
+  color: var(--color-text-light);
 }
 
 /* Main Programs */
 .main-programs {
-  background-color: var(--color-gray);
-  padding-bottom: 3rem;
+  background-color: var(--color-white);
+  padding: 4rem 0;
 }
 
 .programs-grid {
   display: grid;
-  gap: 30px; /* Reduced from 40px */
+  gap: 30px;
   grid-template-columns: 1fr;
-  padding-bottom: 30px; /* Reduced from 40px */
 }
 
 @media (min-width: 768px) {
@@ -388,14 +371,13 @@
 
 /* Special Programs */
 .special-programs {
-  background-color: var(--color-white);
-  padding-bottom: 3rem;
+  background-color: var(--color-gray);
+  padding: 4rem 0;
 }
 
 .special-programs-grid {
   display: grid;
   gap: 30px;
-  padding-bottom: 30px;
   grid-template-columns: 1fr;
 }
 
@@ -406,7 +388,7 @@
 }
 
 .special-program-card {
-  background-color: var(--color-gray);
+  background-color: var(--color-white);
   border-radius: var(--border-radius);
   padding: 25px;
   box-shadow: var(--shadow-small);
@@ -459,6 +441,229 @@
   position: absolute;
   left: 0;
   font-weight: bold;
+}
+
+/* Academic Support */
+.academic-support {
+  background-color: var(--color-white);
+  padding: 4rem 0;
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.support-card {
+  background-color: var(--color-gray);
+  border-radius: var(--border-radius);
+  padding: 25px;
+  box-shadow: var(--shadow-small);
+  text-align: center;
+  transition: transform var(--transition-medium);
+}
+
+.support-card:hover {
+  transform: translateY(-5px);
+}
+
+.support-icon {
+  font-size: 2rem;
+  color: var(--color-primary);
+  margin-bottom: 15px;
+}
+
+.support-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.support-description {
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+/* Extra-Curricular Activities */
+.extra-curricular {
+  background-color: var(--color-gray);
+  padding: 4rem 0;
+}
+
+.activities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.activity-card {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  padding: 25px;
+  box-shadow: var(--shadow-small);
+  text-align: center;
+  transition: transform var(--transition-medium);
+}
+
+.activity-card:hover {
+  transform: translateY(-5px);
+}
+
+.activity-icon {
+  font-size: 2rem;
+  color: var(--color-primary);
+  margin-bottom: 15px;
+}
+
+.activity-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.activity-description {
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+/* Assessment Approach */
+.assessment-approach {
+  background-color: var(--color-white);
+  padding: 4rem 0;
+}
+
+.assessment-card {
+  background-color: var(--color-gray);
+  border-radius: var(--border-radius);
+  padding: 30px;
+  box-shadow: var(--shadow-small);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.assessment-description {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.assessment-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.highlight-item {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow-small);
+}
+
+.highlight-item h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.highlight-item p {
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+/* Program Policies */
+.program-policies {
+  background-color: var(--color-gray);
+  padding: 4rem 0;
+}
+
+.policies-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.policy-section {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-small);
+  transition: transform var(--transition-medium);
+}
+
+.policy-section:hover {
+  transform: translateY(-5px);
+}
+
+.policy-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.policy-description {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+/* Program Events */
+.program-events {
+  background-color: var(--color-white);
+  padding: 4rem 0;
+}
+
+.events-timeline {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.event-item {
+  display: flex;
+  margin-bottom: 30px;
+  background-color: var(--color-gray);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-small);
+}
+
+.event-date {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+}
+
+.event-content {
+  padding: 20px;
+  flex: 1;
+}
+
+.event-content h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.event-content p {
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  line-height: 1.6;
 }
 
 /* CTA Section */
@@ -514,13 +719,13 @@
 }
 
 .btn-light:hover {
-  background-color: red;
+  background-color: var(--color-accent);
   transform: translateY(-2px);
   box-shadow: var(--shadow-medium);
 }
 
 .btn-outline-light {
-  background-color: red;
+  background-color: transparent;
   color: var(--color-white);
   border: 2px solid var(--color-white);
 }
@@ -532,42 +737,55 @@
   box-shadow: var(--shadow-medium);
 }
 
+/* Section Title */
+.program-section-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--color-accent);
+  margin-bottom: 1.5rem;
+  font-family: var(--font-heading);
+}
+
 /* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .programs-hero {
+    height: 80vh;
+    min-height: 500px;
+  }
+}
+
 @media (max-width: 768px) {
   .programs-hero {
-    height: 50vh;
-    min-height: 400px;
+    height: 70vh;
+    min-height: 450px;
   }
   
   .hero-title {
-    font-size: 2.2rem;
+    margin-bottom: 1rem;
   }
   
   .hero-subtitle {
-    font-size: 1.1rem;
+    margin-bottom: 2rem;
   }
   
-  .section-title {
+  .program-section-title {
     font-size: 1.8rem;
   }
   
-  .program-card {
-    max-width: 100%;
+  .event-item {
+    flex-direction: column;
   }
   
-  .cta-title {
-    font-size: 1.8rem;
-  }
-  
-  .cta-subtitle {
-    font-size: 1.1rem;
+  .event-date {
+    min-width: auto;
   }
 }
 
 @media (max-width: 576px) {
   .programs-hero {
-    height: 45vh;
-    min-height: 350px;
+    height: 65vh;
+    min-height: 400px;
   }
   
   .hero-title {

@@ -12,7 +12,6 @@ import eventRoutes from './eventRoutes.js';
 
 const router = Router();
 
-// Add route validation middleware
 router.use((req, res, next) => {
   console.log(`Incoming path: ${req.path}`);
   next();

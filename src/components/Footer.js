@@ -43,8 +43,8 @@ const Footer = () => {
                             </li>
                             <li>
                                 <FaEnvelope className="icon" />
-                                <a href="mailto:info@literacytree.edu">
-                                    info@literacytree.edu
+                                <a href="mailto:peggynanfukwe@gmail.com">
+                                    peggynanfukwe@gmail.com
                                 </a>
                             </li>
                             <li>
@@ -84,16 +84,16 @@ const Footer = () => {
                     <div className="footer-section">
                         <h3>Connect With Us</h3>
                         <div className="social-links">
-                            <a href="https://facebook.com" aria-label="Facebook">
+                            <a href="https://web.facebook.com/profile.php?id=100054527196325" aria-label="Facebook">
                                 <FaFacebook />
                             </a>
-                            <a href="https://tiktok.com" aria-label="TikTok">
+                            <a href="https://www.tiktok.com/@literacy.tree.scho?lang=en" aria-label="TikTok">
                                 <FaTiktok />
                             </a>
-                            <a href="https://instagram.com" aria-label="Instagram">
+                            <a href="https://www.instagram.com/literacytreeschool/" aria-label="Instagram">
                                 <FaInstagram />
                             </a>
-                            <a href="https://youtube.com" aria-label="Youtube">
+                            <a href="https://www.youtube.com/@LiteracyTreeSchool" aria-label="Youtube">
                                 < FaYoutube />
                             </a>
                         </div>

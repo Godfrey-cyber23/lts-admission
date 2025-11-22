@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useTheme } from './styles/themes';
+import { useTheme } from '../styles/themes';
 
 const AdmissionForm = () => {
     const theme = useTheme();
@@ -996,7 +996,7 @@ const SuccessMessage = ({ theme }) => {
                     Need Help?
                 </h3>
                 <p style={{ marginBottom: theme.sizes.spacing.sm }}>
-                    <strong>Email:</strong> admissions@literacytree.edu
+                    <strong>Email:</strong> peggynanfukwe@gmail.com
                 </p>
                 <p>
                     <strong>Phone:</strong> (123) 456-7890

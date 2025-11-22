@@ -88,7 +88,7 @@ export class ErrorBoundary extends React.Component {
               Refresh Page
             </button>
             <p style={styles.contact}>
-              Need help? Contact admissions@literacytree.edu
+              Need help? Contact peggynanfukwe@gmail.com
             </p>
           </div>
         </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Link, useLocation } from 'react-router-dom';
 import CustomChat from './components/CustomChat';
-import useTawkTo from './hooks/useTawkTo'; // Make sure this is the updated hook
+import useTawkTo from './hooks/useTawkTo';
 import { ThemeProvider } from './styles/themes';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { PaymentProvider } from './context/PaymentProvider';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import AppRoutes from './routes';
@@ -20,7 +21,7 @@ function AppContent() {
   // Check if current route is an admin or dashboard route
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isDashboardRoute = location.pathname.startsWith('/dashboard');
-  
+
   // Don't show UI elements on admin or dashboard routes
   const shouldShowUI = !isAdminRoute && !isDashboardRoute;
 
@@ -74,7 +75,7 @@ function AppContent() {
                     <p className="school-motto">"To teach is to touch a life forever"</p>
                   </div>
                 </div>
-                
+
                 <div className="mobile-menu-wrapper">
                   <button
                     className={`hamburger-button ${isMobileMenuOpen ? 'open' : ''}`}
@@ -125,14 +126,14 @@ function AppContent() {
               </div>
             )}
           </button>
-          
+
           <CustomChat isOpen={isChatOpen} onClose={closeChat} />
         </>
       )}
 
       {/* Conditionally render footer - don't show on admin or dashboard routes */}
       {shouldShowUI && <Footer />}
-      
+
       <ScrollToTop />
     </div>
   );
@@ -141,11 +142,13 @@ function AppContent() {
 // Custom NavLink component for active styling
 function NavLink({ to, children, className, onClick }) {
   const location = useLocation();
-  const isActive = location.pathname === to;
-  
+  // Use exact matching for home, and startsWith for other routes
+  const isActive = location.pathname === to ||
+    (to !== "/" && location.pathname.startsWith(to));
+
   return (
-    <Link 
-      to={to} 
+    <Link
+      to={to}
       className={`nav-link ${isActive ? 'active' : ''} ${className || ''}`}
       onClick={onClick}
     >
@@ -158,11 +161,13 @@ function NavLink({ to, children, className, onClick }) {
 function App() {
   return (
     <ThemeProvider>
-      <ErrorBoundary>
-        <Router>
-          <AppContent />
-        </Router>
-      </ErrorBoundary>
+      <PaymentProvider>
+        <ErrorBoundary>
+          <Router>
+            <AppContent />
+          </Router>
+        </ErrorBoundary>
+      </PaymentProvider>
     </ThemeProvider>
   );
 }

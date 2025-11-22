@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import AdmissionForm from './AdmissionForm';
+import EnrollmentFlow from './components/EnrollmentFlow';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
@@ -26,14 +26,17 @@ import ProfilePage from './pages/admins/ProfilePage';
 import AcademicPage from './pages/admins/AcademicPage';
 import FinancePage from './pages/admins/FinancePage';
 import MessagesPage from './pages/admins/MessagesPage';
-import PagesManagement from './pages/admins/PagesManagement'; 
+import PagesManagement from './pages/admins/PagesManagement';
+import Calendar from './components/Calendar'; 
+import Faculty from './components/Faculty';
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
-      <Route path="/admission" element={<AdmissionForm />} />
+      {/* Updated admission route to use EnrollmentFlow */}
+      <Route path="/admission" element={<EnrollmentFlow />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/programs" element={<ProgramsPage />} />
@@ -41,6 +44,8 @@ const AppRoutes = () => {
       <Route path="/sitemap" element={<SiteMap />} />
       <Route path="/gallery" element={<PhotoGallery />} />
       <Route path="/faq" element={<FaqPage />} />
+      <Route path="/calendar" element={<Calendar />} /> 
+      <Route path="/faculty" element={<Faculty />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -1,119 +1,46 @@
-/* src/styles/global.css */
+/* --- CSS Variables (Make sure these are in your file) --- */
 :root {
-  /* Color Variables */
   --color-primary: #2c5e3a;
   --color-primary-dark: #1a3a27;
   --color-primary-light: #e8f5e9;
   --color-secondary: #f5a623;
   --color-accent: #8bc34a;
-  --color-text: #333333;
-  --color-text-light: #5a5a5a;
   --color-white: #ffffff;
-  --color-gray: #e0e0e0;
   --color-border: #d1d1d1;
-  --color-error: #d32f2f;
-
-  /* Font Variables */
-  --font-main: 'Open Sans', sans-serif;
-  --font-heading: 'Merriweather', serif;
-  --font-decorative: 'Schoolbell', cursive;
-
-  /* Size Variables */
-  --border-radius: 8px;
-  --form-max-width: 800px;
-  --header-height: 80px;
-  --footer-height: 60px;
-
-  /* Shadow Variables */
-  --shadow-small: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
-  --shadow-large: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
-/* Base Styles */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* --- Header & Navigation Styles --- */
 
-body {
-  font-family: var(--font-main);
-  color: var(--color-text);
-  line-height: 1.6;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  color: var(--color-text);
-  margin-bottom: 1rem;
-  line-height: 1.2;
-}
-
-h1 {
-  font-size: clamp(2.5rem, 5vw, 3.5rem);
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin-bottom: 1.5rem;
-}
-
-h2 {
-  font-size: clamp(2rem, 4vw, 2.75rem);
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 1.25rem;
-  position: relative;
-  padding-bottom: 0.5rem;
-}
-
-h2:after {
-  content: '';
-  display: block;
-  width: 80px;
-  height: 4px;
-  background: var(--color-secondary);
-  margin: 0.75rem auto 0;
-  border-radius: 2px;
-}
-
-h3 {
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-/* Layout Components */
+/* App Layout */
 .literacy-tree-app {
   display: flex;
-  min-height: 100vh;
   flex-direction: column;
+  min-height: 100vh;
 }
 
-.literacy-tree-app .app-content {
-  width: 100%;
-  flex: 1;
+.app-content {
+  flex-grow: 1;
 }
 
 /* Header Container */
 .app-header {
   background-color: var(--color-primary);
-  padding: 0;
   position: sticky;
   top: 0;
   z-index: 1000;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 .app-header.scrolled {
-  box-shadow: var(--shadow-medium);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .header-main {
-  padding: 0;
+  padding: 15px 0;
 }
 
 .container {
-  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -123,28 +50,21 @@ h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 0;
 }
 
-/* Branding Section - Left Side */
+/* Branding Section */
 .header-branding-wrapper {
   display: flex;
   align-items: center;
   gap: 15px;
-  flex: 1;
 }
 
 .school-logo {
-  width: 70px;
-  height: 70px;
+  width: 50px;
+  height: 50px;
   object-fit: cover;
   border-radius: 50%;
   border: 2px solid var(--color-white);
-}
-
-.school-branding {
-  display: flex;
-  flex-direction: column;
 }
 
 .school-branding h1 {
@@ -156,20 +76,17 @@ h3 {
 }
 
 .school-motto {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   margin: 0;
   color: var(--color-white);
-  font-style: italic;
   opacity: 0.9;
 }
 
-/* Navigation Links - Right Side */
+/* Navigation Links */
 .nav-links {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   align-items: center;
-  justify-content: flex-end;
-  flex: 1;
 }
 
 .nav-link {
@@ -177,35 +94,32 @@ h3 {
   text-decoration: none;
   font-weight: 600;
   padding: 8px 15px;
-  border-radius: 30px;
-  text-align: center;
+  border-radius: 8px; /* <-- INCREASED BORDER RADIUS */
   transition: all 0.3s ease;
-  position: relative;
-  white-space: nowrap;
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+  background-color: var(--color-primary-light); /* <-- CHANGED HOVER COLOR */
+  color: var(--color-primary-dark); /* Added for better contrast */
 }
 
 .nav-link.active {
   background-color: var(--color-secondary);
   color: var(--color-primary-dark);
-  font-weight: 700;
 }
 
-.nav-link.enroll-btn {
+/* Special Button Styles */
+.enroll-btn {
   background-color: var(--color-secondary);
   color: var(--color-primary-dark) !important;
 }
 
-.nav-link.login-btn {
+.login-btn {
   background-color: var(--color-accent);
   color: var(--color-primary-dark) !important;
 }
 
-/* Mobile Menu Toggle */
+/* Mobile Menu Styles */
 .mobile-menu-wrapper {
   display: none;
 }
@@ -214,25 +128,19 @@ h3 {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 10px;
-  z-index: 1001;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
 }
 
 .menu-icon {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   color: var(--color-white);
-  transition: all 0.3s ease;
 }
 
-.hamburger-button.open .menu-icon {
-  color: var(--color-primary-dark);
-}
+/* --- Responsive Styles --- */
 
-/* Mobile Styles */
 @media (max-width: 992px) {
   .mobile-menu-wrapper {
     display: block;
@@ -244,15 +152,13 @@ h3 {
     right: -100%;
     height: 100vh;
     width: 280px;
-    max-width: 80%;
-    background-color: var(--color-white);
+    background-color: var(--color-primary);
     flex-direction: column;
     align-items: flex-start;
-    padding: 100px 30px 30px;
-    box-shadow: var(--shadow-large);
+    padding: 80px 30px 30px;
     transition: right 0.4s ease;
-    z-index: 1000;
-    overflow-y: auto;
+    z-index: 999;
+    gap: 0;
   }
   
   .nav-links.mobile-open {
@@ -261,34 +167,24 @@ h3 {
   
   .nav-link {
     width: 100%;
-    padding: 12px 15px;
-    border-bottom: 1px solid var(--color-border);
-    color: var(--color-primary);
-    font-size: 1.1rem;
-    background-color: transparent;
-    border-radius: 0;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 1rem;
+    border-radius: 0; /* Kept as 0 for mobile sidebar style */
   }
   
   .nav-link:hover {
-    background-color: var(--color-primary-light);
-    color: var(--color-primary-dark);
-    transform: none;
+    background-color: rgba(255, 255, 255, 0.1); /* Reverted to subtle hover for mobile */
+    color: var(--color-white); /* Reverted text color for mobile */
   }
   
-  .nav-link.active {
-    background-color: var(--color-primary-light);
-    color: var(--color-primary-dark);
-    font-weight: 700;
-  }
-  
-  .nav-link.enroll-btn,
-  .nav-link.login-btn {
+  .enroll-btn,
+  .login-btn {
     margin-top: 15px;
-    border-radius: var(--border-radius);
     text-align: center;
   }
   
-  /* Overlay */
+  /* Overlay for mobile menu */
   .literacy-tree-app.mobile-menu-open::before {
     content: '';
     position: fixed;
@@ -297,37 +193,13 @@ h3 {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-  }
-  
-  /* Prevent body scrolling when menu is open */
-  .literacy-tree-app.mobile-menu-open {
-    overflow: hidden;
+    z-index: 998;
   }
 }
 
 @media (max-width: 768px) {
   .school-branding h1 {
-    font-size: 1.3rem;
-  }
-  
-  .school-motto {
-    font-size: 0.75rem;
-  }
-  
-  .school-logo {
-    width: 60px;
-    height: 60px;
-  }
-}
-
-@media (max-width: 480px) {
-  .header-branding-wrapper {
-    gap: 10px;
-  }
-  
-  .school-branding h1 {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
   
   .school-motto {
@@ -335,191 +207,7 @@ h3 {
   }
   
   .school-logo {
-    width: 50px;
-    height: 50px;
-  }
-}
-
-/* Chat Button Styles */
-.chat-button {
-  position: fixed;
-  bottom: 30px;
-  left: 30px;
-  z-index: 999;
-  background-color: #2E7D32;
-  color: white;
-  border: none;
-  border-radius: 50px;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 140px;
-}
-
-.chat-button:hover {
-  background-color: #1B5E20;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
-}
-
-.chat-button:active {
-  transform: translateY(1px);
-}
-
-.chat-button:disabled {
-  background-color: #81C784;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
-}
-
-/* Chat Content */
-.chat-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chat-bubble {
-  font-size: 1.2rem;
-}
-
-.chat-text {
-  font-family: var(--font-main);
-}
-
-/* Responsive adjustments for chat button */
-@media (max-width: 768px) {
-  .chat-button {
-    bottom: 20px;
-    left: 20px;
-    font-size: 0.9rem;
-    padding: 10px 20px;
-    min-width: 120px;
-  }
-}
-
-@media (max-width: 480px) {
-  .chat-button {
-    bottom: 15px;
-    left: 15px;
-    font-size: 0.8rem;
-    padding: 8px 16px;
-    min-width: 110px;
-  }
-}
-
-/* Form Elements */
-.form-container {
-  max-width: var(--form-max-width);
-  margin: 2rem auto;
-  background-color: var(--color-white);
-  padding: 2rem;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-medium);
-}
-
-input, textarea, select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  font-family: var(--font-main);
-  margin-bottom: 1rem;
-  transition: border-color 0.3s;
-}
-
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(44, 94, 58, 0.2);
-}
-
-/* Ad Container Styles */
-.google-ad-container {
-  background: #f9f9f9;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  padding: 15px;
-  text-align: center;
-  margin: 25px 0;
-}
-
-/* Responsive Ads */
-.ad-responsive {
-  width: 100%;
-  height: auto;
-}
-
-.ad-banner {
-  width: 728px;
-  height: 90px;
-  margin: 0 auto;
-}
-
-@media (max-width: 768px) {
-  .ad-banner {
-    width: 320px;
-    height: 50px;
-  }
-}
-
-/* Chat Error Message */
-.chat-error {
-  position: fixed;
-  bottom: 30px;
-  left: 30px;
-  z-index: 999;
-  background-color: #FFEBEE;
-  color: #C62828;
-  border-left: 4px solid #C62828;
-  border-radius: 4px;
-  padding: 12px 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  max-width: 300px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-  animation: slideIn 0.5s ease-out;
-  display: flex;
-  align-items: center;
-}
-
-.chat-error::before {
-  content: '⚠️';
-  margin-right: 10px;
-  font-size: 1.2rem;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Pulse animation */
-.pulse {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
+    width: 40px;
+    height: 40px;
   }
 }

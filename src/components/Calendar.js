@@ -174,7 +174,7 @@ const Calendar = () => {
 
         // Add empty cells for days before the first day of the month
         for (let i = 0; i < firstDay; i++) {
-            calendarDays.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+            calendarDays.push(<div key={`empty-${i}`} className="calendar-day calendar-empty"></div>);
         }
 
         // Add cells for each day of the month
@@ -187,14 +187,14 @@ const Calendar = () => {
             calendarDays.push(
                 <div 
                     key={day} 
-                    className={`calendar-day ${isToday ? 'today' : ''}`}
+                    className={`calendar-day ${isToday ? 'calendar-today' : ''}`}
                 >
-                    <div className="day-number">{day}</div>
-                    <div className="day-events">
+                    <div className="calendar-day-number">{day}</div>
+                    <div className="calendar-day-events">
                         {dayEvents.slice(0, 2).map(event => (
                             <div 
                                 key={event.id}
-                                className="event-indicator"
+                                className="calendar-event-indicator"
                                 style={{ backgroundColor: getEventTypeColor(event.type) }}
                                 onClick={() => handleEventClick(event)}
                                 title={event.title}
@@ -203,7 +203,7 @@ const Calendar = () => {
                             </div>
                         ))}
                         {dayEvents.length > 2 && (
-                            <div className="more-events">+{dayEvents.length - 2} more</div>
+                            <div className="calendar-more-events">+{dayEvents.length - 2} more</div>
                         )}
                     </div>
                 </div>
@@ -223,18 +223,18 @@ const Calendar = () => {
             <div className="calendar-container">
                 {/* Header */}
                 <div className="calendar-header">
-                    <div className="header-content">
+                    <div className="calendar-header-content">
                         <h1>
-                            <FaCalendarAlt className="header-icon" />
+                            <FaCalendarAlt className="calendar-header-icon" />
                             Academic Calendar {currentDate.getFullYear()}
                         </h1>
                         <p>Important dates and events for the academic year</p>
                     </div>
-                    <div className="header-actions">
-                        <button className="btn btn-secondary" onClick={downloadCalendar}>
+                    <div className="calendar-header-actions">
+                        <button className="calendar-btn calendar-btn-secondary" onClick={downloadCalendar}>
                             <FaDownload /> Download
                         </button>
-                        <button className="btn btn-secondary" onClick={printCalendar}>
+                        <button className="calendar-btn calendar-btn-secondary" onClick={printCalendar}>
                             <FaPrint /> Print
                         </button>
                     </div>
@@ -243,26 +243,26 @@ const Calendar = () => {
                 <div className="calendar-content">
                     {/* Calendar Navigation */}
                     <div className="calendar-navigation">
-                        <div className="nav-controls">
+                        <div className="calendar-nav-controls">
                             <button 
-                                className="nav-btn" 
+                                className="calendar-nav-btn" 
                                 onClick={() => navigateMonth(-1)}
                                 aria-label="Previous month"
                             >
                                 <FaChevronLeft />
                             </button>
-                            <h2 className="current-month">
+                            <h2 className="calendar-current-month">
                                 {months[currentDate.getMonth()]} {currentDate.getFullYear()}
                             </h2>
                             <button 
-                                className="nav-btn" 
+                                className="calendar-nav-btn" 
                                 onClick={() => navigateMonth(1)}
                                 aria-label="Next month"
                             >
                                 <FaChevronRight />
                             </button>
                         </div>
-                        <button className="btn btn-primary" onClick={goToToday}>
+                        <button className="calendar-btn calendar-btn-primary" onClick={goToToday}>
                             Today
                         </button>
                     </div>
@@ -273,7 +273,7 @@ const Calendar = () => {
                             <div className="calendar-grid">
                                 {/* Day headers */}
                                 {days.map(day => (
-                                    <div key={day} className="day-header">{day}</div>
+                                    <div key={day} className="calendar-day-header">{day}</div>
                                 ))}
                                 {/* Calendar days */}
                                 {renderCalendar()}
@@ -282,27 +282,27 @@ const Calendar = () => {
 
                         {/* Sidebar - Upcoming Events */}
                         <div className="calendar-sidebar">
-                            <div className="sidebar-section">
+                            <div className="calendar-sidebar-section">
                                 <h3>
-                                    <IoMdSchool className="sidebar-icon" />
+                                    <IoMdSchool className="calendar-sidebar-icon" />
                                     Upcoming Events
                                 </h3>
-                                <div className="upcoming-events">
+                                <div className="calendar-upcoming-events">
                                     {upcomingEvents.map(event => (
                                         <div 
                                             key={event.id} 
-                                            className="upcoming-event"
+                                            className="calendar-upcoming-event"
                                             onClick={() => handleEventClick(event)}
                                         >
                                             <div 
-                                                className="event-type-badge"
+                                                className="calendar-event-type-badge"
                                                 style={{ backgroundColor: getEventTypeColor(event.type) }}
                                             >
                                                 {getEventTypeLabel(event.type)}
                                             </div>
-                                            <div className="event-details">
-                                                <div className="event-title">{event.title}</div>
-                                                <div className="event-date">
+                                            <div className="calendar-event-details">
+                                                <div className="calendar-event-title">{event.title}</div>
+                                                <div className="calendar-event-date">
                                                     {event.date.toLocaleDateString('en-US', {
                                                         month: 'short',
                                                         day: 'numeric',
@@ -316,9 +316,9 @@ const Calendar = () => {
                             </div>
 
                             {/* Legend */}
-                            <div className="sidebar-section">
+                            <div className="calendar-sidebar-section">
                                 <h3>Event Types</h3>
-                                <div className="event-legend">
+                                <div className="calendar-event-legend">
                                     {Object.entries({
                                         academic: "Academic",
                                         break: "Break",
@@ -326,9 +326,9 @@ const Calendar = () => {
                                         meeting: "Meeting",
                                         ceremony: "Ceremony"
                                     }).map(([type, label]) => (
-                                        <div key={type} className="legend-item">
+                                        <div key={type} className="calendar-legend-item">
                                             <div 
-                                                className="legend-color"
+                                                className="calendar-legend-color"
                                                 style={{ backgroundColor: getEventTypeColor(type) }}
                                             ></div>
                                             <span>{label}</span>
@@ -342,15 +342,15 @@ const Calendar = () => {
 
                 {/* Event Modal */}
                 {selectedEvent && (
-                    <div className="modal-overlay" onClick={closeEventModal}>
-                        <div className="modal-content" onClick={e => e.stopPropagation()}>
-                            <div className="modal-header">
+                    <div className="calendar-modal-overlay" onClick={closeEventModal}>
+                        <div className="calendar-modal-content" onClick={e => e.stopPropagation()}>
+                            <div className="calendar-modal-header">
                                 <h3>{selectedEvent.title}</h3>
-                                <button className="close-btn" onClick={closeEventModal}>×</button>
+                                <button className="calendar-close-btn" onClick={closeEventModal}>×</button>
                             </div>
-                            <div className="modal-body">
-                                <div className="event-info">
-                                    <div className="info-item">
+                            <div className="calendar-modal-body">
+                                <div className="calendar-event-info">
+                                    <div className="calendar-info-item">
                                         <strong>Date:</strong> 
                                         {selectedEvent.date.toLocaleDateString('en-US', {
                                             weekday: 'long',
@@ -359,16 +359,16 @@ const Calendar = () => {
                                             day: 'numeric'
                                         })}
                                     </div>
-                                    <div className="info-item">
+                                    <div className="calendar-info-item">
                                         <strong>Type:</strong>
                                         <span 
-                                            className="event-type-tag"
+                                            className="calendar-event-type-tag"
                                             style={{ backgroundColor: getEventTypeColor(selectedEvent.type) }}
                                         >
                                             {getEventTypeLabel(selectedEvent.type)}
                                         </span>
                                     </div>
-                                    <div className="info-item">
+                                    <div className="calendar-info-item">
                                         <strong>Description:</strong>
                                         <p>{selectedEvent.description}</p>
                                     </div>

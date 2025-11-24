@@ -265,9 +265,9 @@ const ContactPage = () => {
   };
 
   return (
-    <div className="hero-contact-page">
+    <div className="literacy-contact-page">
       {/* Animated Hero Section with Sliding Background */}
-      <section className="contact-hero" style={{
+      <section className="literacy-contact-hero" style={{
         position: 'relative',
         height: '70vh',
         minHeight: '500px',
@@ -276,12 +276,12 @@ const ContactPage = () => {
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        color: 'var(--color-white)',
+        color: 'var(--contact-color-white)',
         overflow: 'hidden',
-        animation: 'backgroundPan 30s linear infinite'
+        animation: 'literacy-backgroundPan 30s linear infinite'
       }}>
         {/* Hero content positioned directly on image - NO OVERLAY */}
-        <div className="hero-content" style={{
+        <div className="literacy-hero-content" style={{
           position: 'absolute',
           top: '50%',
           left: '50%',
@@ -305,12 +305,12 @@ const ContactPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={isMounted ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8 }}
-            className="hero-title"
+            className="literacy-hero-title"
             style={{
               fontSize: 'clamp(2.5rem, 5vw, 4rem)',
               fontWeight: 700,
               marginBottom: '1.5rem',
-              fontFamily: 'var(--font-heading)',
+              fontFamily: 'var(--contact-font-heading)',
               lineHeight: '1.2',
               textShadow: '2px 2px 8px rgba(0, 0, 0, 0.8)',
               color: '#ffffff',
@@ -326,7 +326,7 @@ const ContactPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={isMounted ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="hero-subtitle"
+            className="literacy-hero-subtitle"
             style={{
               fontSize: 'clamp(0.85rem, 2.5vw, 1.5rem)', // Improved responsive font size
               maxWidth: '800px', // Increased max width
@@ -350,25 +350,25 @@ const ContactPage = () => {
       </section>
 
       {/* Main Content */}
-      <div className="contact-container">
+      <div className="literacy-contact-container">
         {/* Contact Info Section */}
         <motion.section
           initial={{ opacity: 0 }}
           animate={isMounted ? { opacity: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="contact-info-section"
+          className="literacy-contact-info-section"
         >
-          <h2 className="section-title">
+          <h2 className="literacy-section-title">
             <span>Our Contact Information</span>
           </h2>
 
-          <div className="contact-grid">
+          <div className="literacy-contact-grid">
             {/* Address Card */}
-            <motion.div whileHover={{ y: -5 }} className="contact-card">
-              <div className="contact-icon">
+            <motion.div whileHover={{ y: -5 }} className="literacy-contact-card">
+              <div className="literacy-contact-icon">
                 <FaMapMarkerAlt />
               </div>
-              <div className="contact-details">
+              <div className="literacy-contact-details">
                 <h3>Our Location</h3>
                 <p>St. Bonaventure University College</p>
                 <p>Makeni Area, Lusaka, Zambia</p>
@@ -376,11 +376,11 @@ const ContactPage = () => {
             </motion.div>
 
             {/* Phone Card */}
-            <motion.div whileHover={{ y: -5 }} className="contact-card">
-              <div className="contact-icon">
+            <motion.div whileHover={{ y: -5 }} className="literacy-contact-card">
+              <div className="literacy-contact-icon">
                 <FaPhone />
               </div>
-              <div className="contact-details">
+              <div className="literacy-contact-details">
                 <h3>Call Us</h3>
                 <p>Admissions: (+260) 977-845317</p>
                 <p>Main Office: (+260) 971-935653</p>
@@ -388,11 +388,11 @@ const ContactPage = () => {
             </motion.div>
 
             {/* Email Card */}
-            <motion.div whileHover={{ y: -5 }} className="contact-card">
-              <div className="contact-icon">
+            <motion.div whileHover={{ y: -5 }} className="literacy-contact-card">
+              <div className="literacy-contact-icon">
                 <FaEnvelope />
               </div>
-              <div className="contact-details">
+              <div className="literacy-contact-details">
                 <h3>Email Us</h3>
                 <p>General: kasandwe69@yahoo.co.uk</p>
                 <p>Admissions: admissions@literacytree.edu</p>
@@ -400,11 +400,11 @@ const ContactPage = () => {
             </motion.div>
 
             {/* Hours Card */}
-            <motion.div whileHover={{ y: -5 }} className="contact-card">
-              <div className="contact-icon">
+            <motion.div whileHover={{ y: -5 }} className="literacy-contact-card">
+              <div className="literacy-contact-icon">
                 <FaClock />
               </div>
-              <div className="contact-details">
+              <div className="literacy-contact-details">
                 <h3>Office Hours</h3>
                 <p>Monday-Friday: 7:30 AM - 4:30 PM</p>
                 <p>Saturday: 9:00 AM - 12:00 PM</p>
@@ -413,24 +413,24 @@ const ContactPage = () => {
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="quick-actions">
+          <div className="literacy-quick-actions">
             <h3>Quick Actions</h3>
-            <div className="quick-actions-buttons">
+            <div className="literacy-quick-actions-buttons">
               <button
                 onClick={() => sendQuickReply("I'm interested in admissions information and would like to learn more about the application process.")}
-                className="quick-action-btn"
+                className="literacy-quick-action-btn"
               >
                 📚 Admissions Info
               </button>
               <button
                 onClick={() => sendQuickReply("I'd like to schedule a school visit to tour the campus and learn more about your facilities.")}
-                className="quick-action-btn"
+                className="literacy-quick-action-btn"
               >
                 🏫 Schedule Visit
               </button>
               <button
                 onClick={() => sendQuickReply("I have a general question about school programs, fees, or enrollment process.")}
-                className="quick-action-btn"
+                className="literacy-quick-action-btn"
               >
                 ❓ General Question
               </button>
@@ -438,13 +438,13 @@ const ContactPage = () => {
           </div>
 
           {/* Social Media */}
-          <div className="social-media-section">
+          <div className="literacy-social-media-section">
             <h3>Follow Our Journey</h3>
-            <div className="social-icons">
+            <div className="literacy-social-icons">
               <motion.a
                 href="https://web.facebook.com/profile.php?id=100054527196325"
                 whileHover={{ scale: 1.1 }}
-                className="social-icon facebook"
+                className="literacy-social-icon facebook"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -454,7 +454,7 @@ const ContactPage = () => {
               <motion.a
                 href="https://www.tiktok.com/@literacy.tree.scho?lang=en"
                 whileHover={{ scale: 1.1 }}
-                className="social-icon tiktok"
+                className="literacy-social-icon tiktok"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -464,7 +464,7 @@ const ContactPage = () => {
               <motion.a
                 href="https://www.instagram.com/literacytreeschool/"
                 whileHover={{ scale: 1.1 }}
-                className="social-icon instagram"
+                className="literacy-social-icon instagram"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -474,7 +474,7 @@ const ContactPage = () => {
               <motion.a
                 href="https://www.youtube.com/@LiteracyTreeSchool"
                 whileHover={{ scale: 1.1 }}
-                className="social-icon youtube"
+                className="literacy-social-icon youtube"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -489,26 +489,26 @@ const ContactPage = () => {
           initial={{ opacity: 0 }}
           animate={isMounted ? { opacity: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="contact-form-section"
+          className="literacy-contact-form-section"
         >
-          <h2 className="section-title">
+          <h2 className="literacy-section-title">
             <span>Send Us a Message</span>
           </h2>
 
           {submitStatus === 'success' && (
-            <div className="success-message">
+            <div className="literacy-success-message">
               {submitMessage}
             </div>
           )}
 
           {submitStatus === 'error' && (
-            <div className="error-message">
+            <div className="literacy-error-message">
               {submitMessage}
             </div>
           )}
 
-          <form className="enquiry-form" onSubmit={handleSubmit}>
-            <div className="form-group">
+          <form className="literacy-enquiry-form" onSubmit={handleSubmit}>
+            <div className="literacy-form-group">
               <label htmlFor="name">Your Name *</label>
               <input
                 type="text"
@@ -517,14 +517,14 @@ const ContactPage = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Full Name"
-                className="form-input"
+                className="literacy-form-input"
                 required
                 disabled={isSubmitting}
               />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
+            <div className="literacy-form-row">
+              <div className="literacy-form-group">
                 <label htmlFor="email">Email Address *</label>
                 <input
                   type="email"
@@ -533,13 +533,13 @@ const ContactPage = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="your.email@example.com"
-                  className="form-input"
+                  className="literacy-form-input"
                   required
                   disabled={isSubmitting}
                 />
               </div>
 
-              <div className="form-group">
+              <div className="literacy-form-group">
                 <label htmlFor="phone">Phone Number</label>
                 <input
                   type="tel"
@@ -548,20 +548,20 @@ const ContactPage = () => {
                   value={formData.phone}
                   onChange={handleInputChange}
                   placeholder="(+260) XXX-XXXXXX"
-                  className="form-input"
+                  className="literacy-form-input"
                   disabled={isSubmitting}
                 />
               </div>
             </div>
 
-            <div className="form-group">
+            <div className="literacy-form-group">
               <label htmlFor="subject">Subject</label>
               <select
                 id="subject"
                 name="subject"
                 value={formData.subject}
                 onChange={handleInputChange}
-                className="form-input"
+                className="literacy-form-input"
                 disabled={isSubmitting}
               >
                 <option>Admissions Inquiry</option>
@@ -571,7 +571,7 @@ const ContactPage = () => {
               </select>
             </div>
 
-            <div className="form-group">
+            <div className="literacy-form-group">
               <label htmlFor="message">Your Message *</label>
               <textarea
                 id="message"
@@ -580,7 +580,7 @@ const ContactPage = () => {
                 onChange={handleInputChange}
                 rows="5"
                 placeholder="How can we help you? Please include any specific questions or information you'd like to know."
-                className="form-input"
+                className="literacy-form-input"
                 required
                 disabled={isSubmitting}
               ></textarea>
@@ -590,12 +590,12 @@ const ContactPage = () => {
               type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`submit-btn ${isSubmitting ? 'loading' : ''}`}
+              className={`literacy-submit-btn ${isSubmitting ? 'loading' : ''}`}
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
-                  <span className="loading-spinner"></span>
+                  <span className="literacy-loading-spinner"></span>
                   Sending...
                 </>
               ) : (
@@ -607,7 +607,7 @@ const ContactPage = () => {
 
             <p style={{
               fontSize: '0.875rem',
-              color: 'var(--color-text-light)',
+              color: 'var(--contact-color-text-light)',
               marginTop: '1rem',
               textAlign: 'center'
             }}>
@@ -621,13 +621,13 @@ const ContactPage = () => {
           initial={{ opacity: 0 }}
           animate={isMounted ? { opacity: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="map-section"
+          className="literacy-map-section"
         >
-          <h2 className="section-title">
+          <h2 className="literacy-section-title">
             <span>Find Our Campus</span>
           </h2>
 
-          <div className="map-container">
+          <div className="literacy-map-container">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2384.123456789012!2d28.12345678901234!3d-15.123456789012345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTXCsDA3JzI0LjQiUyAyOMKwMDcnMjQuNCJF!5e0!3m2!1sen!2szm!4v1234567890123!5m2!1sen!2szm"
               width="100%"
@@ -637,15 +637,15 @@ const ContactPage = () => {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               title="Literacy Tree Location Map"
-              className="map-iframe"
+              className="literacy-map-iframe"
             ></iframe>
           </div>
 
-          <div className="map-footer">
+          <div className="literacy-map-footer">
             <p>St. Bonaventure University College, Makeni Area, Lusaka, Zambia</p>
             <button
               type="button"
-              className="directions-btn"
+              className="literacy-directions-btn"
               onClick={handleGetDirections}
             >
               Get Directions

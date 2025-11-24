@@ -177,6 +177,7 @@ const EnrollmentFlow = () => {
                     <h1 style={{
                         fontFamily: theme.fonts.heading,
                         margin: 0,
+                        color: theme.colors.white,
                         fontSize: '1.8rem'
                     }}>
                         Literacy Tree School Enrollment

@@ -1,0 +1,111 @@
+{
+  "version": 2,
+  "name": "literacy-tree-school",
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "installCommand": "npm install",
+  "framework": "create-react-app",
+  
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "s-maxage=31536000,immutable"
+      },
+      "continue": true
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/build/favicon.ico"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/build/manifest.json"
+    },
+    {
+      "src": "/logo192.png",
+      "dest": "/build/logo192.png"
+    },
+    {
+      "src": "/logo512.png",
+      "dest": "/build/logo512.png"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/build/index.html"
+    }
+  ],
+  
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).(js|css)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).(ico|png|jpg|jpeg|gif|svg|webp)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    }
+  ],
+  
+  "env": {
+    "REACT_APP_EMAILJS_SERVICE_ID": "@react_app_emailjs_service_id",
+    "REACT_APP_EMAILJS_TEMPLATE_ID": "@react_app_emailjs_template_id",
+    "REACT_APP_EMAILJS_PUBLIC_KEY": "@react_app_emailjs_public_key",
+    "REACT_APP_SUPABASE_URL": "@react_app_supabase_url",
+    "REACT_APP_SUPABASE_ANON_KEY": "@react_app_supabase_anon_key",
+    "REACT_APP_CLOUDINARY_CLOUD_NAME": "@react_app_cloudinary_cloud_name",
+    "REACT_APP_CLOUDINARY_UPLOAD_PRESET": "@react_app_cloudinary_upload_preset",
+    "REACT_APP_TAWK_TO_PROPERTY_ID": "@react_app_tawk_to_property_id",
+    "REACT_APP_TAWK_TO_WIDGET_ID": "@react_app_tawk_to_widget_id",
+    "REACT_APP_GOOGLE_ANALYTICS_ID": "@react_app_google_analytics_id",
+    "REACT_APP_GOOGLE_ADSENSE_ID": "@react_app_google_adsense_id"
+  },
+  
+  "regions": ["all"],
+  "cleanUrls": true,
+  "trailingSlash": false
+}

@@ -1,7 +1,7 @@
 /* --- CSS Variables (Make sure these are in your file) --- */
 :root {
   --color-primary: #2c5e3a;
-  --color-primary-dark: #1a3a27;
+  --color-primary-dark: #05b44b;
   --color-primary-light: #e8f5e9;
   --color-secondary: #f5a623;
   --color-accent: #8bc34a;
@@ -36,7 +36,7 @@
 }
 
 .header-main {
-  padding: 15px 0;
+  padding: 2px 0;
 }
 
 .container {
@@ -94,7 +94,7 @@
   text-decoration: none;
   font-weight: 600;
   padding: 8px 15px;
-  border-radius: 8px; /* <-- INCREASED BORDER RADIUS */
+  border-radius: 20px; 
   transition: all 0.3s ease;
 }
 

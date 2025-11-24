@@ -971,6 +971,7 @@ color: var(--color-primary);
 .apply-now-btn:hover {
   background-color: var(--color-primary-dark); /* Darker on hover */
   transform: translateY(-3px);
+  color: var(--color-primary-light);
   box-shadow: var(--shadow-large);
 }
 
@@ -1673,5 +1674,3 @@ color: var(--color-primary);
 .video-thumbnail:hover .play-button {
   transform: translate(-50%, -50%) scale(1.1);
 }
-
-

@@ -39,6 +39,11 @@
   --transition-fast: 0.2s ease;
   --transition-medium: 0.3s ease;
   --transition-slow: 0.5s ease;
+
+  /* Hero Blur Variables */
+  --hero-blur-bg: rgba(11, 8, 15, 0.7);
+  --hero-blur-border: rgba(255, 255, 255, 0.1);
+  --hero-blur-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .programs-page {
@@ -86,15 +91,26 @@
   background-color: rgba(44, 94, 58, 0.7);
 }
 
-.program-hero-content {
+.hero-blur-container {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 100%;
-  max-width: 1200px;
-  padding: 0 20px;
+  width: 90%;
+  max-width: 900px;
+  padding: 3rem 2rem;
+  background: var(--hero-blur-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--hero-blur-border);
+  box-shadow: var(--hero-blur-shadow);
   z-index: 10;
+  text-align: center;
+}
+
+.program-hero-content {
+  width: 100%;
   color: var(--color-white);
   text-align: center;
 }
@@ -168,13 +184,13 @@
   color: var(--color-text);
 }
 
-/* Curriculum Philosophy */
-.curriculum-philosophy {
+/* Teaching Philosophy Section */
+.teaching-philosophy-section {
   background-color: var(--color-gray);
   padding: 4rem 0;
 }
 
-.philosophy-content {
+.philosophy-content-wrapper {
   max-width: 1000px;
   margin: 0 auto;
 }
@@ -186,13 +202,13 @@
   color: var(--color-text);
 }
 
-.philosophy-grid {
+.philosophy-items-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
 }
 
-.philosophy-item {
+.philosophy-item-card {
   background-color: var(--color-white);
   border-radius: var(--border-radius);
   padding: 20px;
@@ -201,193 +217,188 @@
   transition: transform var(--transition-medium);
 }
 
-.philosophy-item:hover {
+.philosophy-item-card:hover {
   transform: translateY(-5px);
 }
 
-.philosophy-item h3 {
+.philosophy-item-card h3 {
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--color-primary);
   margin-bottom: 10px;
 }
 
-.philosophy-item p {
+.philosophy-item-card p {
   font-size: 0.95rem;
   color: var(--color-text-light);
 }
 
-/* Main Programs */
-.main-programs {
+/* Academic Pathways Section */
+.academic-pathways-section {
   background-color: var(--color-white);
   padding: 4rem 0;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  overflow: hidden;
 }
 
-.programs-grid {
+.pathways-grid {
   display: grid;
-  gap: 30px;
   grid-template-columns: 1fr;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-@media (min-width: 768px) {
-  .programs-grid {
+@media (min-width: 992px) {
+  .pathways-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (min-width: 1200px) {
-  .programs-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.program-card {
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
+.pathway-card {
+  background-color: var(--color-gray);
+  border-radius: var(--border-radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-small);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: var(--shadow-medium);
+  transition: transform var(--transition-medium);
   display: flex;
   flex-direction: column;
-  height: 100%; 
+  height: 100%;
 }
 
-.program-card:hover {
-  transform: translateY(-10px);
-  box-shadow: var(--shadow-medium);
+.pathway-card:hover {
+  transform: translateY(-5px);
 }
 
-.program-image-container {
-  height: 180px;
-  position: relative;
+.pathway-card-image {
+  height: 200px;
   overflow: hidden;
+  position: relative;
 }
 
-.program-image {
+.pathway-card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
+  transition: transform var(--transition-slow);
 }
 
-.program-card:hover .program-image {
+.pathway-card:hover .pathway-card-image img {
   transform: scale(1.05);
 }
 
-.program-badge {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background-color: var(--color-accent);
-  color: var(--color-white);
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
+.pathway-card-content {
+  padding: 25px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.program-content {
-  padding: 20px;
-}
-
-.program-header {
+.pathway-card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 15px;
+  gap: 15px;
 }
 
-.program-icon-container {
-  width: 40px;
-  height: 40px;
-  background-color: var(--color-primary-light);
+.pathway-icon-container {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 12px;
+  flex-shrink: 0;
 }
 
-.program-icon {
-  font-size: 1.25rem;
-  color: var(--color-primary);
+.pathway-icon {
+  font-size: 1.5rem;
 }
 
-.program-title {
-  font-size: 1.3rem;
+.pathway-title {
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-primary);
   margin: 0;
 }
 
-.program-description {
-  font-size: 0.95rem;
-  color: var(--color-text-light);
-  margin-bottom: 15px;
-  line-height: 1.6;
-}
-
-.program-details {
-  margin-top: 15px;
-}
-
-.details-title {
-  font-size: 1rem;
+.pathway-grades {
+  color: var(--color-secondary);
   font-weight: 600;
-  color: var(--color-primary);
-  margin-bottom: 8px;
+  margin: 5px 0 0;
+  font-size: 0.9rem;
 }
 
-.features-list {
+.pathway-description {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin-bottom: 20px;
+}
+
+.pathway-details {
+  margin-top: auto;
+}
+
+.pathway-features h4,
+.pathway-benefits h4 {
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.pathway-features ul {
   list-style: none;
   padding: 0;
-  margin: 0 0 20px 0;
+  margin: 0 0 15px;
 }
 
-.feature-item {
-  padding: 4px 0;
+.pathway-features li {
+  padding: 5px 0;
   font-size: 0.9rem;
-  display: flex;
-  align-items: flex-start;
+  position: relative;
+  padding-left: 20px;
+  color: var(--color-text-light);
 }
 
-.feature-bullet {
+.pathway-features li::before {
+  content: '✓';
   color: var(--color-accent);
-  margin-right: 8px;
+  position: absolute;
+  left: 0;
   font-weight: bold;
 }
 
-.benefits-box {
-  background-color: var(--color-primary-light);
-  padding: 12px;
-  border-radius: var(--border-radius);
+.pathway-benefits p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-light);
+  margin: 0;
 }
 
-.benefits-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-primary-dark);
-  margin-bottom: 5px;
-}
-
-/* Special Programs */
-.special-programs {
+/* Enrichment & Clubs Section */
+.enrichment-clubs-section {
   background-color: var(--color-gray);
   padding: 4rem 0;
 }
 
-.special-programs-grid {
+.enrichment-clubs-grid {
   display: grid;
   gap: 30px;
   grid-template-columns: 1fr;
 }
 
 @media (min-width: 768px) {
-  .special-programs-grid {
+  .enrichment-clubs-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.special-program-card {
+.enrichment-club-card {
   background-color: var(--color-white);
   border-radius: var(--border-radius);
   padding: 25px;
@@ -396,46 +407,46 @@
   text-align: center;
 }
 
-.special-program-card:hover {
+.enrichment-club-card:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-medium);
 }
 
-.special-program-icon {
+.enrichment-club-icon-wrapper {
   font-size: 2rem;
   color: var(--color-primary);
   margin-bottom: 12px;
 }
 
-.special-program-title {
+.enrichment-club-title {
   font-size: 1.3rem;
   font-weight: 700;
   margin-bottom: 12px;
   color: var(--color-primary);
 }
 
-.special-program-description {
+.enrichment-club-description {
   color: var(--color-text-light);
   margin-bottom: 15px;
   font-size: 0.95rem;
   line-height: 1.6;
 }
 
-.special-program-features {
+.enrichment-club-features {
   list-style: none;
   padding: 0;
   margin: 0;
   text-align: left;
 }
 
-.special-program-features li {
+.enrichment-club-features li {
   padding: 6px 0;
   font-size: 0.9rem;
   position: relative;
   padding-left: 20px;
 }
 
-.special-program-features li::before {
+.enrichment-club-features li::before {
   content: '✓';
   color: var(--color-accent);
   position: absolute;
@@ -443,19 +454,19 @@
   font-weight: bold;
 }
 
-/* Academic Support */
-.academic-support {
+/* Academic Support Section */
+.academic-support-section {
   background-color: var(--color-white);
   padding: 4rem 0;
 }
 
-.support-grid {
+.support-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 30px;
 }
 
-.support-card {
+.support-item-card {
   background-color: var(--color-gray);
   border-radius: var(--border-radius);
   padding: 25px;
@@ -464,42 +475,42 @@
   transition: transform var(--transition-medium);
 }
 
-.support-card:hover {
+.support-item-card:hover {
   transform: translateY(-5px);
 }
 
-.support-icon {
+.support-icon-wrapper {
   font-size: 2rem;
   color: var(--color-primary);
   margin-bottom: 15px;
 }
 
-.support-title {
+.support-item-title {
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--color-primary);
   margin-bottom: 10px;
 }
 
-.support-description {
+.support-item-description {
   font-size: 0.95rem;
   color: var(--color-text-light);
   line-height: 1.6;
 }
 
-/* Extra-Curricular Activities */
-.extra-curricular {
+/* Co-Curricular Activities Section */
+.co-curricular-section {
   background-color: var(--color-gray);
   padding: 4rem 0;
 }
 
-.activities-grid {
+.co-curricular-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 30px;
 }
 
-.activity-card {
+.co-curricular-card {
   background-color: var(--color-white);
   border-radius: var(--border-radius);
   padding: 25px;
@@ -508,24 +519,24 @@
   transition: transform var(--transition-medium);
 }
 
-.activity-card:hover {
+.co-curricular-card:hover {
   transform: translateY(-5px);
 }
 
-.activity-icon {
+.co-curricular-icon-wrapper {
   font-size: 2rem;
   color: var(--color-primary);
   margin-bottom: 15px;
 }
 
-.activity-title {
+.co-curricular-title {
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--color-primary);
   margin-bottom: 10px;
 }
 
-.activity-description {
+.co-curricular-description {
   font-size: 0.95rem;
   color: var(--color-text-light);
   line-height: 1.6;
@@ -580,18 +591,18 @@
   line-height: 1.6;
 }
 
-/* Program Policies */
-.program-policies {
+/* School Policies & Values Section */
+.school-policies-section {
   background-color: var(--color-gray);
   padding: 4rem 0;
 }
 
-.policies-content {
+.policies-wrapper {
   max-width: 800px;
   margin: 0 auto;
 }
 
-.policy-section {
+.policy-card {
   background-color: var(--color-white);
   border-radius: var(--border-radius);
   padding: 25px;
@@ -600,35 +611,35 @@
   transition: transform var(--transition-medium);
 }
 
-.policy-section:hover {
+.policy-card:hover {
   transform: translateY(-5px);
 }
 
-.policy-title {
+.policy-card-title {
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--color-primary);
   margin-bottom: 10px;
 }
 
-.policy-description {
+.policy-card-description {
   font-size: 1rem;
   line-height: 1.6;
   color: var(--color-text);
 }
 
-/* Program Events */
-.program-events {
+/* Annual Events & Traditions Section */
+.annual-events-section {
   background-color: var(--color-white);
   padding: 4rem 0;
 }
 
-.events-timeline {
+.events-timeline-wrapper {
   max-width: 800px;
   margin: 0 auto;
 }
 
-.event-item {
+.timeline-event-card {
   display: flex;
   margin-bottom: 30px;
   background-color: var(--color-gray);
@@ -637,7 +648,7 @@
   box-shadow: var(--shadow-small);
 }
 
-.event-date {
+.timeline-event-date {
   background-color: var(--color-primary);
   color: var(--color-white);
   padding: 20px;
@@ -648,19 +659,19 @@
   min-width: 120px;
 }
 
-.event-content {
+.timeline-event-content {
   padding: 20px;
   flex: 1;
 }
 
-.event-content h3 {
+.timeline-event-content h3 {
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--color-primary);
   margin-bottom: 10px;
 }
 
-.event-content p {
+.timeline-event-content p {
   font-size: 0.95rem;
   color: var(--color-text-light);
   line-height: 1.6;
@@ -739,65 +750,141 @@
 
 /* Section Title */
 .program-section-title {
-  font-size: 2.25rem;
-  font-weight: 800;
   text-align: center;
-  color: var(--color-accent);
-  margin-bottom: 1.5rem;
-  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 3rem;
+  position: relative;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 1024px) {
-  .programs-hero {
-    height: 80vh;
-    min-height: 500px;
-  }
+.program-section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: var(--color-primary);
+  border-radius: 2px;
 }
 
+/* Container fix */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ======================================================= */
+/* =============== MOBILE RESPONSIVE STYLES =============== */
+/* ======================================================= */
 @media (max-width: 768px) {
+  /* Adjust section titles for smaller screens */
+  .program-section-title {
+    font-size: 2rem;
+    padding: 0 15px;
+  }
+
+  /* Adjust hero section height for mobile */
   .programs-hero {
-    height: 70vh;
+    height: 60vh;
     min-height: 450px;
   }
-  
-  .hero-title {
-    margin-bottom: 1rem;
+
+  /* Adjust hero blur container for mobile */
+  .hero-blur-container {
+    width: 95%;
+    padding: 2rem 1.5rem;
+  }
+
+  /* Ensure all text in centered cards remains centered */
+  .philosophy-item-card,
+  .enrichment-club-card,
+  .support-item-card,
+  .co-curricular-card {
+    text-align: center;
+  }
+
+  /* Specifically center list inside enrichment card */
+  .enrichment-club-features {
+    text-align: center;
+  }
+
+  /* Adjust Academic Pathways Card for mobile */
+  .pathway-card {
+    text-align: center; /* Center all text in card */
+  }
+  .pathway-card-header {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+  .pathway-card-header .pathway-title,
+  .pathway-card-header .pathway-grades {
+    margin: 0;
+  }
+  .pathway-description {
+    text-align: left; /* Keep paragraphs left-aligned for readability */
+  }
+  .pathway-features,
+  .pathway-benefits {
+    text-align: left; /* Keep lists left-aligned for readability */
   }
   
-  .hero-subtitle {
-    margin-bottom: 2rem;
-  }
-  
-  .program-section-title {
-    font-size: 1.8rem;
-  }
-  
-  .event-item {
+  /* Adjust Timeline for mobile */
+  .timeline-event-card {
     flex-direction: column;
   }
   
-  .event-date {
+  .timeline-event-date {
     min-width: auto;
+    padding: 10px 15px;
   }
-}
 
-@media (max-width: 576px) {
-  .programs-hero {
-    height: 65vh;
-    min-height: 400px;
-  }
-  
-  .hero-title {
-    font-size: 2rem;
-  }
-  
+  /* Adjust CTA buttons for mobile */
   .cta-buttons {
     flex-direction: column;
+    align-items: center;
     gap: 15px;
   }
   
   .btn {
     width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* Further adjustments for very small screens */
+@media (max-width: 576px) {
+  .programs-hero {
+    min-height: 400px;
+  }
+  
+  .hero-blur-container {
+    width: 95%;
+    padding: 1.5rem 1rem;
+  }
+  
+  .program-hero-content h1 {
+    font-size: 2rem;
+  }
+  
+  .program-section-title {
+    font-size: 1.8rem;
+  }
+}
+
+/* Further adjustments for extremely small screens */
+@media (max-width: 400px) {
+  .hero-blur-container {
+    width: 98%;
+    padding: 1.2rem 0.8rem;
   }
 }

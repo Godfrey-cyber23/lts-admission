@@ -1,3 +1,18 @@
+:root {
+  --font-main: 'Poppins', sans-serif;
+  --font-heading: 'Montserrat', sans-serif;
+  --color-primary: #2C5E3A;
+  --color-primary-dark: #0fb844;
+  --color-primary-light: #E8F0EA;
+  --color-accent: #8bc34a;
+  --color-text: #333333;
+  --color-text-light: #666666;
+  --color-white: #FFFFFF;
+  --border-radius: 12px;
+  --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-large: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
 
 .app-footer {
   background-color: var(--color-primary-dark);

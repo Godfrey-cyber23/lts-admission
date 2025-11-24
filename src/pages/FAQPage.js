@@ -54,10 +54,10 @@ const FAQPage = () => {
     },
     cta: {
       title: "Still have questions?",
-      subtitle: "Our team led by Edith B Kasandwe is happy to help with any additional questions you may have about joining our school family.",
+      subtitle: "Our team would be happy to help with any additional questions you may have about joining our school family.",
       buttonText: "Contact Us",
       buttonLink: "/contact",
-      image: "/_MG_4091.jpg",
+      image: "/_MG_4530.JPG",
       imageAlt: "Literacy Tree School Staff"
     }
   };
@@ -237,7 +237,7 @@ const FAQPage = () => {
                 textAlign: 'center'
               }}>
                 <FaMusic style={{ fontSize: '2rem', color: '#2C5E3A' }} />
-                <h3 style={{ fontSize: '1.3rem', color: '#2C5E3A' }}>School Concert</h3>
+                <h3 style={{ fontSize: '1.3rem', color: '#2C5E3A', justifyContent:'center' }}>School Concert</h3>
                 <p>Annual celebration in December where all children participate. A special day for the entire family.</p>
               </div>
 

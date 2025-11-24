@@ -1,10 +1,18 @@
-import { FaBook, FaCalculator, FaMusic, FaRunning, FaChild, FaLanguage, FaRobot, FaGraduationCap, FaShieldAlt, FaHeart, FaUsers, FaClipboardCheck, FaBus, FaUserMd, FaUserClock, FaCalendarAlt, FaChartLine, FaAppleAlt, FaChalkboardTeacher, FaBookOpen, FaTag, FaExclamationTriangle, FaSignOutAlt, FaPhone, FaPalette, FaBirthdayCake, FaHandshake, FaRocket, FaComments, FaSeedling, FaMicrophone } from 'react-icons/fa';
+import {
+    FaBook, FaCalculator, FaMusic, FaRunning, FaChild, FaLanguage, FaRobot,
+    FaGraduationCap, FaShieldAlt, FaHeart, FaUsers, FaClipboardCheck, FaBus,
+    FaUserMd, FaUserClock, FaCalendarAlt, FaChartLine, FaAppleAlt,
+    FaChalkboardTeacher, FaBookOpen, FaTag, FaExclamationTriangle,
+    FaSignOutAlt, FaPhone, FaPalette, FaBirthdayCake, FaHandshake,
+    FaRocket, FaComments, FaBrain, FaSeedling,
+    FaPray, FaSmile
+} from 'react-icons/fa';
 import { Carousel } from 'react-responsive-carousel';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import '../styles/ProgramsPage.css';
 
 const ProgramsPage = () => {
-     const heroImages = [
+    const heroImages = [
         { src: "/classroom-1.jpg", alt: "Students engaged in classroom activities" },
         { src: "/library.jpeg", alt: "School library with students reading" },
         { src: "/resources-bg.webp", alt: "Students conducting science experiments" },
@@ -14,7 +22,7 @@ const ProgramsPage = () => {
     const programs = [
         {
             title: "Early Childhood",
-            icon: <FaChild className="program-icon" />,
+            icon: <FaChild className="pathway-icon" />,
             description: "Play-based learning for ages 3-6 focusing on literacy, numeracy, and social skills.",
             grades: "Pre-K to Kindergarten",
             image: "/early-class.jpg",
@@ -30,7 +38,7 @@ const ProgramsPage = () => {
         },
         {
             title: "Lower Primary",
-            icon: <FaBook className="program-icon" />,
+            icon: <FaBook className="pathway-icon" />,
             description: "Building core academic skills with emphasis on reading fluency and mathematical thinking.",
             grades: "Grades 1-3",
             image: "/pre-school.jpg",
@@ -46,7 +54,7 @@ const ProgramsPage = () => {
         },
         {
             title: "Upper Primary",
-            icon: <FaCalculator className="program-icon" />,
+            icon: <FaCalculator className="pathway-icon" />,
             description: "Advanced curriculum preparing students for secondary education with subject specialization.",
             grades: "Grades 4-7",
             image: "/upper-primary.jpg",
@@ -62,7 +70,7 @@ const ProgramsPage = () => {
         },
         {
             title: "Creative Arts",
-            icon: <FaMusic className="program-icon" />,
+            icon: <FaMusic className="pathway-icon" />,
             description: "Integrated arts program including music, visual arts, and drama.",
             grades: "All Grades",
             image: "/creative-arts.jpeg",
@@ -78,7 +86,7 @@ const ProgramsPage = () => {
         },
         {
             title: "Physical Education",
-            icon: <FaRunning className="program-icon" />,
+            icon: <FaRunning className="pathway-icon" />,
             description: "Comprehensive program promoting physical health and teamwork.",
             grades: "All Grades",
             image: "/physical-education.jpeg",
@@ -97,7 +105,7 @@ const ProgramsPage = () => {
     const specialPrograms = [
         {
             title: "Jets Club",
-            icon: <FaRocket className="text-3xl" />,
+            icon: <FaRocket className="enrichment-club-icon" />,
             description: "Our Jets Club focuses on science, technology, and innovation, encouraging students to explore STEM fields.",
             features: [
                 "Science experiments and projects",
@@ -108,7 +116,7 @@ const ProgramsPage = () => {
         },
         {
             title: "Debate Club",
-            icon: <FaComments className="text-3xl" />,
+            icon: <FaComments className="enrichment-club-icon" />,
             description: "Developing critical thinking, public speaking, and argumentation skills through structured debates.",
             features: [
                 "Weekly debate sessions",
@@ -119,7 +127,7 @@ const ProgramsPage = () => {
         },
         {
             title: "Agriculture Club",
-            icon: <FaSeedling className="text-3xl" />,
+            icon: <FaSeedling className="enrichment-club-icon" />,
             description: "Hands-on learning about farming, environmental conservation, and sustainable agriculture practices.",
             features: [
                 "School garden projects",
@@ -130,7 +138,7 @@ const ProgramsPage = () => {
         },
         {
             title: "Music Clubs",
-            icon: <FaMusic className="text-3xl" />,
+            icon: <FaMusic className="enrichment-club-icon" />,
             description: "Various music clubs offering vocal training, instrument lessons, and performance opportunities.",
             features: [
                 "Vocal training and choir",
@@ -144,22 +152,22 @@ const ProgramsPage = () => {
     const academicSupport = [
         {
             title: "Intensive Reading",
-            icon: <FaBookOpen />,
+            icon: <FaBookOpen className="support-item-icon" />,
             description: "Focused reading programs to improve literacy skills"
         },
         {
             title: "Test Preparation",
-            icon: <FaChartLine />,
+            icon: <FaChartLine className="support-item-icon" />,
             description: "Targeted support to improve test scores"
         },
         {
             title: "Homework Help",
-            icon: <FaClipboardCheck />,
+            icon: <FaClipboardCheck className="support-item-icon" />,
             description: "After-school assistance with homework"
         },
         {
             title: "Individual Tutoring",
-            icon: <FaUsers />,
+            icon: <FaUsers className="support-item-icon" />,
             description: "One-on-one support for personalized learning"
         }
     ];
@@ -167,28 +175,66 @@ const ProgramsPage = () => {
     const extraCurricular = [
         {
             title: "Ball Games",
-            icon: <FaRunning />,
+            icon: <FaRunning className="co-curricular-icon" />,
             description: "Team sports and individual athletic activities"
         },
         {
             title: "Computer Skills",
-            icon: <FaRobot />,
+            icon: <FaRobot className="co-curricular-icon" />,
             description: "Digital literacy and basic programming"
         },
         {
             title: "Swimming",
-            icon: <FaUserMd />,
+            icon: <FaUserMd className="co-curricular-icon" />,
             description: "Water safety and swimming techniques"
         },
         {
             title: "Educational Trips",
-            icon: <FaBus />,
+            icon: <FaBus className="co-curricular-icon" />,
             description: "Field trips to enhance learning"
         },
         {
             title: "Creative Arts",
-            icon: <FaPalette />,
+            icon: <FaPalette className="co-curricular-icon" />,
             description: "Visual arts, drama, and creative expression"
+        }
+    ];
+
+    const philosophyItems = [
+        {
+            title: "Communicating",
+            icon: <FaComments className="philosophy-item-icon" />,
+            description: "Developing language and expression skills"
+        },
+        {
+            title: "Creating",
+            icon: <FaPalette className="philosophy-item-icon" />,
+            description: "Fostering imagination and innovation"
+        },
+        {
+            title: "Socializing",
+            icon: <FaUsers className="philosophy-item-icon" />,
+            description: "Building relationships and community"
+        },
+        {
+            title: "Physical & Active",
+            icon: <FaRunning className="philosophy-item-icon" />,
+            description: "Promoting health and movement"
+        },
+        {
+            title: "Thinking & Exploring",
+            icon: <FaBrain className="philosophy-item-icon" />,
+            description: "Encouraging curiosity and problem-solving"
+        },
+        {
+            title: "Emotional",
+            icon: <FaHeart className="philosophy-item-icon" />,
+            description: "Nurturing feelings and self-awareness"
+        },
+        {
+            title: "Spiritual & Moral",
+            icon: <FaPray className="philosophy-item-icon" />,
+            description: "Developing values and character"
         }
     ];
 
@@ -208,134 +254,96 @@ const ProgramsPage = () => {
                 >
                     {heroImages.map((image, index) => (
                         <div key={index} className="hero-slide">
-                            <img 
-                                src={image.src} 
-                                alt={image.alt} 
+                            <img
+                                src={image.src}
+                                alt={image.alt}
                                 className="hero-image"
                                 loading={index === 0 ? "eager" : "lazy"}
                             />
                         </div>
                     ))}
                 </Carousel>
-                
-                <div 
-                    className="program-hero-content container"
-                    style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        maxWidth: '800px',
-                        width: '90%',
-                        textAlign: 'center',
-                        zIndex: 10,
-                        padding: '2rem',
-                        background: 'rgba(44, 94, 58, 0.4)',
-                        borderRadius: '12px',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                        backdropFilter: 'blur(5px)',
-                        WebkitBackdropFilter: 'blur(5px)'
-                    }}
-                >
-                    <h1 className="program-hero-title">Our Academic Programs</h1>
-                    <p className="hero-subtitle">
-                        Comprehensive educational pathways designed to nurture each child's potential up to Grade 7.
-                    </p>
+
+                <div className="hero-overlay"></div>
+
+                {/* NEW: Blurred Background Container */}
+                <div className="hero-blur-container">
+                    <div className="program-hero-content">
+                        <h1 className="program-hero-title">Our Academic Programs</h1>
+                        <p className="hero-subtitle">
+                            Comprehensive educational pathways designed to nurture each child's potential up to Grade 7.
+                        </p>
+                    </div>
                 </div>
             </section>
 
             {/* School Brief */}
-            <section className="school-brief py-16">
+            <section className="school-brief">
                 <div className="container">
                     <div className="brief-content">
                         <h2 className="brief-title">About Literacy Tree School</h2>
                         <p className="brief-description">
-                            Privately run by Edith B Kasandwe for over 10 years, Pickey Ponkey – Literacy Tree School provides 
-                            quality childcare, early and primary education at affordable fees. We are committed to the quality 
+                            Privately run by Edith B Kasandwe for over 10 years, Pickey Ponkey – Literacy Tree School provides
+                            quality childcare, early and primary education at affordable fees. We are committed to quality
                             of education received by our individual learners, valuing both high and low achieving learners.
                         </p>
                     </div>
                 </div>
             </section>
 
-            {/* Curriculum Philosophy */}
-            <section className="curriculum-philosophy py-16 bg-gray-50">
+            {/* Teaching Philosophy Section */}
+            <section className="teaching-philosophy-section">
                 <div className="container">
-                    <h2 className="program-section-title text-center mb-12">Our Curriculum Philosophy</h2>
-                    <div className="philosophy-content">
+                    <h2 className="program-section-title">Our Teaching Philosophy</h2>
+                    <div className="philosophy-content-wrapper">
                         <p className="philosophy-description">
-                            Our curriculum is designed around the understanding that children are:
+                            Our curriculum is designed around understanding that children are:
                         </p>
-                        <div className="philosophy-grid">
-                            <div className="philosophy-item">
-                                <h3>Communicating</h3>
-                                <p>Developing language and expression skills</p>
-                            </div>
-                            <div className="philosophy-item">
-                                <h3>Creating</h3>
-                                <p>Fostering imagination and innovation</p>
-                            </div>
-                            <div className="philosophy-item">
-                                <h3>Socializing</h3>
-                                <p>Building relationships and community</p>
-                            </div>
-                            <div className="philosophy-item">
-                                <h3>Physical & Active</h3>
-                                <p>Promoting health and movement</p>
-                            </div>
-                            <div className="philosophy-item">
-                                <h3>Thinking & Exploring</h3>
-                                <p>Encouraging curiosity and problem-solving</p>
-                            </div>
-                            <div className="philosophy-item">
-                                <h3>Emotional</h3>
-                                <p>Nurturing feelings and self-awareness</p>
-                            </div>
-                            <div className="philosophy-item">
-                                <h3>Spiritual & Moral</h3>
-                                <p>Developing values and character</p>
-                            </div>
+                        <div className="philosophy-items-grid">
+                            {philosophyItems.map((item, index) => (
+                                <div key={index} className="philosophy-item-card">
+                                    {item.icon}
+                                    <h3>{item.title}</h3>
+                                    <p>{item.description}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Main Programs */}
-            <section className="main-programs py-16">
+            {/* Academic Pathways Section */}
+            <section className="academic-pathways-section">
                 <div className="container">
-                    <h2 className="program-section-title text-center mb-12">Program Offerings</h2>
-                    <div className="programs-grid">
+                    <h2 className="program-section-title">Our Academic Pathways</h2>
+                    <div className="pathways-grid">
                         {programs.map((program, index) => (
-                            <div key={index} className="program-card">
-                                <div className="program-image-container">
-                                    <img 
-                                        src={program.image} 
-                                        alt={program.title} 
-                                        className="program-image"
-                                    />
-                                    <div className="program-badge">{program.grades}</div>
+                            <div key={index} className="pathway-card">
+                                <div className="pathway-card-image">
+                                    <img src={program.image} alt={program.title} loading="lazy" />
                                 </div>
-                                <div className="program-content">
-                                    <div className="program-header">
-                                        <div className="program-icon-container">
+                                <div className="pathway-card-content">
+                                    <div className="pathway-card-header">
+                                        <div className="pathway-icon-container">
                                             {program.icon}
                                         </div>
-                                        <h3 className="program-title">{program.title}</h3>
+                                        <div>
+                                            <h3 className="pathway-title">{program.title}</h3>
+                                            <p className="pathway-grades">{program.grades}</p>
+                                        </div>
                                     </div>
-                                    <p className="program-description">{program.description}</p>
-                                    
-                                    <div className="program-details">
-                                        <h4 className="details-title">Key Features:</h4>
-                                        <ul className="features-list">
-                                            {program.details.features.map((feature, i) => (
-                                                <li key={i} className="feature-item">
-                                                    <span className="feature-bullet">•</span>
-                                                    {feature}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <div className="benefits-box">
-                                            <h4 className="benefits-title">Key Benefits:</h4>
+                                    <p className="pathway-description">{program.description}</p>
+                                    <div className="pathway-details">
+                                        <div className="pathway-features">
+                                            <h4>Key Features:</h4>
+                                            <ul>
+                                                {program.details.features.map((feature, i) => (
+                                                    <li key={i}>{feature}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <div className="pathway-benefits">
+                                            <h4>Benefits:</h4>
                                             <p>{program.details.benefits}</p>
                                         </div>
                                     </div>
@@ -346,19 +354,19 @@ const ProgramsPage = () => {
                 </div>
             </section>
 
-            {/* Special Programs */}
-            <section className="special-programs py-16 bg-gray-50">
+            {/* Enrichment & Clubs Section */}
+            <section className="enrichment-clubs-section">
                 <div className="container">
-                    <h2 className="program-section-title text-center mb-12">Special Programs & Clubs</h2>
-                    <div className="special-programs-grid">
+                    <h2 className="program-section-title">Enrichment & Clubs</h2>
+                    <div className="enrichment-clubs-grid">
                         {specialPrograms.map((program, index) => (
-                            <div key={index} className="special-program-card">
-                                <div className="special-program-icon">
+                            <div key={index} className="enrichment-club-card">
+                                <div className="enrichment-club-icon-wrapper">
                                     {program.icon}
                                 </div>
-                                <h3 className="special-program-title">{program.title}</h3>
-                                <p className="special-program-description">{program.description}</p>
-                                <ul className="special-program-features">
+                                <h3 className="enrichment-club-title">{program.title}</h3>
+                                <p className="enrichment-club-description">{program.description}</p>
+                                <ul className="enrichment-club-features">
                                     {program.features.map((feature, i) => (
                                         <li key={i}>{feature}</li>
                                     ))}
@@ -369,32 +377,32 @@ const ProgramsPage = () => {
                 </div>
             </section>
 
-            {/* Academic Support */}
-            <section className="academic-support py-16">
+            {/* Academic Support Section */}
+            <section className="academic-support-section">
                 <div className="container">
-                    <h2 className="program-section-title text-center mb-12">Academic Support Programs</h2>
-                    <div className="support-grid">
+                    <h2 className="program-section-title">Academic Support</h2>
+                    <div className="support-cards-grid">
                         {academicSupport.map((support, index) => (
-                            <div key={index} className="support-card">
-                                <div className="support-icon">{support.icon}</div>
-                                <h3 className="support-title">{support.title}</h3>
-                                <p className="support-description">{support.description}</p>
+                            <div key={index} className="support-item-card">
+                                <div className="support-icon-wrapper">{support.icon}</div>
+                                <h3 className="support-item-title">{support.title}</h3>
+                                <p className="support-item-description">{support.description}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Extra-Curricular Activities */}
-            <section className="extra-curricular py-16 bg-gray-50">
+            {/* Co-Curricular Activities Section */}
+            <section className="co-curricular-section">
                 <div className="container">
-                    <h2 className="program-section-title text-center mb-12">Extra-Curricular Activities</h2>
-                    <div className="activities-grid">
+                    <h2 className="program-section-title">Co-Curricular Activities</h2>
+                    <div className="co-curricular-grid">
                         {extraCurricular.map((activity, index) => (
-                            <div key={index} className="activity-card">
-                                <div className="activity-icon">{activity.icon}</div>
-                                <h3 className="activity-title">{activity.title}</h3>
-                                <p className="activity-description">{activity.description}</p>
+                            <div key={index} className="co-curricular-card">
+                                <div className="co-curricular-icon-wrapper">{activity.icon}</div>
+                                <h3 className="co-curricular-title">{activity.title}</h3>
+                                <p className="co-curricular-description">{activity.description}</p>
                             </div>
                         ))}
                     </div>
@@ -402,15 +410,15 @@ const ProgramsPage = () => {
             </section>
 
             {/* Assessment Approach */}
-            <section className="assessment-approach py-16">
+            <section className="assessment-approach">
                 <div className="container">
-                    <h2 className="program-section-title text-center mb-12">Our Assessment Approach</h2>
+                    <h2 className="program-section-title">Our Assessment Approach</h2>
                     <div className="assessment-card">
                         <p className="assessment-description">
-                            Assessment at Literacy Tree School is based on ability rather than age. We evaluate each child's 
-                            capacity to write, identify letters and numbers, formulate sounds, and demonstrate understanding. 
-                            This approach ensures that children progress at their own pace, with 5-year-olds who demonstrate 
-                            advanced skills able to move to higher levels, while 6-year-olds needing more support receive 
+                            Assessment at Literacy Tree School is based on ability rather than age. We evaluate each child's
+                            capacity to write, identify letters and numbers, formulate sounds, and demonstrate understanding.
+                            This approach ensures that children progress at their own pace, with 5-year-olds who demonstrate
+                            advanced skills able to move to higher levels, while 6-year-olds needing more support receive
                             appropriate foundational instruction.
                         </p>
                         <div className="assessment-highlights">
@@ -431,29 +439,29 @@ const ProgramsPage = () => {
                 </div>
             </section>
 
-            {/* Program Policies */}
-            <section className="program-policies py-16 bg-gray-50">
+            {/* School Policies & Values Section */}
+            <section className="school-policies-section">
                 <div className="container">
-                    <h2 className="program-section-title text-center mb-12">Program Policies</h2>
-                    <div className="policies-content">
-                        <div className="policy-section">
-                            <h3 className="policy-title">Zero Tolerance on Bullying</h3>
-                            <p className="policy-description">
-                                We do not tolerate bullying or discrimination in any form. Our policy prevents bullying, 
+                    <h2 className="program-section-title">School Policies & Values</h2>
+                    <div className="policies-wrapper">
+                        <div className="policy-card">
+                            <h3 className="policy-card-title">Zero Tolerance on Bullying</h3>
+                            <p className="policy-card-description">
+                                We do not tolerate bullying or discrimination in any form. Our policy prevents bullying,
                                 stops it if it occurs, and deals with incidents appropriately.
                             </p>
                         </div>
-                        <div className="policy-section">
-                            <h3 className="policy-title">Child Rights</h3>
-                            <p className="policy-description">
-                                Every child has the right to feel safe, learn without fear, belong, ask for help, 
+                        <div className="policy-card">
+                            <h3 className="policy-card-title">Child Rights</h3>
+                            <p className="policy-card-description">
+                                Every child has the right to feel safe, learn without fear, belong, ask for help,
                                 solve problems constructively, and be treated with respect.
                             </p>
                         </div>
-                        <div className="policy-section">
-                            <h3 className="policy-title">Discipline Approach</h3>
-                            <p className="policy-description">
-                                We maintain firm discipline while discouraging fighting and bad language. 
+                        <div className="policy-card">
+                            <h3 className="policy-card-title">Discipline Approach</h3>
+                            <p className="policy-card-description">
+                                We maintain firm discipline while discouraging fighting and bad language.
                                 Our approach focuses on helping children understand right from wrong through discussion.
                             </p>
                         </div>
@@ -461,35 +469,35 @@ const ProgramsPage = () => {
                 </div>
             </section>
 
-            {/* Special Program Events */}
-            <section className="program-events py-16">
+            {/* Annual Events & Traditions Section */}
+            <section className="annual-events-section">
                 <div className="container">
-                    <h2 className="program-section-title text-center mb-12">Annual Program Events</h2>
-                    <div className="events-timeline">
-                        <div className="event-item">
-                            <div className="event-date">December</div>
-                            <div className="event-content">
+                    <h2 className="program-section-title">Annual Events & Traditions</h2>
+                    <div className="events-timeline-wrapper">
+                        <div className="timeline-event-card">
+                            <div className="timeline-event-date">December</div>
+                            <div className="timeline-event-content">
                                 <h3>Graduation Ceremony</h3>
                                 <p>Celebrating completion of Pre-school and Grade 7 with gowns, hats, and certificates</p>
                             </div>
                         </div>
-                        <div className="event-item">
-                            <div className="event-date">December</div>
-                            <div className="event-content">
+                        <div className="timeline-event-card">
+                            <div className="timeline-event-date">December</div>
+                            <div className="timeline-event-content">
                                 <h3>School Concert</h3>
                                 <p>Annual performance showcasing student talents with all family members invited</p>
                             </div>
                         </div>
-                        <div className="event-item">
-                            <div className="event-date">Biennial</div>
-                            <div className="event-content">
+                        <div className="timeline-event-card">
+                            <div className="timeline-event-date">Biennial</div>
+                            <div className="timeline-event-content">
                                 <h3>Educational Field Trips</h3>
                                 <p>Learning experiences outside the classroom to broaden horizons</p>
                             </div>
                         </div>
-                        <div className="event-item">
-                            <div className="event-date">Ongoing</div>
-                            <div className="event-content">
+                        <div className="timeline-event-card">
+                            <div className="timeline-event-date">Ongoing</div>
+                            <div className="timeline-event-content">
                                 <h3>Parent Interactive Days</h3>
                                 <p>Opportunities for parents to engage with the school community</p>
                             </div>
@@ -499,10 +507,10 @@ const ProgramsPage = () => {
             </section>
 
             {/* CTA Section */}
-            <section className="programs-cta py-16 bg-primary text-white">
-                <div className="container text-center">
-                    <h2 className="cta-title mb-6">Ready to Enroll Your Child?</h2>
-                    <p className="cta-subtitle mb-8">
+            <section className="programs-cta">
+                <div className="container">
+                    <h2 className="cta-title">Ready to Enroll Your Child?</h2>
+                    <p className="cta-subtitle">
                         Limited spaces available for the 2026 academic year. Schedule a tour to learn more about our programs.
                     </p>
                     <div className="cta-buttons">

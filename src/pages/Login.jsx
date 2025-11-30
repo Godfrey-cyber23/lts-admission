@@ -261,7 +261,7 @@ const Login = () => {
 
             {/* Password Field */}
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               name="password"

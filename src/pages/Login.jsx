@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import LockIcon from "@mui/icons-material/Lock";
-import BadgeIcon from "@mui/icons-material/Badge";
+import BadgeIcon from "@mui/icons-material/Badge"; // For staff ID field
 import api from "../api/api";
 import {
   Box,
@@ -32,7 +32,7 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    staffId: "",
+    staffId: "", // Added staff ID field
     showPassword: false,
   });
   const [error, setError] = useState("");
@@ -57,7 +57,7 @@ const Login = () => {
       const response = await api.post("/auth/login", {
         email: formData.email,
         password: formData.password,
-        staffId: formData.staffId,
+        staffId: formData.staffId, // Include staff ID in the request
       });
 
       console.log("Login response:", response.data);
@@ -177,15 +177,7 @@ const Login = () => {
             Literacy Tree Admin Portal
           </Typography>
 
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              mb: 1.5,
-              color: "text.secondary", 
-              textAlign: 'center',
-              fontSize: "0.85rem"
-            }}
-          >
+          <Typography variant="body1" sx={{ mb: 3, color: "text.secondary" }}>
             Staff & Admin Sign In
           </Typography>
 
@@ -267,6 +259,27 @@ const Login = () => {
 
             <TextField
               margin="dense"
+              required
+              fullWidth
+              name="staffId"
+              label="Staff ID"
+              placeholder="Enter your staff ID"
+              id="staffId"
+              autoComplete="off"
+              value={formData.staffId}
+              onChange={handleChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BadgeIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              margin="normal"
               required
               fullWidth
               name="password"

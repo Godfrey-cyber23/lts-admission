@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs'; // Add bcrypt for password hashing
 import { supabase } from '../config/db.js';
 import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
@@ -26,6 +27,17 @@ const createSendToken = (user, statusCode, res) => {
   });
 };
 
+// Hash password middleware
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return await bcrypt.hash(password, salt);
+};
+
+// Compare password middleware
+const comparePassword = async (candidatePassword, userPassword) => {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
+
 export const registerAdmin = catchAsync(async (req, res, next) => {
   // Check if any admin exists
   const { data: existingAdmins, error: countError } = await supabase
@@ -41,6 +53,9 @@ export const registerAdmin = catchAsync(async (req, res, next) => {
     return next(new AppError('Admin registration is closed', 403));
   }
 
+  // Hash password
+  const hashedPassword = await hashPassword(req.body.password);
+
   // Create user directly in your users table (no Supabase Auth)
   const { data: newUser, error: userError } = await supabase
     .from('users')
@@ -48,7 +63,7 @@ export const registerAdmin = catchAsync(async (req, res, next) => {
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       email: req.body.email,
-      password: req.body.password, // You'll need to hash this
+      password: hashedPassword,
       role: 'admin',
       isActive: true
     }])
@@ -62,29 +77,73 @@ export const registerAdmin = catchAsync(async (req, res, next) => {
   createSendToken(newUser, 201, res);
 });
 
+export const registerStaff = catchAsync(async (req, res, next) => {
+  const { firstName, lastName, email, phone, password, staffId } = req.body;
+
+  // Check if staff ID already exists
+  const { data: existingStaff, error: staffError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('staffId', staffId);
+
+  if (staffError) {
+    return next(new AppError('Database error', 500));
+  }
+
+  if (existingStaff && existingStaff.length > 0) {
+    return next(new AppError('Staff ID already exists', 400));
+  }
+
+  // Hash password
+  const hashedPassword = await hashPassword(password);
+
+  // Create staff user
+  const { data: newUser, error: userError } = await supabase
+    .from('users')
+    .insert([{
+      firstName,
+      lastName,
+      email,
+      phone,
+      password: hashedPassword,
+      staffId,
+      role: 'staff',
+      isActive: true
+    }])
+    .select()
+    .single();
+
+  if (userError) {
+    return next(new AppError('Failed to create user: ' + userError.message, 400));
+  }
+
+  createSendToken(newUser, 201, res);
+});
+
 export const login = catchAsync(async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password, staffId } = req.body;
   
-  // 1) Check if email and password exist
-  if (!email || !password) {
-    return next(new AppError('Please provide email and password', 400));
+  // 1) Check if email, password and staffId exist
+  if (!email || !password || !staffId) {
+    return next(new AppError('Please provide email, password and staff ID', 400));
   }
   
-  // 2) Check if user exists in your users table
+  // 2) Check if user exists in your users table with matching email and staffId
   const { data: user, error: userError } = await supabase
     .from('users')
     .select('*')
     .eq('email', email)
+    .eq('staffId', staffId)
     .single();
 
   if (userError || !user) {
-    return next(new AppError('Incorrect email or password', 401));
+    return next(new AppError('Incorrect email, password or staff ID', 401));
   }
 
-  // 3) Check if password is correct (simple comparison for now)
-  // In production, you should use proper password hashing like bcrypt
-  if (user.password !== password) {
-    return next(new AppError('Incorrect email or password', 401));
+  // 3) Check if password is correct using bcrypt
+  const isPasswordCorrect = await comparePassword(password, user.password);
+  if (!isPasswordCorrect) {
+    return next(new AppError('Incorrect email, password or staff ID', 401));
   }
 
   // 4) Check if account is active
@@ -103,24 +162,25 @@ export const login = catchAsync(async (req, res, next) => {
 });
 
 export const forgotPassword = catchAsync(async (req, res, next) => {
-  const { email } = req.body;
+  const { email, staffId } = req.body;
 
-  if (!email) {
-    return next(new AppError('Please provide email address', 400));
+  if (!email || !staffId) {
+    return next(new AppError('Please provide email address and staff ID', 400));
   }
 
-  // 1) Get user based on email
+  // 1) Get user based on email and staffId
   const { data: user, error: userError } = await supabase
     .from('users')
     .select('*')
     .eq('email', email)
+    .eq('staffId', staffId)
     .single();
 
   if (userError || !user) {
     // Don't reveal if email exists for security
     return res.status(200).json({
       status: 'success',
-      message: 'If an account with that email exists, a reset link has been sent.'
+      message: 'If an account with that email and staff ID exists, a reset link has been sent.'
     });
   }
 
@@ -177,13 +237,13 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 export const resetPassword = catchAsync(async (req, res, next) => {
-  const { token, password } = req.body;
+  const { token, password, staffId } = req.body;
 
-  if (!token || !password) {
-    return next(new AppError('Token and new password are required', 400));
+  if (!token || !password || !staffId) {
+    return next(new AppError('Token, new password and staff ID are required', 400));
   }
 
-  // 1) Hash the token and find user
+  // 1) Hash token and find user
   const hashedToken = crypto
     .createHash('sha256')
     .update(token)
@@ -193,18 +253,22 @@ export const resetPassword = catchAsync(async (req, res, next) => {
     .from('users')
     .select('*')
     .eq('resetPasswordToken', hashedToken)
+    .eq('staffId', staffId)
     .gt('resetPasswordExpire', new Date().toISOString())
     .single();
 
   if (userError || !user) {
-    return next(new AppError('Token is invalid or has expired', 400));
+    return next(new AppError('Token is invalid or has expired, or staff ID is incorrect', 400));
   }
 
-  // 2) Update password and clear reset token
+  // 2) Hash new password
+  const hashedPassword = await hashPassword(password);
+
+  // 3) Update password and clear reset token
   const { error: updateError } = await supabase
     .from('users')
     .update({
-      password: password, // You should hash this password
+      password: hashedPassword,
       resetPasswordToken: null,
       resetPasswordExpire: null,
       updatedAt: new Date().toISOString()
@@ -232,10 +296,13 @@ export const getMe = catchAsync(async (req, res, next) => {
     return next(new AppError('User not found', 404));
   }
 
+  // Remove password from output
+  const { password, ...userWithoutPassword } = user;
+
   res.status(200).json({
     status: 'success',
     data: {
-      user
+      user: userWithoutPassword
     }
   });
 });
@@ -296,7 +363,7 @@ export const protect = catchAsync(async (req, res, next) => {
   const { data: currentUser, error } = await supabase
     .from('users')
     .select('*')
-    .eq('id', decoded.userId)
+    .eq('id', decoded.id)
     .single();
 
   if (error || !currentUser) {
@@ -323,15 +390,19 @@ export const updatePassword = catchAsync(async (req, res, next) => {
   }
 
   // 2) Check if current password is correct
-  if (user.password !== currentPassword) {
+  const isPasswordCorrect = await comparePassword(currentPassword, user.password);
+  if (!isPasswordCorrect) {
     return next(new AppError('Your current password is wrong.', 401));
   }
 
-  // 3) Update password
+  // 3) Hash new password
+  const hashedPassword = await hashPassword(newPassword);
+
+  // 4) Update password
   const { error: updateError } = await supabase
     .from('users')
     .update({
-      password: newPassword, // You should hash this
+      password: hashedPassword,
       updatedAt: new Date().toISOString()
     })
     .eq('id', req.user.id);
@@ -340,7 +411,7 @@ export const updatePassword = catchAsync(async (req, res, next) => {
     return next(new AppError('Error updating password', 500));
   }
 
-  // 4) Get updated user data
+  // 5) Get updated user data
   const { data: updatedUser } = await supabase
     .from('users')
     .select('*')
@@ -352,6 +423,7 @@ export const updatePassword = catchAsync(async (req, res, next) => {
 
 const authController = {
   registerAdmin,
+  registerStaff,
   login,
   forgotPassword,
   resetPassword,

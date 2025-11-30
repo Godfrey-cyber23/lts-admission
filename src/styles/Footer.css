@@ -15,11 +15,12 @@
 }
 
 .app-footer {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary);
   color: var(--color-white);
   padding: 2rem 1rem;
   font-size: 1rem;
   line-height: 1.6;
+  border-top: 3px solid var(--color-accent);
 }
 
 .app-footer .container {
@@ -150,6 +151,7 @@
 
 .footer-section a:hover {
   color: var(--color-accent);
+  transform: translateX(5px);
 }
 
 /* Contact info specific styles */
@@ -186,16 +188,18 @@
 }
 
 .social-links a {
-  background-color: var(--color-primary);
-  color: white;
+  background-color: var(--color-primary-dark);
+  color: var(--color-white);
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
+  border: 2px solid transparent;
+  text-decoration: none;
 }
 
 /* Mobile social links */
@@ -213,17 +217,63 @@
   }
 }
 
+/* Social Links Hover Colors */
 .social-links a:hover {
-  background-color: var(--color-primary-dark);
-  transform: translateY(-3px);
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+  transform: translateY(-3px) scale(1.1);
+  border-color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(139, 195, 74, 0.3);
+}
+
+/* Individual social platform hover colors */
+.social-links a[href*="facebook"]:hover {
+  background-color: #1877f2;
+  color: var(--color-white);
+}
+
+.social-links a[href*="twitter"]:hover,
+.social-links a[href*="x.com"]:hover {
+  background-color: #000000;
+  color: var(--color-white);
+}
+
+.social-links a[href*="instagram"]:hover {
+  background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D);
+  color: var(--color-white);
+}
+
+.social-links a[href*="linkedin"]:hover {
+  background-color: #0077b5;
+  color: var(--color-white);
+}
+
+.social-links a[href*="youtube"]:hover {
+  background-color: #ff0000;
+  color: var(--color-white);
+}
+
+.social-links a[href*="whatsapp"]:hover {
+  background-color: #25d366;
+  color: var(--color-white);
+}
+
+.social-links a[href*="tiktok"]:hover {
+  background-color: #000000;
+  color: var(--color-white);
+}
+
+.social-links a[href*="pinterest"]:hover {
+  background-color: #e60023;
+  color: var(--color-white);
 }
 
 /* Footer bottom section */
 .footer-bottom {
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255,255,255,0.2);
   padding-top: 1.5rem;
   text-align: center;
-  color: var(--color-gray);
+  color: var(--color-primary-light);
   margin-top: 2rem;
   font-size: 0.9rem;
 }
@@ -299,16 +349,17 @@
   height: 100%;
   outline: none;
   transition: all 0.3s ease;
+  border: 2px solid transparent;
 }
 
 .newsletter-input:focus {
-  box-shadow: 0 0 0 2px var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.1);
 }
 
-.footer-section .newsletter-container .newsletter-btn {
-  all: unset;
-  background-color: var(--color-secondary);
-  color: var(--color-primary-dark);
+.newsletter-btn {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
   border: none;
   border-radius: 0 var(--border-radius) var(--border-radius) 0;
   padding: 0 1.5rem;
@@ -322,24 +373,71 @@
   gap: 0.5rem;
   height: 100%;
   white-space: nowrap;
+  font-family: var(--font-main);
 }
 
-.footer-section .newsletter-container .newsletter-btn:hover {
-  background-color: var(--color-accent);
+.newsletter-btn:hover {
+  background-color: var(--color-primary-dark);
+  color: var(--color-white);
+  transform: translateY(-1px);
 }
 
-/* Remove default button focus styles */
-.footer-section .newsletter-container .newsletter-btn:focus {
+.newsletter-btn:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-white);
 }
 
-.footer-section .newsletter-container h4 {
+.newsletter-container h4 {
   font-size: 1.1rem;
   font-weight: 600;
   align-self: flex-start;
   margin-bottom: 1rem;
   color: var(--color-accent);
+}
+
+/* Quick Links Styling */
+.quick-links a {
+  padding: 0.25rem 0;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.quick-links a:hover {
+  background-color: rgba(139, 195, 74, 0.1);
+  padding-left: 10px;
+}
+
+/* Contact Icons */
+.contact-info .icon {
+  color: var(--color-accent);
+  font-size: 1.1rem;
+  min-width: 20px;
+}
+
+/* Footer Branding */
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.footer-logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+}
+
+.footer-brand-text h3 {
+  color: var(--color-white);
+  margin-bottom: 0.5rem;
+}
+
+.footer-brand-text p {
+  color: var(--color-primary-light);
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 @media (min-width: 768px) {
@@ -349,20 +447,33 @@
     width: auto;
   }
 
-  .school-branding h1 {
-    font-size: 1.25rem;
-  }
-
   .newsletter-input {
     border-radius: var(--border-radius) 0 0 var(--border-radius);
     margin-bottom: 0;
     flex: 1;
   }
 
-  .footer-section .newsletter-container .newsletter-btn {
+  .newsletter-btn {
     width: auto;
-    /* Auto width on desktop */
     border-radius: 0 var(--border-radius) var(--border-radius) 0;
     padding: 0 1.5rem;
+  }
+}
+
+/* Enhanced hover effects for better interactivity */
+.footer-section a, 
+.footer-link, 
+.social-links a, 
+.newsletter-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .footer-section a,
+  .footer-link,
+  .social-links a,
+  .newsletter-btn {
+    transition: none;
   }
 }

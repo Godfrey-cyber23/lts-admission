@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import LockIcon from "@mui/icons-material/Lock";
-import BadgeIcon from "@mui/icons-material/Badge"; // For staff ID field
+import BadgeIcon from "@mui/icons-material/Badge";
 import api from "../api/api";
 import {
   Box,
@@ -15,6 +15,8 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Email as EmailIcon,
@@ -24,10 +26,13 @@ import {
 
 const Login = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    staffId: "", // Added staff ID field
+    staffId: "",
     showPassword: false,
   });
   const [error, setError] = useState("");
@@ -52,7 +57,7 @@ const Login = () => {
       const response = await api.post("/auth/login", {
         email: formData.email,
         password: formData.password,
-        staffId: formData.staffId, // Include staff ID in the request
+        staffId: formData.staffId,
       });
 
       console.log("Login response:", response.data);
@@ -85,11 +90,14 @@ const Login = () => {
       container
       component="main"
       sx={{
-        height: "100%",
+        height: "100vh",
+        minHeight: "100vh",
         position: "relative",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        padding: { xs: 2, sm: 3 },
+        overflow: "hidden",
         "&::before": {
           content: '""',
           position: "absolute",
@@ -117,18 +125,21 @@ const Login = () => {
     >
       <Grid
         item
-        xs={10}
-        sm={6}
+        xs={12}
+        sm={8}
         md={5}
         lg={4}
+        xl={3}
         component={Paper}
         elevation={6}
         sx={{
-          borderRadius: "10px",
+          borderRadius: 2,
           backgroundColor: "rgba(255, 255, 255, 0.95)",
-          padding: { xs: 2, sm: 4 },
-          margin: 2,
-          maxWidth: "450px",
+          backdropFilter: "blur(10px)",
+          padding: { xs: 1.5, sm: 2.5 },
+          margin: 1,
+          maxWidth: "380px",
+          width: "100%",
         }}
       >
         <Box
@@ -136,39 +147,65 @@ const Login = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            width: "100%",
           }}
         >
           {/* School Logo */}
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 1.5 }}>
             <img
               src="/school-logo.jpg"
               alt="Literacy Tree School Logo"
-              style={{ height: "80px" }}
+              style={{ 
+                height: isMobile ? "45px" : "55px",
+                width: "auto",
+                objectFit: "contain"
+              }}
             />
           </Box>
 
           <Typography
-            component="h2"
+            component="h1"
             color="darkgreen"
-            variant="h4"
-            sx={{ mb: 1, fontWeight: 600 }}
+            variant="h6"
+            sx={{ 
+              mb: 0.5,
+              fontWeight: 600,
+              textAlign: "center",
+              fontSize: { xs: "1.2rem", sm: "1.4rem" }
+            }}
           >
             Literacy Tree Admin Portal
           </Typography>
 
-          <Typography variant="body1" sx={{ mb: 3, color: "text.secondary" }}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              mb: 1.5,
+              color: "text.secondary", 
+              textAlign: 'center',
+              fontSize: "0.85rem"
+            }}
+          >
             Staff & Admin Sign In
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                width: "100%", 
+                mb: 1.5,
+                fontSize: "0.75rem",
+                py: 0.5
+              }}
+            >
               {error}
             </Alert>
           )}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               id="email"
@@ -182,15 +219,24 @@ const Login = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EmailIcon color="primary" />
+                    <EmailIcon color="primary" fontSize="small" />
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 1,
+                '& .MuiOutlinedInput-root': {
+                  fontSize: "0.85rem"
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: "0.85rem"
+                }
+              }}
+              size="small"
             />
 
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               name="staffId"
@@ -203,15 +249,24 @@ const Login = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <BadgeIcon color="primary" />
+                    <BadgeIcon color="primary" fontSize="small" />
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 1,
+                '& .MuiOutlinedInput-root': {
+                  fontSize: "0.85rem"
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: "0.85rem"
+                }
+              }}
+              size="small"
             />
 
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               name="password"
@@ -225,7 +280,7 @@ const Login = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LockIcon color="primary" />
+                    <LockIcon color="primary" fontSize="small" />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -234,17 +289,27 @@ const Login = () => {
                       aria-label="toggle password visibility"
                       onClick={togglePasswordVisibility}
                       edge="end"
+                      size="small"
                     >
                       {formData.showPassword ? (
-                        <VisibilityOff />
+                        <VisibilityOff fontSize="small" />
                       ) : (
-                        <Visibility />
+                        <Visibility fontSize="small" />
                       )}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 1.5,
+                '& .MuiOutlinedInput-root': {
+                  fontSize: "0.85rem"
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: "0.85rem"
+                }
+              }}
+              size="small"
             />
 
             <Button
@@ -253,20 +318,21 @@ const Login = () => {
               variant="contained"
               disabled={loading}
               sx={{
-                mt: 3,
-                mb: 2,
-                py: 1.5,
-                borderRadius: "8px",
+                mb: 1.5,
+                py: 0.8,
+                borderRadius: 1,
                 fontWeight: 600,
-                bgcolor: "primary.main",
+                fontSize: "0.85rem",
+                textTransform: 'none',
+                minHeight: '36px',
                 "&:hover": {
-                  bgcolor: "primary.dark",
                   transform: "translateY(-1px)",
+                  boxShadow: 2,
                 },
               }}
             >
               {loading ? (
-                <CircularProgress size={24} color="inherit" />
+                <CircularProgress size={18} color="inherit" />
               ) : (
                 "Sign In"
               )}
@@ -274,14 +340,21 @@ const Login = () => {
 
             <Grid
               container
-              sx={{ mt: 2, mb: 2, justifyContent: "space-between" }}
+              sx={{ mb: 1, justifyContent: "space-between" }}
             >
-              <Grid item xs>
+              <Grid item>
                 <Link
                   component={RouterLink}
                   to="/forgot-password"
                   variant="body2"
-                  sx={{ color: "primary.main" }}
+                  sx={{ 
+                    color: "primary.main",
+                    fontSize: "0.75rem",
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    }
+                  }}
                 >
                   Forgot password?
                 </Link>
@@ -291,23 +364,41 @@ const Login = () => {
                   component={RouterLink}
                   to="/register"
                   variant="body2"
-                  sx={{ color: "primary.main" }}
+                  sx={{ 
+                    color: "primary.main",
+                    fontSize: "0.75rem",
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    }
+                  }}
                 >
                   Create account
                 </Link>
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 4, textAlign: "center" }}>
+            {/* Spacing between form and footer */}
+            <Box sx={{ height: 12 }} />
+
+            <Box sx={{ textAlign: "center" }}>
               <Typography
-                variant="body2"
-                sx={{ color: "text.secondary", fontSize: "0.8rem" }}
+                variant="caption"
+                sx={{ 
+                  color: "text.secondary", 
+                  display: 'block',
+                  mb: 0.25,
+                  fontSize: "0.7rem"
+                }}
               >
                 Literacy Tree School Management System
               </Typography>
               <Typography
-                variant="body2"
-                sx={{ color: "text.secondary", fontSize: "0.8rem" }}
+                variant="caption"
+                sx={{ 
+                  color: "text.secondary", 
+                  fontSize: "0.7rem"
+                }}
               >
                 © {new Date().getFullYear()} All rights reserved
               </Typography>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
+import BadgeIcon from "@mui/icons-material/Badge";
 import api from "../api/api";
 import {
   Box,
@@ -15,10 +16,6 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from "@mui/material";
 import {
   Email as EmailIcon,
@@ -36,7 +33,8 @@ const Register = () => {
     phone: "",
     password: "",
     confirmPassword: "",
-    role: "parent",
+    role: "staff", // Default role is now staff
+    staffId: "",
     showPassword: false,
     showConfirmPassword: false,
   });
@@ -68,11 +66,19 @@ const Register = () => {
       return;
     }
 
+    // Staff ID is now always required
+    if (!formData.staffId.trim()) {
+      setError("Staff ID is required");
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log("Attempting registration with:", { 
+      console.log("Attempting staff registration with:", { 
         email: formData.email,
         firstName: formData.firstName,
-        lastName: formData.lastName 
+        lastName: formData.lastName,
+        staffId: formData.staffId
       });
 
       const response = await api.post("/auth/register", {
@@ -82,11 +88,12 @@ const Register = () => {
         phone: formData.phone,
         password: formData.password,
         role: formData.role,
+        staffId: formData.staffId, // Always include staff ID
       });
 
       console.log("Registration response:", response.data);
 
-      setSuccess("Registration successful! You can now login.");
+      setSuccess("Staff registration successful! You can now login.");
       
       // Clear form
       setFormData({
@@ -96,7 +103,8 @@ const Register = () => {
         phone: "",
         password: "",
         confirmPassword: "",
-        role: "parent",
+        role: "staff",
+        staffId: "",
         showPassword: false,
         showConfirmPassword: false,
       });
@@ -206,11 +214,11 @@ const Register = () => {
             variant="h4"
             sx={{ mb: 1, fontWeight: 600 }}
           >
-            Create Account
+            Staff Registration
           </Typography>
 
           <Typography variant="body1" sx={{ mb: 3, color: "text.secondary", textAlign: 'center' }}>
-            Join Literacy Tree School community. Fill in your details to create an account.
+            Create your staff account for Literacy Tree School. Fill in your details to get started.
           </Typography>
 
           {error && (
@@ -306,20 +314,27 @@ const Register = () => {
               sx={{ mb: 2 }}
             />
 
-            <FormControl fullWidth margin="normal" sx={{ mb: 2 }}>
-              <InputLabel id="role-label">Account Type</InputLabel>
-              <Select
-                labelId="role-label"
-                id="role"
-                name="role"
-                value={formData.role}
-                label="Account Type"
-                onChange={handleChange}
-              >
-                <MenuItem value="parent">Parent</MenuItem>
-                <MenuItem value="staff">Staff Member</MenuItem>
-              </Select>
-            </FormControl>
+            {/* Staff ID field - always visible now */}
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="staffId"
+              label="Staff ID"
+              name="staffId"
+              autoComplete="off"
+              value={formData.staffId}
+              onChange={handleChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BadgeIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+              helperText="Enter your official staff ID"
+            />
 
             <TextField
               margin="normal"
@@ -414,14 +429,14 @@ const Register = () => {
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
-                "Create Account"
+                "Create Staff Account"
               )}
             </Button>
 
             <Grid container justifyContent="center">
               <Grid item>
                 <Typography variant="body2">
-                  Already have an account?{" "}
+                  Already have a staff account?{" "}
                   <Link component={RouterLink} to="/login" sx={{ color: "primary.main" }}>
                     Sign in here
                   </Link>

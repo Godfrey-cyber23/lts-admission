@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import LockIcon from "@mui/icons-material/Lock";
+import BadgeIcon from "@mui/icons-material/Badge"; // For staff ID field
 import api from "../api/api";
 import {
   Box,
@@ -26,6 +27,7 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    staffId: "", // Added staff ID field
     showPassword: false,
   });
   const [error, setError] = useState("");
@@ -42,11 +44,15 @@ const Login = () => {
     setError("");
 
     try {
-      console.log("Attempting login with:", { email: formData.email });
+      console.log("Attempting login with:", { 
+        email: formData.email,
+        staffId: formData.staffId 
+      });
 
       const response = await api.post("/auth/login", {
         email: formData.email,
         password: formData.password,
+        staffId: formData.staffId, // Include staff ID in the request
       });
 
       console.log("Login response:", response.data);
@@ -63,7 +69,7 @@ const Login = () => {
       setError(
         err.response?.data?.message ||
         err.message ||
-        "Login failed. Please try again."
+        "Login failed. Please check your credentials and staff ID."
       );
     } finally {
       setLoading(false);
@@ -151,7 +157,7 @@ const Login = () => {
           </Typography>
 
           <Typography variant="body1" sx={{ mb: 3, color: "text.secondary" }}>
-            Sign in to access the administration dashboard
+            Staff & Admin Sign In
           </Typography>
 
           {error && (
@@ -177,6 +183,27 @@ const Login = () => {
                 startAdornment: (
                   <InputAdornment position="start">
                     <EmailIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="staffId"
+              label="Staff ID"
+              placeholder="Enter your staff ID"
+              id="staffId"
+              autoComplete="off"
+              value={formData.staffId}
+              onChange={handleChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BadgeIcon color="primary" />
                   </InputAdornment>
                 ),
               }}

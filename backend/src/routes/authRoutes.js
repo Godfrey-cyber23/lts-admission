@@ -2,8 +2,11 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { supabase } from '../config/db.js';
 import catchAsync from '../utils/catchAsync.js';
+import sendEmail from '../utils/email.js';
 
 const router = express.Router();
 
@@ -11,7 +14,7 @@ const router = express.Router();
 const generateToken = (userId, role) => {
   return jwt.sign(
     { 
-      userId, 
+      id: userId, // Changed from userId to id for consistency
       role,
       type: 'access'
     }, 
@@ -22,17 +25,22 @@ const generateToken = (userId, role) => {
   );
 };
 
-// Simple password verification (replace with bcrypt in production)
-const verifyPassword = (inputPassword, storedPassword) => {
-  // For now, using simple comparison since passwords are stored in plain text
-  // In production, you should use bcrypt.compare()
-  return inputPassword === storedPassword;
+// Hash password using bcrypt
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return await bcrypt.hash(password, salt);
+};
+
+// Verify password using bcrypt
+const verifyPassword = async (inputPassword, storedPassword) => {
+  return await bcrypt.compare(inputPassword, storedPassword);
 };
 
 // Login route
 router.post('/login', [
   body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 1 }).withMessage('Password is required')
+  body('password').isLength({ min: 1 }).withMessage('Password is required'),
+  body('staffId').notEmpty().withMessage('Staff ID is required')
 ], catchAsync(async (req, res, next) => {
   // Check for validation errors
   const errors = validationResult(req);
@@ -44,19 +52,20 @@ router.post('/login', [
     });
   }
 
-  const { email, password } = req.body;
+  const { email, password, staffId } = req.body;
 
-  // Find user by email using Supabase
+  // Find user by email and staff ID using Supabase
   const { data: user, error } = await supabase
     .from('users')
     .select('*')
     .eq('email', email)
+    .eq('staffId', staffId)
     .single();
 
   if (error || !user) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid email or password'
+      message: 'Invalid email, password, or staff ID'
     });
   }
 
@@ -68,12 +77,12 @@ router.post('/login', [
     });
   }
 
-  // Verify password
-  const isPasswordValid = verifyPassword(password, user.password);
+  // Verify password using bcrypt
+  const isPasswordValid = await verifyPassword(password, user.password);
   if (!isPasswordValid) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid email or password'
+      message: 'Invalid email, password, or staff ID'
     });
   }
 
@@ -100,12 +109,13 @@ router.post('/login', [
   });
 }));
 
+// Register staff route
 router.post('/register', [
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
-  body('role').isIn(['parent', 'staff']).withMessage('Invalid role')
+  body('staffId').notEmpty().withMessage('Staff ID is required')
 ], catchAsync(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -116,7 +126,7 @@ router.post('/register', [
     });
   }
 
-  const { firstName, lastName, email, password, phone, role } = req.body;
+  const { firstName, lastName, email, password, phone, staffId } = req.body;
 
   // Check if user already exists
   const { data: existingUser, error: checkError } = await supabase
@@ -132,16 +142,34 @@ router.post('/register', [
     });
   }
 
-  // Create new user
+  // Check if staff ID already exists
+  const { data: existingStaff, error: staffError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('staffId', staffId)
+    .single();
+
+  if (existingStaff) {
+    return res.status(400).json({
+      success: false,
+      message: 'Staff ID already exists'
+    });
+  }
+
+  // Hash password
+  const hashedPassword = await hashPassword(password);
+
+  // Create new staff user
   const { data: newUser, error } = await supabase
     .from('users')
     .insert([{
       firstName,
       lastName,
       email,
-      password, // In production, hash this password
+      password: hashedPassword,
       phone,
-      role,
+      staffId,
+      role: 'staff',
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -161,7 +189,7 @@ router.post('/register', [
 
   res.status(201).json({
     success: true,
-    message: 'User registered successfully',
+    message: 'Staff registered successfully',
     user: userWithoutPassword
   });
 }));
@@ -184,7 +212,7 @@ router.get('/me', catchAsync(async (req, res, next) => {
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .eq('id', decoded.userId)
+      .eq('id', decoded.id) // Changed from decoded.userId to decoded.id
       .single();
 
     if (error || !user) {
@@ -202,7 +230,7 @@ router.get('/me', catchAsync(async (req, res, next) => {
       });
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password, ...userWithoutPassword } = user;
 
     res.json({
       success: true,
@@ -235,7 +263,8 @@ router.get('/me', catchAsync(async (req, res, next) => {
 
 // Forgot password route
 router.post('/forgot-password', [
-  body('email').isEmail().normalizeEmail()
+  body('email').isEmail().normalizeEmail(),
+  body('staffId').notEmpty().withMessage('Staff ID is required')
 ], catchAsync(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -246,52 +275,87 @@ router.post('/forgot-password', [
     });
   }
 
-  const { email } = req.body;
+  const { email, staffId } = req.body;
 
   // Check if user exists using Supabase
   const { data: user, error } = await supabase
     .from('users')
     .select('id, email, firstName, lastName')
     .eq('email', email)
+    .eq('staffId', staffId)
     .single();
 
   // For security, don't reveal if email exists or not
   if (error || !user) {
     return res.json({
       success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
+      message: 'If an account with that email and staff ID exists, a password reset link has been sent.'
     });
   }
 
   // Generate reset token
-  const resetToken = jwt.sign(
-    { 
-      userId: user.id, 
-      action: 'password_reset',
-      type: 'reset'
-    },
-    process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
-    { expiresIn: '1h' }
-  );
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
 
-  // TODO: In production, implement email service
-  // For now, we'll log the token (remove this in production)
-  console.log('Password reset token for', user.email, ':', resetToken);
+  // Save hashed token and expiry to database
+  const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  // In a real application, you would:
-  // 1. Save the reset token to the database with an expiry
-  // 2. Send an email with a reset link containing the token
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: resetTokenExpiry.toISOString()
+    })
+    .eq('id', user.id);
 
-  res.json({
-    success: true,
-    message: 'If an account with that email exists, a password reset link has been sent.'
-  });
+  if (updateError) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error generating reset token'
+    });
+  }
+
+  // Send email with reset token
+  const resetURL = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+  
+  const message = `You requested a password reset. Please click the following link to reset your password: ${resetURL}\n\nThis link will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Password Reset Request - Literacy Tree School',
+      message
+    });
+
+    res.json({
+      success: true,
+      message: 'Password reset link sent to your email.'
+    });
+  } catch (err) {
+    // Reset token if email fails
+    await supabase
+      .from('users')
+      .update({
+        resetPasswordToken: null,
+        resetPasswordExpire: null
+      })
+      .eq('id', user.id);
+
+    return res.status(500).json({
+      success: false,
+      message: 'There was an error sending the email. Try again later.'
+    });
+  }
 }));
 
 // Reset password route
 router.post('/reset-password', [
   body('token').notEmpty().withMessage('Reset token is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+  body('staffId').notEmpty().withMessage('Staff ID is required')
 ], catchAsync(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -302,54 +366,54 @@ router.post('/reset-password', [
     });
   }
 
-  const { token, password } = req.body;
+  const { token, password, staffId } = req.body;
 
-  try {
-    // Verify the reset token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production');
-    
-    if (decoded.action !== 'password_reset') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid reset token'
-      });
-    }
+  // Hash token and find user
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
 
-    // Update user password in Supabase
-    const { error } = await supabase
-      .from('users')
-      .update({ 
-        password: password, // In production, hash this password
-        updatedAt: new Date().toISOString()
-      })
-      .eq('id', decoded.userId);
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('resetPasswordToken', hashedToken)
+    .eq('staffId', staffId)
+    .gt('resetPasswordExpire', new Date().toISOString())
+    .single();
 
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: 'Error updating password'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Password has been reset successfully'
-    });
-
-  } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid or expired reset token'
-      });
-    }
-
-    console.error('Reset password error:', error);
-    res.status(500).json({
+  if (userError || !user) {
+    return res.status(400).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Token is invalid or has expired, or staff ID is incorrect'
     });
   }
+
+  // Hash new password
+  const hashedPassword = await hashPassword(password);
+
+  // Update password and clear reset token
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({
+      password: hashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpire: null,
+      updatedAt: new Date().toISOString()
+    })
+    .eq('id', user.id);
+
+  if (updateError) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error updating password'
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Password updated successfully'
+  });
 }));
 
 // Register admin route (first-time setup)
@@ -357,7 +421,8 @@ router.post('/register-admin', [
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
   body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+  body('staffId').notEmpty().withMessage('Staff ID is required')
 ], catchAsync(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -388,7 +453,10 @@ router.post('/register-admin', [
     });
   }
 
-  const { firstName, lastName, email, password } = req.body;
+  const { firstName, lastName, email, password, staffId } = req.body;
+
+  // Hash password
+  const hashedPassword = await hashPassword(password);
 
   // Create admin user in Supabase
   const { data: newUser, error } = await supabase
@@ -397,7 +465,8 @@ router.post('/register-admin', [
       firstName,
       lastName,
       email,
-      password, // In production, hash this password
+      password: hashedPassword,
+      staffId,
       role: 'admin',
       isActive: true,
       createdAt: new Date().toISOString(),

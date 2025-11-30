@@ -2,6 +2,8 @@ import { supabase } from '../config/db.js';
 import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
 
+// User Management Functions
+
 export const getUsers = catchAsync(async (req, res, next) => {
   let query = supabase.from('users').select('*', { count: 'exact' });
 
@@ -176,12 +178,147 @@ export const deleteUser = catchAsync(async (req, res, next) => {
   });
 });
 
+// Subscriber Management Functions
+
+export const getSubscribers = catchAsync(async (req, res, next) => {
+  let query = supabase.from('subscribers').select('*', { count: 'exact' });
+
+  // Search functionality
+  if (req.query.search) {
+    query = query.ilike('email', `%${req.query.search}%`);
+  }
+
+  // Sorting
+  const sortBy = req.query.sort || 'subscribed_at.desc';
+  const [sortField, sortOrder] = sortBy.split('.');
+  query = query.order(sortField, { ascending: sortOrder === 'asc' });
+
+  // Pagination
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data: subscribers, error, count } = await query.range(from, to);
+
+  if (error) {
+    return next(new AppError('Error fetching subscribers', 500));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    results: subscribers?.length || 0,
+    data: {
+      subscribers: subscribers || []
+    },
+    pagination: {
+      page,
+      limit,
+      total: count || 0,
+      pages: Math.ceil((count || 0) / limit)
+    }
+  });
+});
+
+export const subscribe = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return next(new AppError('Email is required', 400));
+  }
+
+  // Check if email is already subscribed
+  const { data: existingSubscriber, error: checkError } = await supabase
+    .from('subscribers')
+    .select('id')
+    .eq('email', email)
+    .single();
+
+  if (existingSubscriber) {
+    return res.status(200).json({
+      status: 'success',
+      message: 'You are already subscribed to our newsletter.'
+    });
+  }
+
+  // Add new subscriber
+  const { data: newSubscriber, error } = await supabase
+    .from('subscribers')
+    .insert([{
+      email,
+      subscribed_at: new Date().toISOString(),
+      is_active: true
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    return next(new AppError('Failed to subscribe to newsletter', 500));
+  }
+
+  res.status(201).json({
+    status: 'success',
+    message: 'Successfully subscribed to our newsletter.',
+    data: {
+      subscriber: newSubscriber
+    }
+  });
+});
+
+export const unsubscribe = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return next(new AppError('Email is required', 400));
+  }
+
+  // Find and update subscriber
+  const { data: subscriber, error } = await supabase
+    .from('subscribers')
+    .update({ is_active: false })
+    .eq('email', email)
+    .select()
+    .single();
+
+  if (error || !subscriber) {
+    return next(new AppError('Subscriber not found', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'You have been unsubscribed from our newsletter.'
+  });
+});
+
+export const deleteSubscriber = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  // Delete subscriber
+  const { error } = await supabase
+    .from('subscribers')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    return next(new AppError('Error deleting subscriber', 500));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Subscriber deleted successfully.'
+  });
+});
+
 const userController = {
   getUsers,
   getUser,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  getSubscribers,
+  subscribe,
+  unsubscribe,
+  deleteSubscriber
 };
 
 export default userController;

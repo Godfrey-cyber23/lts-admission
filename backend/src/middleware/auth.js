@@ -21,8 +21,8 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('Decoded token:', decoded);
     
-    // FIX: Use userId instead of id
-    if (!decoded.userId) {
+    // Check for user ID in token (consistent with previous code)
+    if (!decoded.id) {
       console.log('No user ID in token');
       return next(new ErrorResponse('Not authorized to access this route', 401));
     }
@@ -30,8 +30,8 @@ export const protect = async (req, res, next) => {
     // Be specific about which columns to select to avoid ambiguity
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, role, firstName, lastName, isActive')
-      .eq('id', decoded.userId) // Use decoded.userId here
+      .select('id, email, role, firstName, lastName, isActive, staffId')
+      .eq('id', decoded.id) // Use decoded.id here
       .single();
 
     if (error) {
@@ -70,6 +70,7 @@ export const authorize = (...roles) => {
   };
 };
 
+// Check if user is admin or superadmin
 export const isAdmin = (req, res, next) => {
   if (!req.user) {
     return next(new ErrorResponse('Not authorized to access this route', 401));
@@ -78,5 +79,44 @@ export const isAdmin = (req, res, next) => {
   if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
     return next(new ErrorResponse('User is not authorized as admin', 403));
   }
+  next();
+};
+
+// Check if user is staff (admin or staff member)
+export const isStaff = (req, res, next) => {
+  if (!req.user) {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
+  
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin' && req.user.role !== 'staff') {
+    return next(new ErrorResponse('User is not authorized as staff', 403));
+  }
+  next();
+};
+
+// Verify staff ID (for additional security)
+export const verifyStaffId = (req, res, next) => {
+  if (!req.user) {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
+  
+  // Only staff members and admins need to verify staff ID
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin' && req.user.role !== 'staff') {
+    return next();
+  }
+  
+  // Check if staff ID is provided in the request
+  if (!req.body.staffId && !req.query.staffId) {
+    return next(new ErrorResponse('Staff ID is required', 400));
+  }
+  
+  // Get staff ID from request body or query parameters
+  const providedStaffId = req.body.staffId || req.query.staffId;
+  
+  // Verify staff ID matches the one in the database
+  if (req.user.staffId !== providedStaffId) {
+    return next(new ErrorResponse('Invalid staff ID', 401));
+  }
+  
   next();
 };

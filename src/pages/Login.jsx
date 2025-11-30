@@ -196,6 +196,7 @@ const Login = () => {
           )}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
+            {/* Email Field */}
             <TextField
               margin="dense"
               required
@@ -227,6 +228,7 @@ const Login = () => {
               size="small"
             />
 
+            {/* Staff ID Field - ONLY ONE */}
             <TextField
               margin="dense"
               required
@@ -257,27 +259,7 @@ const Login = () => {
               size="small"
             />
 
-            <TextField
-              margin="dense"
-              required
-              fullWidth
-              name="staffId"
-              label="Staff ID"
-              placeholder="Enter your staff ID"
-              id="staffId"
-              autoComplete="off"
-              value={formData.staffId}
-              onChange={handleChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <BadgeIcon color="primary" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2 }}
-            />
-
+            {/* Password Field */}
             <TextField
               margin="normal"
               required

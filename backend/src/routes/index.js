@@ -9,6 +9,7 @@ import staffRoutes from './staffRoutes.js';
 import academicRoutes from './academicRoutes.js';
 import financeRoutes from './financeRoutes.js';
 import eventRoutes from './eventRoutes.js';
+import subscriberRoutes from './subscriberRoutes.js';
 
 const router = Router();
 
@@ -32,6 +33,9 @@ const mountRoutes = () => {
     
     router.use('/pages', pageRoutes);
     console.log('✅ Page routes mounted');
+
+    router.use('/subscribers', subscriberRoutes);
+    console.log('✅ Subscribers routes mounted');
     
     router.use('/programs', programRoutes);
     console.log('✅ Program routes mounted');

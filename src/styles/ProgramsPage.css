@@ -41,9 +41,9 @@
   --transition-slow: 0.5s ease;
 
   /* Hero Blur Variables */
-  --hero-blur-bg: rgba(11, 8, 15, 0.7);
-  --hero-blur-border: rgba(255, 255, 255, 0.1);
-  --hero-blur-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --hero-blur-bg: rgba(44, 94, 58, 0.3); 
+  --hero-blur-border:transparent;
+ --hero-blur-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .programs-page {
@@ -98,12 +98,12 @@
   transform: translate(-50%, -50%);
   width: 90%;
   max-width: 900px;
-  padding: 3rem 2rem;
+  padding: 2rem;
   background: var(--hero-blur-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--hero-blur-border);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: var(--border-radius);
+  border: none;
   box-shadow: var(--hero-blur-shadow);
   z-index: 10;
   text-align: center;

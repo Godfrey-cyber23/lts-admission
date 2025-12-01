@@ -135,6 +135,15 @@ router.post('/register', [
     .eq('email', email)
     .single();
 
+  // Handle database error properly
+  if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    console.error('Database error checking existing user:', checkError);
+    return res.status(500).json({
+      success: false,
+      message: 'Database error occurred while checking user'
+    });
+  }
+
   if (existingUser) {
     return res.status(400).json({
       success: false,
@@ -148,6 +157,15 @@ router.post('/register', [
     .select('id')
     .eq('staffId', staffId)
     .single();
+
+  // Handle database error properly
+  if (staffError && staffError.code !== 'PGRST116') {
+    console.error('Database error checking existing staff ID:', staffError);
+    return res.status(500).json({
+      success: false,
+      message: 'Database error occurred while checking staff ID'
+    });
+  }
 
   if (existingStaff) {
     return res.status(400).json({
@@ -168,7 +186,7 @@ router.post('/register', [
       email,
       password: hashedPassword,
       phone,
-      staffId: staffId,
+      staffId, // Using shorthand property name
       role: 'staff',
       isActive: true,
       createdAt: new Date().toISOString(),
@@ -179,7 +197,7 @@ router.post('/register', [
 
   if (error) {
     console.error('Registration error:', error);
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to create user: ' + error.message
     });
@@ -206,7 +224,7 @@ router.get('/me', catchAsync(async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || '09432ec4a0b4dd3ffa1737e0b806d783b068f9b3a0af2f18316705b7f1888e25230751ebc73cc51d153e7ba150998d36cfdf28efcf5a31ab6030ecd3fcddaa25be6829eb8ae6d2500d4951f52d0a30167f17ec938ab3b364b616dc2c1b9c4f07d25bf88265b1430095a2292d1c45a0e0b88792f6f536e89ad6aab82cd0862e5f1e6306e6b2973090d1059a4975d36912f5981ff80af457dc1edff5fe4ac580f6d802a9c4d19781a01b6a2f7ce0fd6d739dca10f10e4fe4eea6761662a238f39a4a65b432c75c84605ffa7a873807e39efa6362f55e835ccf30247a82fd9d0954f229bfb41bed7607660b09e20c64abc517c1da53edaf92bad0a8be9708a57b29');
     
     // Find user by ID using Supabase
     const { data: user, error } = await supabase
@@ -312,6 +330,7 @@ router.post('/forgot-password', [
     .eq('id', user.id);
 
   if (updateError) {
+    console.error('Error updating reset token:', updateError);
     return res.status(500).json({
       success: false,
       message: 'Error generating reset token'
@@ -335,6 +354,7 @@ router.post('/forgot-password', [
       message: 'Password reset link sent to your email.'
     });
   } catch (err) {
+    console.error('Error sending reset email:', err);
     // Reset token if email fails
     await supabase
       .from('users')
@@ -404,6 +424,7 @@ router.post('/reset-password', [
     .eq('id', user.id);
 
   if (updateError) {
+    console.error('Error updating password:', updateError);
     return res.status(500).json({
       success: false,
       message: 'Error updating password'
@@ -440,6 +461,7 @@ router.post('/register-admin', [
     .in('role', ['admin', 'superadmin']);
 
   if (countError) {
+    console.error('Error checking existing admins:', countError);
     return res.status(500).json({
       success: false,
       message: 'Database error'
@@ -455,6 +477,29 @@ router.post('/register-admin', [
 
   const { firstName, lastName, email, password, staffId } = req.body;
 
+  // Check if staff ID already exists
+  const { data: existingStaff, error: staffError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('staffId', staffId)
+    .single();
+
+  // Handle database error properly
+  if (staffError && staffError.code !== 'PGRST116') {
+    console.error('Database error checking existing staff ID:', staffError);
+    return res.status(500).json({
+      success: false,
+      message: 'Database error occurred while checking staff ID'
+    });
+  }
+
+  if (existingStaff) {
+    return res.status(400).json({
+      success: false,
+      message: 'Staff ID already exists'
+    });
+  }
+
   // Hash password
   const hashedPassword = await hashPassword(password);
 
@@ -466,7 +511,7 @@ router.post('/register-admin', [
       lastName,
       email,
       password: hashedPassword,
-      staffId,
+      staffId, // Using shorthand property name
       role: 'admin',
       isActive: true,
       createdAt: new Date().toISOString(),
@@ -477,7 +522,7 @@ router.post('/register-admin', [
 
   if (error) {
     console.error('Admin registration error:', error);
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to create admin user: ' + error.message
     });

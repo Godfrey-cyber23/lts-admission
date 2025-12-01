@@ -268,6 +268,59 @@ router.post('/login', [
   }
 }));
 
+router.post('/test-email', catchAsync(async (req, res) => {
+  try {
+    const { email, subject, message } = req.body || {};
+    
+    console.log('Test email request received:', { email, subject, message });
+    
+    const result = await sendEmail({
+      email: email || 'test@example.com',
+      subject: subject || 'Test Email from Literacy Tree School',
+      message: message || 'This is a test email to verify the email service is working.',
+      resetURL: 'https://example.com/reset-password?token=test-token-123'
+    });
+    
+    res.json({
+      success: true,
+      message: 'Test email sent successfully',
+      details: {
+        previewUrl: result.previewUrl,
+        messageId: result.messageId,
+        note: result.previewUrl ? `Check email at: ${result.previewUrl}` : 'Email sent to real address'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({
+      success: false,
+      message: `Failed to send test email: ${error.message}`,
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      suggestion: 'Check your email configuration in environment variables'
+    });
+  }
+}));
+
+// Debug email configuration
+router.get('/email-config', catchAsync(async (req, res) => {
+  // Don't expose passwords in response
+  const config = {
+    EMAIL_HOST: process.env.EMAIL_HOST ? 'SET' : 'NOT SET',
+    EMAIL_PORT: process.env.EMAIL_PORT ? 'SET' : 'NOT SET',
+    EMAIL_USER: process.env.EMAIL_USER ? 'SET' : 'NOT SET',
+    EMAIL_FROM: process.env.EMAIL_FROM ? 'SET' : 'NOT SET',
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    CLIENT_URL: process.env.CLIENT_URL || 'NOT SET'
+  };
+  
+  res.json({
+    success: true,
+    config: config,
+    timestamp: new Date().toISOString()
+  });
+}));
+
 // Register staff route - PostgreSQL compatible
 router.post('/register', [
   body('firstName').notEmpty().trim().withMessage('First name is required'),
@@ -577,35 +630,108 @@ router.put('/update-password', protect, [
 
 // Forgot password route
 router.post('/forgot-password', [
-  body('email').isEmail().normalizeEmail(),
-  body('staffId').notEmpty().withMessage('Staff ID is required')
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .customSanitizer(value => {
+      if (!value) return value;
+      return value.toLowerCase().trim();
+    }),
+  body('staffId')
+    .notEmpty()
+    .withMessage('Staff ID is required')
+    .trim()
+    .customSanitizer(value => value.toUpperCase())
 ], catchAsync(async (req, res) => {
+  // Check for validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: errors.array()
+    console.log('Forgot password validation errors:', errors.array());
+    
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Validation failed', 
+      errors: errors.array().map(err => ({ field: err.path, message: err.msg }))
     });
   }
 
   const { email, staffId } = req.body;
+  
+  // Sanitize inputs
+  const sanitizedEmail = email.toLowerCase().trim();
+  const sanitizedStaffId = staffId.trim().toUpperCase();
+  
+  console.log('Forgot password request:', { 
+    email: sanitizedEmail,
+    staffId: sanitizedStaffId
+  });
 
-  // Check if user exists in PostgreSQL
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('id, email, firstName, lastName')
-    .ilike('email', email.toLowerCase().trim())
-    .eq('staffId', staffId.trim().toUpperCase())
-    .single();
+  // CRITICAL FIX: Handle dots in email for comparison
+  // Some email providers treat dots differently (Gmail ignores dots in local part)
+  const emailVariations = [sanitizedEmail];
+  
+  // If email has dots in local part, create variations
+  const [localPart, domain] = sanitizedEmail.split('@');
+  if (localPart && domain) {
+    // Remove dots from local part for comparison
+    const dotlessLocal = localPart.replace(/\./g, '');
+    if (dotlessLocal !== localPart) {
+      emailVariations.push(`${dotlessLocal}@${domain}`);
+    }
+    
+    // Also try with different dot combinations
+    const withDots = localPart.split('').join('.');
+    if (withDots !== localPart) {
+      emailVariations.push(`${withDots}@${domain}`);
+    }
+  }
+
+  console.log('Checking email variations:', emailVariations);
+
+  // Check if user exists using PostgreSQL
+  // Try exact match first, then try variations
+  let user = null;
+  let dbError = null;
+  
+  for (const emailVar of emailVariations) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, email, firstName, lastName, staffId')
+      .eq('staffId', sanitizedStaffId)
+      .ilike('email', emailVar)
+      .single();
+    
+    if (data && !error) {
+      user = data;
+      console.log(`Found user with email variation: ${emailVar} (stored as: ${user.email})`);
+      break;
+    }
+    
+    if (error && error.code !== 'PGRST116') {
+      dbError = error;
+      break;
+    }
+  }
 
   // For security, don't reveal if email exists or not
-  if (error || !user) {
+  if (!user) {
+    console.log('User not found after checking all variations:', {
+      requestedEmail: sanitizedEmail,
+      staffId: sanitizedStaffId,
+      error: dbError?.message
+    });
     return res.json({
       success: true,
       message: 'If an account with that email and staff ID exists, a password reset link has been sent.'
     });
   }
+
+  console.log('User found for password reset:', {
+    id: user.id,
+    email: user.email, // Actual stored email
+    staffId: user.staffId,
+    firstName: user.firstName
+  });
 
   // Generate reset token
   const resetToken = crypto.randomBytes(32).toString('hex');
@@ -614,7 +740,7 @@ router.post('/forgot-password', [
     .update(resetToken)
     .digest('hex');
 
-  // Save hashed token and expiry to PostgreSQL
+  // Save hashed token and expiry to database
   const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   const { error: updateError } = await supabase
@@ -626,31 +752,56 @@ router.post('/forgot-password', [
     .eq('id', user.id);
 
   if (updateError) {
-    console.error('PostgreSQL error updating reset token:', updateError);
+    console.error('Error updating reset token:', updateError);
     return res.status(500).json({
       success: false,
-      message: 'Error generating reset token in database'
+      message: 'Error generating reset token'
     });
   }
 
   // Send email with reset token
   const resetURL = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-
-  const message = `You requested a password reset. Please click the following link to reset your password: ${resetURL}\n\nThis link will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`;
-
+  
+  console.log('Attempting to send password reset email:', {
+    to: user.email, // Use the ACTUAL stored email
+    resetURL: resetURL,
+    timestamp: new Date().toISOString()
+  });
+  
   try {
-    await sendEmail({
-      email: user.email,
+    const emailResult = await sendEmail({
+      email: user.email, // Use the ACTUAL stored email
       subject: 'Password Reset Request - Literacy Tree School',
-      message
+      message: `You requested a password reset. Please click the following link to reset your password: ${resetURL}\n\nThis link will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`,
+      resetURL: resetURL
     });
-
-    res.json({
+    
+    console.log('Password reset email sent successfully:', {
+      messageId: emailResult.messageId,
+      previewUrl: emailResult.previewUrl,
+      to: user.email
+    });
+    
+    const response = {
       success: true,
       message: 'Password reset link sent to your email.'
+    };
+    
+    // Include preview URL for Ethereal emails
+    if (emailResult.previewUrl) {
+      response.previewUrl = emailResult.previewUrl;
+      response.note = 'Check your email or view at the link above.';
+    }
+    
+    res.json(response);
+    
+  } catch (emailError) {
+    console.error('Error sending reset email:', {
+      error: emailError.message,
+      stack: emailError.stack,
+      to: user.email
     });
-  } catch (err) {
-    console.error('Error sending reset email:', err);
+    
     // Reset token if email fails
     await supabase
       .from('users')
@@ -662,7 +813,8 @@ router.post('/forgot-password', [
 
     return res.status(500).json({
       success: false,
-      message: 'There was an error sending the email. Try again later.'
+      message: 'There was an error sending the email. Try again later.',
+      debug: process.env.NODE_ENV === 'development' ? emailError.message : undefined
     });
   }
 }));

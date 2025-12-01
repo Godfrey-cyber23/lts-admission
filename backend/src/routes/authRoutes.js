@@ -759,18 +759,18 @@ router.post('/forgot-password', [
     });
   }
 
-  // Send email with reset token
-  const resetURL = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+  // Send email with reset token - INCLUDE STAFF ID IN URL
+  const resetURL = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&staffId=${encodeURIComponent(sanitizedStaffId)}`;
   
   console.log('Attempting to send password reset email:', {
-    to: user.email, // Use the ACTUAL stored email
+    to: user.email, // Use ACTUAL stored email
     resetURL: resetURL,
     timestamp: new Date().toISOString()
   });
   
   try {
     const emailResult = await sendEmail({
-      email: user.email, // Use the ACTUAL stored email
+      email: user.email, // Use ACTUAL stored email
       subject: 'Password Reset Request - Literacy Tree School',
       message: `You requested a password reset. Please click the following link to reset your password: ${resetURL}\n\nThis link will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`,
       resetURL: resetURL
@@ -842,6 +842,12 @@ router.post('/reset-password', [
     .update(token)
     .digest('hex');
 
+  console.log('Reset password attempt:', {
+    token: token.substring(0, 8) + '...', // Only log first 8 chars for security
+    staffId: staffId.trim().toUpperCase(),
+    hashedToken: hashedToken.substring(0, 8) + '...' // Only log first 8 chars for security
+  });
+
   const { data: user, error: userError } = await supabase
     .from('users')
     .select('*')
@@ -849,6 +855,8 @@ router.post('/reset-password', [
     .eq('staffId', staffId.trim().toUpperCase())
     .gt('resetPasswordExpire', new Date().toISOString())
     .single();
+
+  console.log('User lookup result:', { user: user ? 'found' : 'not found', error: userError?.message });
 
   if (userError || !user) {
     return res.status(400).json({
@@ -879,6 +887,8 @@ router.post('/reset-password', [
     });
   }
 
+  console.log('Password updated successfully for user:', user.id);
+  
   res.json({
     success: true,
     message: 'Password updated successfully'

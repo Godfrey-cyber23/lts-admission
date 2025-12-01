@@ -1,3 +1,4 @@
+// ForgotPassword.jsx - Updated with better error handling
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LockIcon from '@mui/icons-material/Lock';
@@ -33,7 +34,7 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,7 +46,7 @@ const ForgotPassword = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-    setDebugInfo('');
+    setPreviewUrl('');
 
     // Validate inputs
     if (!formData.email.trim() || !formData.email.includes('@')) {
@@ -66,7 +67,6 @@ const ForgotPassword = () => {
     });
 
     try {
-      // Use fetch directly for better debugging
       const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/forgot-password', {
         method: 'POST',
         headers: {
@@ -76,55 +76,63 @@ const ForgotPassword = () => {
         body: JSON.stringify({
           email: formData.email.toLowerCase().trim(),
           staffId: formData.staffId.trim().toUpperCase()
-        })
+        }),
+        // Add timeout
+        signal: AbortSignal.timeout(30000)
       });
 
-      const responseText = await response.text();
-      console.log('Forgot password response:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: responseText
-      });
-
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch (e) {
-        console.error('Failed to parse response:', e);
-        responseData = { message: 'Server returned invalid response' };
-      }
-
+      console.log('Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        if (response.status === 400 && responseData.errors) {
-          const validationErrors = responseData.errors.map(err => 
-            `${err.field || err.param}: ${err.msg}`
-          ).join(', ');
-          throw new Error(`Validation failed: ${validationErrors}`);
+        const errorText = await response.text();
+        console.error('Server error response:', errorText);
+        
+        let errorMessage = `Server error: ${response.status}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+          
+          // If there's a preview URL (for Ethereal emails), show it
+          if (errorData.previewUrl) {
+            setPreviewUrl(errorData.previewUrl);
+            errorMessage += ' (Check preview link below)';
+          }
+        } catch (e) {
+          // Not JSON response
         }
-        throw new Error(responseData.message || `Request failed with status ${response.status}`);
+        
+        throw new Error(errorMessage);
       }
 
-      // Always show success message (for security, don't reveal if user exists)
-      setSuccess('If an account with that email and staff ID exists, a password reset link has been sent. Please check your email inbox and spam folder.');
+      const responseData = await response.json();
+      console.log('Success response:', responseData);
+
+      // Always show success message (for security)
+      setSuccess('If an account with that email and staff ID exists, a password reset link has been sent.');
+      
+      // If there's a preview URL (for Ethereal emails), show it
+      if (responseData.previewUrl) {
+        setPreviewUrl(responseData.previewUrl);
+        setSuccess(prev => prev + ' Click the preview link below to view the test email.');
+      }
       
       // Clear form
       setFormData({ email: '', staffId: '' });
 
-      // Show debug info in development
-      if (process.env.NODE_ENV === 'development') {
-        setDebugInfo(`Email attempted: ${formData.email}, Staff ID: ${formData.staffId}`);
-      }
-
     } catch (err) {
       console.error('Forgot password error:', err);
       
-      // For security reasons, still show success message
-      // This prevents attackers from knowing which emails/staff IDs exist
-      setSuccess('If an account with that email and staff ID exists, a password reset link has been sent. Please check your email inbox and spam folder.');
+      if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+        setError('Request timeout. Please try again.');
+      } else if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError(err.message || 'An error occurred. Please try again.');
+      }
       
-      // But also log the real error for debugging
-      if (process.env.NODE_ENV === 'development') {
-        setError(`Debug: ${err.message}`);
+      // Still show security message
+      if (!error) {
+        setSuccess('If an account with that email and staff ID exists, a password reset link has been sent. Please check your email inbox and spam folder.');
       }
     } finally {
       setLoading(false);
@@ -132,23 +140,41 @@ const ForgotPassword = () => {
   };
 
   const handleTestEmail = async () => {
-    // Test endpoint to check if email service is working
     try {
-      setDebugInfo('Testing email service...');
+      setError('');
+      setSuccess('Testing email service...');
+      
       const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email || 'test@example.com',
-          subject: 'Test Email from Literacy Tree School',
-          message: 'This is a test email to verify the email service is working.'
+          email: formData.email || 'test@example.com'
         })
       });
       
       const result = await response.json();
-      setDebugInfo(`Test result: ${JSON.stringify(result)}`);
+      
+      if (result.success) {
+        setSuccess(`Test email sent successfully! ${result.previewUrl ? 'Check the preview link.' : ''}`);
+        if (result.previewUrl) {
+          setPreviewUrl(result.previewUrl);
+        }
+      } else {
+        setError(`Test failed: ${result.message}`);
+      }
     } catch (err) {
-      setDebugInfo(`Test failed: ${err.message}`);
+      setError(`Test error: ${err.message}`);
+    }
+  };
+
+  const handleDebugConfig = async () => {
+    try {
+      const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/email-config');
+      const config = await response.json();
+      console.log('Email config:', config);
+      setSuccess(`Email config: ${JSON.stringify(config.config)}`);
+    } catch (err) {
+      setError(`Config error: ${err.message}`);
     }
   };
 
@@ -374,18 +400,48 @@ const ForgotPassword = () => {
               {loading ? <CircularProgress size={18} color="inherit" /> : 'Send Reset Link'}
             </Button>
 
-            {/* Debug button - only show in development */}
-            {process.env.NODE_ENV === 'development' && (
+            {/* Debug buttons */}
+            <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
               <Button
                 onClick={handleTestEmail}
                 fullWidth
                 variant="outlined"
                 color="secondary"
                 size="small"
-                sx={{ mb: 1, fontSize: '0.7rem', py: 0.5 }}
+                sx={{ fontSize: '0.7rem', py: 0.5 }}
               >
-                Test Email Service
+                Test Email
               </Button>
+              <Button
+                onClick={handleDebugConfig}
+                fullWidth
+                variant="outlined"
+                color="info"
+                size="small"
+                sx={{ fontSize: '0.7rem', py: 0.5 }}
+              >
+                Check Config
+              </Button>
+            </Box>
+
+            {/* Preview URL for Ethereal emails */}
+            {previewUrl && (
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  width: "100%", 
+                  mb: 1,
+                  fontSize: "0.75rem",
+                  py: 0.5
+                }}
+              >
+                <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                  <strong>Test Email Preview:</strong>{' '}
+                  <Link href={previewUrl} target="_blank" rel="noopener noreferrer">
+                    Click here to view email
+                  </Link>
+                </Typography>
+              </Alert>
             )}
 
             <Box sx={{ textAlign: 'center', mb: 0.5 }}>
@@ -406,25 +462,6 @@ const ForgotPassword = () => {
                 ← Back to Login
               </Link>
             </Box>
-
-            {/* Debug info */}
-            {debugInfo && (
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  display: 'block',
-                  mt: 1,
-                  p: 1,
-                  bgcolor: 'grey.100',
-                  borderRadius: 1,
-                  fontSize: '0.65rem',
-                  color: 'text.secondary',
-                  fontFamily: 'monospace'
-                }}
-              >
-                {debugInfo}
-              </Typography>
-            )}
           </Box>
 
           {/* Spacing between form and footer */}

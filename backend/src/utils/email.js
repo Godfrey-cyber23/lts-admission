@@ -1,67 +1,64 @@
-// src/utils/email.js
+// src/utils/email.js - Fixed version
 import nodemailer from 'nodemailer';
 
 // Simple send function for emails
 export const sendEmail = async (options) => {
-  console.log('=== EMAIL SENDING ATTEMPT ===');
+  console.log('=== EMAIL SENDING START ===');
   console.log('To:', options.email);
   console.log('Subject:', options.subject);
-  console.log('Environment:', process.env.NODE_ENV);
   
   try {
-    // Log email configuration (without passwords)
-    console.log('Email config:', {
-      host: process.env.EMAIL_HOST ? 'SET' : 'NOT SET',
-      port: process.env.EMAIL_PORT ? 'SET' : 'NOT SET',
-      user: process.env.EMAIL_USER ? 'SET' : 'NOT SET',
-      from: process.env.EMAIL_FROM ? 'SET' : 'NOT SET',
-    });
-
-    // Use different configurations for development/production
-    let transporterConfig;
+    // Check for required options
+    if (!options.email || !options.email.includes('@')) {
+      throw new Error('Invalid email address');
+    }
     
-    if (process.env.NODE_ENV === 'production') {
-      // Production configuration - Gmail or SendGrid
+    if (!options.subject || !options.message) {
+      throw new Error('Missing email subject or message');
+    }
+
+    // Determine which email service to use
+    let transporterConfig;
+    let isTestAccount = false;
+    
+    // Check if we have real email credentials
+    if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      console.log('Using real email service:', process.env.EMAIL_HOST);
+      
       transporterConfig = {
-        service: 'gmail', // or 'sendgrid'
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        secure: process.env.EMAIL_PORT === '465',
         auth: {
-          user: process.env.EMAIL_USER || process.env.GMAIL_USER,
-          pass: process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
         },
+        // For development/testing
         tls: {
           rejectUnauthorized: false
         }
       };
-      
-      // If using SendGrid
-      if (process.env.EMAIL_HOST && process.env.EMAIL_HOST.includes('sendgrid')) {
-        transporterConfig = {
-          host: process.env.EMAIL_HOST || 'smtp.sendgrid.net',
-          port: process.env.EMAIL_PORT || 587,
-          auth: {
-            user: process.env.EMAIL_USER || 'apikey',
-            pass: process.env.EMAIL_PASS || process.env.SENDGRID_API_KEY
-          }
-        };
-      }
     } else {
-      // Development configuration
+      // Use Ethereal test email (no configuration needed)
+      console.log('No email config found, using Ethereal test service');
+      isTestAccount = true;
+      
+      // Create a test account
+      const testAccount = await nodemailer.createTestAccount();
+      console.log('Ethereal test account created:', testAccount.user);
+      
       transporterConfig = {
-        host: process.env.EMAIL_HOST || 'smtp.ethereal.email',
-        port: process.env.EMAIL_PORT || 587,
-        auth: {
-          user: process.env.EMAIL_USER || 'sylvester.dubuque@ethereal.email',
-          pass: process.env.EMAIL_PASS || 'yqYJ5MghPzUpqE3Y2S'
-        },
-        // For testing with Ethereal
+        host: 'smtp.ethereal.email',
+        port: 587,
         secure: false,
-        tls: {
-          rejectUnauthorized: false
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass
         }
       };
     }
 
-    console.log('Creating transporter with config:', {
+    console.log('Transporter config (password hidden):', {
       ...transporterConfig,
       auth: { ...transporterConfig.auth, pass: '***' }
     });
@@ -69,95 +66,36 @@ export const sendEmail = async (options) => {
     // Create transporter
     const transporter = nodemailer.createTransport(transporterConfig);
 
-    // Test connection
+    // Test connection (with timeout)
     try {
-      await transporter.verify();
-      console.log('SMTP connection verified successfully');
+      await Promise.race([
+        transporter.verify(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('SMTP connection timeout')), 10000)
+        )
+      ]);
+      console.log('✓ SMTP connection verified');
     } catch (verifyError) {
-      console.error('SMTP connection failed:', verifyError.message);
-      throw new Error(`SMTP connection failed: ${verifyError.message}`);
+      console.error('✗ SMTP connection failed:', verifyError.message);
+      throw new Error(`Email server connection failed: ${verifyError.message}`);
     }
 
-    // Create email content with HTML
+    // Create HTML content
+    const resetURL = options.resetURL || '';
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${options.subject}</title>
           <style>
-            body {
-              font-family: Arial, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              margin: 0;
-              padding: 20px;
-              background-color: #f4f4f4;
-            }
-            .container {
-              max-width: 600px;
-              margin: 0 auto;
-              background-color: #ffffff;
-              padding: 30px;
-              border-radius: 10px;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            .header {
-              text-align: center;
-              padding-bottom: 20px;
-              border-bottom: 2px solid #2E7D32;
-            }
-            .logo {
-              height: 60px;
-              margin-bottom: 15px;
-            }
-            .title {
-              color: #2E7D32;
-              margin: 0;
-              font-size: 24px;
-            }
-            .content {
-              padding: 20px 0;
-            }
-            .button {
-              display: inline-block;
-              padding: 12px 30px;
-              background-color: #2E7D32;
-              color: white;
-              text-decoration: none;
-              border-radius: 5px;
-              font-weight: bold;
-              margin: 20px 0;
-            }
-            .button:hover {
-              background-color: #1B5E20;
-            }
-            .reset-link {
-              background-color: #f0f0f0;
-              padding: 15px;
-              border-radius: 5px;
-              margin: 20px 0;
-              word-break: break-all;
-              font-family: monospace;
-              font-size: 14px;
-            }
-            .footer {
-              margin-top: 30px;
-              padding-top: 20px;
-              border-top: 1px solid #ddd;
-              font-size: 12px;
-              color: #666;
-              text-align: center;
-            }
-            .warning {
-              background-color: #fff3cd;
-              border: 1px solid #ffeaa7;
-              color: #856404;
-              padding: 15px;
-              border-radius: 5px;
-              margin: 20px 0;
-            }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid #2E7D32; }
+            .title { color: #2E7D32; margin: 0; }
+            .button { display: inline-block; padding: 10px 20px; background-color: #2E7D32; 
+                     color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; 
+                     font-size: 12px; color: #666; text-align: center; }
           </style>
         </head>
         <body>
@@ -167,36 +105,24 @@ export const sendEmail = async (options) => {
               <p>Password Reset Request</p>
             </div>
             
-            <div class="content">
-              <p>Hello,</p>
-              
-              <p>You requested a password reset for your staff account.</p>
-              
-              <div class="warning">
-                <strong>Important:</strong> This link will expire in 10 minutes.
-              </div>
-              
-              <div style="text-align: center;">
-                <a href="${options.resetURL || options.message}" class="button">
-                  Reset Your Password
-                </a>
-              </div>
-              
-              <p>Or copy and paste this link into your browser:</p>
-              <div class="reset-link">
-                ${options.resetURL || options.message}
-              </div>
-              
-              <p>If you didn't request this password reset, please ignore this email.</p>
-              
-              <p>Best regards,<br>
-              Literacy Tree School Management Team</p>
+            <p>You requested a password reset for your staff account.</p>
+            
+            ${resetURL ? `
+            <div style="text-align: center;">
+              <a href="${resetURL}" class="button">Reset Your Password</a>
             </div>
             
+            <p>Or copy and paste this link:</p>
+            <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; word-break: break-all;">
+              ${resetURL}
+            </div>
+            ` : ''}
+            
+            <p>This link will expire in 10 minutes.</p>
+            
             <div class="footer">
-              <p>This is an automated message from Literacy Tree School Management System.</p>
-              <p>Please do not reply to this email.</p>
-              <p>© ${new Date().getFullYear()} Literacy Tree School. All rights reserved.</p>
+              <p>Automated message from Literacy Tree School Management System.</p>
+              <p>© ${new Date().getFullYear()} Literacy Tree School</p>
             </div>
           </div>
         </body>
@@ -205,107 +131,100 @@ export const sendEmail = async (options) => {
 
     // Define email options
     const mailOptions = {
-      from: process.env.EMAIL_FROM || `"Literacy Tree School" <noreply@literacytreeschool.com>`,
+      from: process.env.EMAIL_FROM || '"Literacy Tree School" <noreply@literacytreeschool.com>',
       to: options.email,
-      subject: options.subject || 'Password Reset Request - Literacy Tree School',
-      text: options.message, // Plain text version
-      html: htmlContent // HTML version
+      subject: options.subject,
+      text: options.message,
+      html: htmlContent
     };
 
-    console.log('Sending email with options:', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      subject: mailOptions.subject
-    });
-
-    // Send email
-    const info = await transporter.sendMail(mailOptions);
+    console.log('Sending email...');
     
-    console.log('=== EMAIL SENT SUCCESSFULLY ===');
+    // Send email (with timeout)
+    const info = await Promise.race([
+      transporter.sendMail(mailOptions),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Email sending timeout')), 30000)
+      )
+    ]);
+    
+    console.log('✓ Email sent successfully!');
     console.log('Message ID:', info.messageId);
-    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
     
-    // Return the info for debugging
+    // Get preview URL for Ethereal emails
+    let previewUrl = null;
+    if (isTestAccount) {
+      previewUrl = nodemailer.getTestMessageUrl(info);
+      if (previewUrl) {
+        console.log('Preview URL:', previewUrl);
+      }
+    }
+    
+    console.log('=== EMAIL SENDING END ===');
+    
     return {
       success: true,
       messageId: info.messageId,
-      previewUrl: nodemailer.getTestMessageUrl(info),
+      previewUrl: previewUrl,
       response: info.response
     };
     
   } catch (error) {
-    console.error('=== EMAIL SENDING FAILED ===');
-    console.error('Error:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('✗ Email sending failed:', error.message);
+    console.error('Error stack:', error.stack);
     
-    // For Ethereal email test accounts
-    if (error.code === 'EAUTH' && error.command === 'API') {
-      console.error('\n=== EMAIL SETUP INSTRUCTIONS ===');
-      console.error('For testing, create a free account at: https://ethereal.email/');
-      console.error('Or use Gmail with app password:');
-      console.error('1. Enable 2FA on your Google account');
-      console.error('2. Generate app password: https://myaccount.google.com/apppasswords');
-      console.error('3. Set environment variables:');
-      console.error('   EMAIL_HOST=smtp.gmail.com');
-      console.error('   EMAIL_PORT=587');
-      console.error('   EMAIL_USER=your-email@gmail.com');
-      console.error('   EMAIL_PASS=your-app-password');
+    // Provide user-friendly error message
+    let userMessage = 'Failed to send email';
+    
+    if (error.message.includes('timeout')) {
+      userMessage = 'Email server timeout. Please try again.';
+    } else if (error.message.includes('connection')) {
+      userMessage = 'Cannot connect to email server. Check configuration.';
+    } else if (error.message.includes('auth') || error.code === 'EAUTH') {
+      userMessage = 'Email authentication failed. Check credentials.';
+    } else if (error.message.includes('Invalid email')) {
+      userMessage = 'Invalid email address format.';
     }
     
-    throw new Error(`Failed to send email: ${error.message}`);
+    throw new Error(userMessage);
   }
 };
 
-// Test email function (for debugging)
+// Test email function
 export const sendTestEmail = async (req, res) => {
   try {
-    const { email, subject, message } = req.body || {};
+    console.log('Test email request received');
     
-    const testEmail = email || 'test@example.com';
-    const testSubject = subject || 'Test Email from Literacy Tree School';
-    const testMessage = message || 'This is a test email to verify the email service is working.';
-    
-    console.log('Sending test email to:', testEmail);
+    const { email = 'test@example.com' } = req.body || {};
     
     const result = await sendEmail({
-      email: testEmail,
-      subject: testSubject,
-      message: testMessage,
+      email: email,
+      subject: 'Test Email from Literacy Tree School',
+      message: 'This is a test email to verify the email service is working properly.',
       resetURL: 'https://example.com/reset-password?token=test-token-123'
     });
     
-    res.json({
+    const response = {
       success: true,
       message: 'Test email sent successfully',
-      details: {
-        to: testEmail,
-        previewUrl: result.previewUrl,
-        messageId: result.messageId
-      }
-    });
+      previewUrl: result.previewUrl,
+      messageId: result.messageId
+    };
+    
+    if (result.previewUrl) {
+      response.note = 'This is a test email. View it at the preview URL.';
+    }
+    
+    res.json(response);
     
   } catch (error) {
     console.error('Test email error:', error);
     res.status(500).json({
       success: false,
-      message: `Failed to send test email: ${error.message}`,
-      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: `Test email failed: ${error.message}`,
+      suggestion: 'Check email configuration in environment variables'
     });
   }
-};
-
-// Simple email sender for password reset
-export const sendPasswordResetEmail = async (userEmail, resetToken, firstName = 'User') => {
-  const resetURL = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-  
-  console.log('Generating password reset link:', resetURL);
-  
-  return sendEmail({
-    email: userEmail,
-    subject: 'Password Reset Request - Literacy Tree School',
-    message: `You requested a password reset. Please click the following link to reset your password: ${resetURL}\n\nThis link will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`,
-    resetURL: resetURL
-  });
 };
 
 export default sendEmail;

@@ -9,14 +9,14 @@ import sendEmail from '../utils/email.js';
 
 const router = express.Router();
 
-// Generate JWT token - using integer ID from your database
+// Generate JWT token - using integer ID from PostgreSQL
 const generateToken = (id, role) => {
   return jwt.sign(
-    { 
-      id, // This is now an integer, not UUID
+    {
+      id, // This is an integer from PostgreSQL sequence
       role,
       type: 'access'
-    }, 
+    },
     process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
     {
       expiresIn: process.env.JWT_EXPIRE || '7d',
@@ -59,13 +59,13 @@ const protect = catchAsync(async (req, res, next) => {
 
   try {
     // 2) Verification token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || '09432ec4a0b4dd3ffa1737e0b806d783b068f9b3a0af2f18316705b7f1888e25230751ebc73cc51d153e7ba150998d36cfdf28efcf5a31ab6030ecd3fcddaa25be6829eb8ae6d2500d4951f52d0a30167f17ec938ab3b364b616dc2c1b9c4f07d25bf88265b1430095a2292d1c45a0e0b88792f6f536e89ad6aab82cd0862e5f1e6306e6b2973090d1059a4975d36912f5981ff80af457dc1edff5fe4ac580f6d802a9c4d19781a01b6a2f7ce0fd6d739dca10f10e4fe4eea6761662a238f39a4a65b432c75c84605ffa7a873807e39efa6362f55e835ccf30247a82fd9d0954f229bfb41bed7607660b09e20c64abc517c1da53edaf92bad0a8be9708a57b29');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production');
 
-    // 3) Check if user still exists - using integer ID
+    // 3) Check if user still exists - using integer ID from PostgreSQL
     const { data: currentUser, error } = await supabase
       .from('users')
       .select('*')
-      .eq('id', decoded.id) // This expects an integer, which matches your database
+      .eq('id', decoded.id)
       .single();
 
     if (error || !currentUser) {
@@ -93,7 +93,7 @@ const protect = catchAsync(async (req, res, next) => {
         message: 'Invalid or expired token. Please log in again.'
       });
     }
-    
+
     console.error('Protect middleware error:', error);
     return res.status(500).json({
       success: false,
@@ -102,42 +102,121 @@ const protect = catchAsync(async (req, res, next) => {
   }
 });
 
+// DEBUG: Check existing users in PostgreSQL
+router.get('/debug/users', catchAsync(async (req, res) => {
+  try {
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, email, "staffId", role, "firstName", "lastName", "createdAt", "updatedAt"')
+      .order('id', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      count: users ? users.length : 0,
+      users: users || []
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Debug error: ' + error.message
+    });
+  }
+}));
+
+// DEBUG: Clear test users (for development only)
+router.delete('/debug/clear-test-users', catchAsync(async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .or('email.ilike.%test%', 'staffId.eq.STAFF001', 'staffId.eq.STAFF002');
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      message: 'Test users cleared successfully'
+    });
+  } catch (error) {
+    console.error('Clear test users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error clearing test users: ' + error.message
+    });
+  }
+}));
+
 // Login route
 router.post('/login', [
-  body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 1 }).withMessage('Password is required'),
-  body('staffId').notEmpty().withMessage('Staff ID is required')
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required'),
+  body('staffId')
+    .notEmpty()
+    .withMessage('Staff ID is required')
+    .trim()
 ], catchAsync(async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Validation failed', 
-      errors: errors.array() 
+    console.log('Login validation errors:', errors.array());
+
+    // Format error messages for better readability
+    const errorMessages = errors.array().map(error => ({
+      field: error.path,
+      message: error.msg
+    }));
+
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errorMessages
     });
   }
 
   const { email, password, staffId } = req.body;
 
+  console.log('Login attempt for:', {
+    email: email,
+    staffId: staffId,
+    timestamp: new Date().toISOString()
+  });
+
   try {
-    // Find user by email and staff ID using Supabase
+    // Find user by email and staff ID using PostgreSQL
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .eq('email', email.toLowerCase().trim())
-      .eq('staffId', staffId.trim())
+      .eq('staffId', staffId.trim().toUpperCase())
+      .ilike('email', email.toLowerCase().trim())
       .single();
 
+    console.log('Database query result:', { user, error });
+
     if (error || !user) {
+      console.log('No user found or database error:', error);
       return res.status(401).json({
         success: false,
         message: 'Invalid email, password, or staff ID'
       });
     }
 
+    console.log('User found:', { id: user.id, email: user.email, role: user.role });
+
     // Check if user is active
     if (!user.isActive) {
+      console.log('User account is inactive:', user.email);
       return res.status(401).json({
         success: false,
         message: 'Your account has been deactivated. Please contact administrator.'
@@ -145,8 +224,12 @@ router.post('/login', [
     }
 
     // Verify password using bcrypt
+    console.log('Verifying password...');
     const isPasswordValid = await verifyPassword(password, user.password);
+    console.log('Password valid:', isPasswordValid);
+
     if (!isPasswordValid) {
+      console.log('Invalid password for user:', user.email);
       return res.status(401).json({
         success: false,
         message: 'Invalid email, password, or staff ID'
@@ -155,11 +238,12 @@ router.post('/login', [
 
     // Generate token
     const token = generateToken(user.id, user.role);
+    console.log('Token generated for user:', user.id);
 
     // Update last login
     await supabase
       .from('users')
-      .update({ 
+      .update({
         lastLogin: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
@@ -167,7 +251,8 @@ router.post('/login', [
 
     // Return user data (excluding password) and token
     const { password: _, ...userWithoutPassword } = user;
-    
+
+    console.log('Login successful for:', user.email);
     res.json({
       success: true,
       message: 'Login successful',
@@ -175,15 +260,15 @@ router.post('/login', [
       user: userWithoutPassword
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login process error:', error);
     return res.status(500).json({
       success: false,
-      message: 'An error occurred during login'
+      message: 'An error occurred during login: ' + error.message
     });
   }
 }));
 
-// Register staff route - FIXED FOR INTEGER ID
+// Register staff route - PostgreSQL compatible
 router.post('/register', [
   body('firstName').notEmpty().trim().withMessage('First name is required'),
   body('lastName').notEmpty().trim().withMessage('Last name is required'),
@@ -192,126 +277,166 @@ router.post('/register', [
   body('staffId').notEmpty().trim().withMessage('Staff ID is required')
 ], catchAsync(async (req, res) => {
   console.log('Registration request received:', req.body);
-  
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log('Validation errors:', errors.array());
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Validation failed', 
-      errors: errors.array() 
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
     });
   }
 
   const { firstName, lastName, email, password, phone, staffId } = req.body;
-  
-  // Trim and sanitize inputs
+
+  // Trim and sanitize inputs for PostgreSQL
   const sanitizedData = {
     firstName: firstName.trim(),
     lastName: lastName.trim(),
     email: email.toLowerCase().trim(),
     password: password.trim(),
     phone: phone ? phone.trim() : null,
-    staffId: staffId.trim()
+    staffId: staffId.trim().toUpperCase() // Convert to uppercase for consistency
   };
 
   console.log('Processing registration for:', sanitizedData);
 
   try {
-    // Check if user already exists by email
-    const { data: existingUser, error: checkError } = await supabase
+    // Check if user already exists by email (case-insensitive for email)
+    const { data: existingByEmail, error: emailCheckError } = await supabase
       .from('users')
-      .select('id')
-      .eq('email', sanitizedData.email)
+      .select('id, email, "staffId"')
+      .ilike('email', sanitizedData.email) // Use ilike for case-insensitive comparison in PostgreSQL
       .single();
 
-    // PGRST116 means "no rows returned" - which is OK
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Database error checking existing user:', checkError);
+    console.log('Email check result - Existing user by email:', existingByEmail);
+
+    // PostgreSQL error PGRST116 means "no rows returned"
+    if (emailCheckError && emailCheckError.code !== 'PGRST116') {
+      console.error('PostgreSQL error checking existing user:', emailCheckError);
       return res.status(500).json({
         success: false,
         message: 'Database error occurred while checking user'
       });
     }
 
-    if (existingUser) {
-      console.log('User already exists');
+    if (existingByEmail) {
+      console.log('User with this email already exists:', existingByEmail.email);
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: `User with email ${sanitizedData.email} already exists. Please use a different email.`
       });
     }
 
-    // Check if staff ID already exists
-    const { data: existingStaff, error: staffError } = await supabase
+    // Check if staff ID already exists (case-sensitive as per your UNIQUE constraint)
+    const { data: existingByStaffId, error: staffCheckError } = await supabase
       .from('users')
-      .select('id')
-      .eq('staffId', sanitizedData.staffId)
+      .select('id, email, "staffId"')
+      .eq('staffId', sanitizedData.staffId) // Use eq for case-sensitive comparison
       .single();
 
-    if (staffError && staffError.code !== 'PGRST116') {
-      console.error('Database error checking existing staff ID:', staffError);
+    console.log('Staff ID check result - Existing user by staffId:', existingByStaffId);
+
+    if (staffCheckError && staffCheckError.code !== 'PGRST116') {
+      console.error('PostgreSQL error checking existing staff ID:', staffCheckError);
       return res.status(500).json({
         success: false,
         message: 'Database error occurred while checking staff ID'
       });
     }
 
-    if (existingStaff) {
-      console.log('Staff ID already exists');
+    if (existingByStaffId) {
+      console.log('Staff ID already exists:', existingByStaffId.staffId);
       return res.status(400).json({
         success: false,
-        message: 'Staff ID already exists'
+        message: `Staff ID ${sanitizedData.staffId} already exists. Please use a different staff ID.`
       });
     }
 
-    // Hash password
+    // Hash password for PostgreSQL storage
     const hashedPassword = await hashPassword(sanitizedData.password);
 
-    // Create new staff user - database will auto-generate the integer ID
+    // Create new staff user - PostgreSQL will auto-generate the integer ID via sequence
+    // Note: Column names must match exactly with your PostgreSQL table definition
+    const userData = {
+      firstName: sanitizedData.firstName,
+      lastName: sanitizedData.lastName,
+      email: sanitizedData.email,
+      password: hashedPassword,
+      phone: sanitizedData.phone,
+      staffId: sanitizedData.staffId, // This matches column name "staffId" (case-sensitive with quotes)
+      role: 'staff', // Must be one of: 'admin', 'staff', 'parent' (per your check constraint)
+      isActive: true,
+      lastLogin: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      resetPasswordToken: null,
+      resetPasswordExpire: null,
+      auth_id: null, // Can be null since we're not using Supabase Auth
+      profileImage: null
+    };
+
+    console.log('Attempting to insert user into PostgreSQL:', userData);
+
     const { data: newUser, error: createError } = await supabase
       .from('users')
-      .insert([{
-        firstName: sanitizedData.firstName,
-        lastName: sanitizedData.lastName,
-        email: sanitizedData.email,
-        password: hashedPassword,
-        phone: sanitizedData.phone,
-        staffId: sanitizedData.staffId,
-        role: 'staff',
-        isActive: true,
-        lastLogin: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        resetPasswordToken: null,
-        resetPasswordExpire: null,
-        auth_id: null, // This can be null since we're not using Supabase Auth
-        profileImage: null
-      }])
+      .insert([userData])
       .select()
       .single();
 
     if (createError) {
-      console.error('Registration error:', createError);
+      console.error('PostgreSQL registration error:', {
+        message: createError.message,
+        code: createError.code,
+        details: createError.details,
+        hint: createError.hint
+      });
+
+      // Handle PostgreSQL specific errors
+      let errorMessage = 'Failed to create user in database';
+
+      // PostgreSQL error codes:
+      // 23505 = unique_violation
+      // 23503 = foreign_key_violation
+      // 23502 = not_null_violation
+      // 23514 = check_violation
+
+      if (createError.code === '23505') { // Unique violation
+        if (createError.details && createError.details.includes('email')) {
+          errorMessage = 'User with this email already exists';
+        } else if (createError.details && createError.details.includes('staffId')) {
+          errorMessage = 'Staff ID already exists';
+        } else if (createError.details && createError.details.includes('users_email_key')) {
+          errorMessage = 'Email address already registered';
+        } else if (createError.details && createError.details.includes('users_staff_id_key')) {
+          errorMessage = 'Staff ID already registered';
+        }
+      } else if (createError.code === '23514') { // Check violation
+        if (createError.details && createError.details.includes('role')) {
+          errorMessage = 'Invalid role specified. Must be admin, staff, or parent';
+        }
+      }
+
       return res.status(500).json({
         success: false,
-        message: 'Failed to create user: ' + createError.message
+        message: `${errorMessage}: ${createError.message}`
       });
     }
 
     const { password: _, ...userWithoutPassword } = newUser;
 
-    console.log('Registration successful');
+    console.log('PostgreSQL registration successful:', userWithoutPassword);
     res.status(201).json({
       success: true,
       message: 'Staff registered successfully',
       user: userWithoutPassword
     });
   } catch (error) {
-    console.error('Unexpected error during registration:', error);
+    console.error('Unexpected error during PostgreSQL registration:', error);
     return res.status(500).json({
       success: false,
-      message: 'An unexpected error occurred during registration'
+      message: 'An unexpected error occurred during registration: ' + error.message
     });
   }
 }));
@@ -319,7 +444,7 @@ router.post('/register', [
 // Get current user route
 router.get('/me', protect, catchAsync(async (req, res) => {
   const { password, ...userWithoutPassword } = req.user;
-  
+
   res.json({
     success: true,
     user: userWithoutPassword
@@ -336,10 +461,10 @@ router.put('/update-details', protect, [
 ], catchAsync(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Validation failed', 
-      errors: errors.array() 
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
     });
   }
 
@@ -354,19 +479,19 @@ router.put('/update-details', protect, [
     updatedAt: new Date().toISOString()
   };
 
-  // Check if email is being updated and if it already exists
+  // Check if email is being updated and if it already exists in PostgreSQL
   if (updateData.email && updateData.email !== req.user.email) {
     const { data: existingUser } = await supabase
       .from('users')
       .select('id')
-      .eq('email', updateData.email)
+      .ilike('email', updateData.email)
       .neq('id', req.user.id)
       .single();
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'Email already in use'
+        message: 'Email already in use by another user'
       });
     }
   }
@@ -379,10 +504,10 @@ router.put('/update-details', protect, [
     .single();
 
   if (error) {
-    console.error('Update error:', error);
+    console.error('PostgreSQL update error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to update user details'
+      message: 'Failed to update user details in database'
     });
   }
 
@@ -402,10 +527,10 @@ router.put('/update-password', protect, [
 ], catchAsync(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Validation failed', 
-      errors: errors.array() 
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
     });
   }
 
@@ -423,7 +548,7 @@ router.put('/update-password', protect, [
   // Hash new password
   const hashedPassword = await hashPassword(newPassword);
 
-  // Update password
+  // Update password in PostgreSQL
   const { error } = await supabase
     .from('users')
     .update({
@@ -433,10 +558,10 @@ router.put('/update-password', protect, [
     .eq('id', req.user.id);
 
   if (error) {
-    console.error('Password update error:', error);
+    console.error('PostgreSQL password update error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to update password'
+      message: 'Failed to update password in database'
     });
   }
 
@@ -457,21 +582,21 @@ router.post('/forgot-password', [
 ], catchAsync(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Validation failed', 
-      errors: errors.array() 
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
     });
   }
 
   const { email, staffId } = req.body;
 
-  // Check if user exists using Supabase
+  // Check if user exists in PostgreSQL
   const { data: user, error } = await supabase
     .from('users')
     .select('id, email, firstName, lastName')
-    .eq('email', email.toLowerCase().trim())
-    .eq('staffId', staffId.trim())
+    .ilike('email', email.toLowerCase().trim())
+    .eq('staffId', staffId.trim().toUpperCase())
     .single();
 
   // For security, don't reveal if email exists or not
@@ -489,7 +614,7 @@ router.post('/forgot-password', [
     .update(resetToken)
     .digest('hex');
 
-  // Save hashed token and expiry to database
+  // Save hashed token and expiry to PostgreSQL
   const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   const { error: updateError } = await supabase
@@ -501,16 +626,16 @@ router.post('/forgot-password', [
     .eq('id', user.id);
 
   if (updateError) {
-    console.error('Error updating reset token:', updateError);
+    console.error('PostgreSQL error updating reset token:', updateError);
     return res.status(500).json({
       success: false,
-      message: 'Error generating reset token'
+      message: 'Error generating reset token in database'
     });
   }
 
   // Send email with reset token
   const resetURL = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-  
+
   const message = `You requested a password reset. Please click the following link to reset your password: ${resetURL}\n\nThis link will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`;
 
   try {
@@ -550,16 +675,16 @@ router.post('/reset-password', [
 ], catchAsync(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Validation failed', 
-      errors: errors.array() 
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
     });
   }
 
   const { token, password, staffId } = req.body;
 
-  // Hash token and find user
+  // Hash token and find user in PostgreSQL
   const hashedToken = crypto
     .createHash('sha256')
     .update(token)
@@ -569,7 +694,7 @@ router.post('/reset-password', [
     .from('users')
     .select('*')
     .eq('resetPasswordToken', hashedToken)
-    .eq('staffId', staffId.trim())
+    .eq('staffId', staffId.trim().toUpperCase())
     .gt('resetPasswordExpire', new Date().toISOString())
     .single();
 
@@ -583,7 +708,7 @@ router.post('/reset-password', [
   // Hash new password
   const hashedPassword = await hashPassword(password);
 
-  // Update password and clear reset token
+  // Update password and clear reset token in PostgreSQL
   const { error: updateError } = await supabase
     .from('users')
     .update({
@@ -595,10 +720,10 @@ router.post('/reset-password', [
     .eq('id', user.id);
 
   if (updateError) {
-    console.error('Error updating password:', updateError);
+    console.error('PostgreSQL error updating password:', updateError);
     return res.status(500).json({
       success: false,
-      message: 'Error updating password'
+      message: 'Error updating password in database'
     });
   }
 
@@ -618,46 +743,46 @@ router.post('/register-admin', [
 ], catchAsync(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Validation failed', 
-      errors: errors.array() 
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
     });
   }
 
-  // Check if any admin already exists
+  // Check if any admin already exists in PostgreSQL
   const { data: existingAdmins, error: countError } = await supabase
     .from('users')
     .select('id')
     .in('role', ['admin', 'superadmin']);
 
   if (countError) {
-    console.error('Error checking existing admins:', countError);
+    console.error('PostgreSQL error checking existing admins:', countError);
     return res.status(500).json({
       success: false,
-      message: 'Database error'
+      message: 'Database error checking for existing admins'
     });
   }
 
   if (existingAdmins && existingAdmins.length > 0) {
     return res.status(403).json({
       success: false,
-      message: 'Admin registration is closed'
+      message: 'Admin registration is closed. An admin already exists.'
     });
   }
 
   const { firstName, lastName, email, password, staffId } = req.body;
 
-  // Check if staff ID already exists
+  // Check if staff ID already exists in PostgreSQL
   const { data: existingStaff, error: staffError } = await supabase
     .from('users')
     .select('id')
-    .eq('staffId', staffId.trim())
+    .eq('staffId', staffId.trim().toUpperCase())
     .single();
 
-  // Handle database error properly
+  // Handle PostgreSQL error properly
   if (staffError && staffError.code !== 'PGRST116') {
-    console.error('Database error checking existing staff ID:', staffError);
+    console.error('PostgreSQL error checking existing staff ID:', staffError);
     return res.status(500).json({
       success: false,
       message: 'Database error occurred while checking staff ID'
@@ -674,7 +799,7 @@ router.post('/register-admin', [
   // Hash password
   const hashedPassword = await hashPassword(password);
 
-  // Create admin user in Supabase
+  // Create admin user in PostgreSQL
   const { data: newUser, error } = await supabase
     .from('users')
     .insert([{
@@ -682,7 +807,7 @@ router.post('/register-admin', [
       lastName: lastName.trim(),
       email: email.toLowerCase().trim(),
       password: hashedPassword,
-      staffId: staffId.trim(),
+      staffId: staffId.trim().toUpperCase(),
       role: 'admin',
       isActive: true,
       lastLogin: null,
@@ -698,7 +823,7 @@ router.post('/register-admin', [
     .single();
 
   if (error) {
-    console.error('Admin registration error:', error);
+    console.error('PostgreSQL admin registration error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to create admin user: ' + error.message
@@ -717,10 +842,8 @@ router.post('/register-admin', [
   });
 }));
 
-// Logout route (client-side only, but included for completeness)
+// Logout route
 router.post('/logout', catchAsync(async (req, res) => {
-  // Since we're using JWT, logout is client-side (just remove token)
-  // This endpoint can be used to blacklist tokens if needed
   res.json({
     success: true,
     message: 'Logged out successfully'

@@ -30,7 +30,7 @@ const Register = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -58,14 +58,39 @@ const Register = () => {
     setError("");
     setSuccess("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+    // Validation checks
+    if (!formData.firstName.trim()) {
+      setError("First name is required");
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.lastName.trim()) {
+      setError("Last name is required");
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setError("Valid email address is required");
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.password.trim()) {
+      setError("Password is required");
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
@@ -77,27 +102,61 @@ const Register = () => {
     }
 
     try {
-      console.log("Attempting staff registration with:", { 
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        staffId: formData.staffId
-      });
-
-      const response = await api.post("/auth/register", {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
+      const registrationData = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.toLowerCase().trim(),
+        phone: formData.phone ? formData.phone.trim() : '',
         password: formData.password,
-        role: formData.role,
-        staffId: formData.staffId,
+        role: 'staff',
+        staffId: formData.staffId.trim().toUpperCase()
+      };
+
+      console.log("Attempting staff registration with:", registrationData);
+
+      // Use fetch directly for better debugging
+      const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(registrationData),
+        cache: 'no-cache',
+        credentials: 'same-origin'
       });
 
-      console.log("Registration response:", response.data);
+      console.log('Registration response status:', response.status);
+      console.log('Registration response headers:', response.headers);
+
+      const responseText = await response.text();
+      console.log('Registration raw response:', responseText);
+
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 100)}`);
+      }
+
+      console.log("Registration parsed response:", responseData);
+
+      if (!response.ok) {
+        // Handle validation errors from backend
+        if (response.status === 400 && responseData.errors) {
+          const validationErrors = responseData.errors.map(err =>
+            `${err.field || err.param}: ${err.msg}`
+          ).join(', ');
+          throw new Error(`Validation failed: ${validationErrors}`);
+        }
+
+        throw new Error(responseData.message || `Registration failed with status ${response.status}`);
+      }
 
       setSuccess("Staff registration successful! You can now login.");
-      
+
+      // Reset form
       setFormData({
         firstName: "",
         lastName: "",
@@ -116,17 +175,39 @@ const Register = () => {
       }, 2000);
 
     } catch (err) {
-      console.error("Registration error details:", {
+      console.error("Registration error:", {
+        name: err.name,
         message: err.message,
-        response: err.response,
-        request: err.request
+        stack: err.stack
       });
 
-      setError(
-        err.response?.data?.message ||
-        err.message ||
-        "Registration failed. Please try again."
-      );
+      // Show user-friendly error messages
+      let errorMessage = err.message;
+
+      if (err.message.includes('Network Error') || err.message.includes('Failed to fetch')) {
+        errorMessage = "Network error. Please check your internet connection and try again.";
+      } else if (err.message.includes('JSON')) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (err.message.includes('already exists')) {
+        // Extract which field already exists
+        if (err.message.includes('email')) {
+          errorMessage = "This email is already registered. Please use a different email or try logging in.";
+        } else if (err.message.includes('Staff ID')) {
+          errorMessage = "This Staff ID is already in use. Please use a different Staff ID.";
+        }
+      } else if (err.message.includes('Validation failed')) {
+        // Keep the validation error message as is
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
+
+      // If it's a duplicate error, suggest alternatives
+      if (err.message.includes('already exists')) {
+        setSuccess(`Try using a different email or Staff ID. 
+        Suggested Staff ID: ${formData.staffId.trim().toUpperCase()}2
+        Or try: STAFF${Math.floor(Math.random() * 9000) + 1000}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -216,7 +297,7 @@ const Register = () => {
             <img
               src="/school-logo.jpg"
               alt="Literacy Tree School Logo"
-              style={{ 
+              style={{
                 height: isMobile ? "45px" : "55px",
                 width: "auto",
                 objectFit: "contain"
@@ -228,7 +309,7 @@ const Register = () => {
             component="h1"
             color="darkgreen"
             variant="h6"
-            sx={{ 
+            sx={{
               mb: 0.5,
               fontWeight: 600,
               textAlign: "center",
@@ -239,11 +320,11 @@ const Register = () => {
             Staff Registration
           </Typography>
 
-          <Typography 
-            variant="body2" 
-            sx={{ 
+          <Typography
+            variant="body2"
+            sx={{
               mb: 1.5,
-              color: "text.secondary", 
+              color: "text.secondary",
               textAlign: 'center',
               fontSize: "0.85rem",
               lineHeight: 1.4,
@@ -254,10 +335,10 @@ const Register = () => {
           </Typography>
 
           {error && (
-            <Alert 
-              severity="error" 
-              sx={{ 
-                width: "100%", 
+            <Alert
+              severity="error"
+              sx={{
+                width: "100%",
                 mb: 1.5,
                 fontSize: "0.75rem",
                 py: 0.5,
@@ -269,10 +350,10 @@ const Register = () => {
           )}
 
           {success && (
-            <Alert 
-              severity="success" 
-              sx={{ 
-                width: "100%", 
+            <Alert
+              severity="success"
+              sx={{
+                width: "100%",
                 mb: 1.5,
                 fontSize: "0.75rem",
                 py: 0.5,
@@ -283,10 +364,10 @@ const Register = () => {
             </Alert>
           )}
 
-          <Box 
-            component="form" 
-            onSubmit={handleSubmit} 
-            sx={{ 
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
               width: "100%",
               flex: 1,
               display: "flex",
@@ -295,7 +376,7 @@ const Register = () => {
             }}
           >
             {/* Scrollable form content */}
-            <Box sx={{ 
+            <Box sx={{
               flex: 1,
               overflow: "auto",
               mb: 2,
@@ -333,7 +414,7 @@ const Register = () => {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{ 
+                    sx={{
                       mb: 1,
                       '& .MuiOutlinedInput-root': {
                         fontSize: "0.85rem"
@@ -362,7 +443,7 @@ const Register = () => {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{ 
+                    sx={{
                       mb: 1,
                       '& .MuiOutlinedInput-root': {
                         fontSize: "0.85rem"
@@ -393,7 +474,7 @@ const Register = () => {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ 
+                sx={{
                   mb: 1,
                   '& .MuiOutlinedInput-root': {
                     fontSize: "0.85rem"
@@ -421,7 +502,7 @@ const Register = () => {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ 
+                sx={{
                   mb: 1,
                   '& .MuiOutlinedInput-root': {
                     fontSize: "0.85rem"
@@ -450,7 +531,7 @@ const Register = () => {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ 
+                sx={{
                   mb: 1,
                   '& .MuiOutlinedInput-root': {
                     fontSize: "0.85rem"
@@ -500,7 +581,7 @@ const Register = () => {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ 
+                sx={{
                   mb: 1,
                   '& .MuiOutlinedInput-root': {
                     fontSize: "0.85rem"
@@ -549,7 +630,7 @@ const Register = () => {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ 
+                sx={{
                   mb: 1.5,
                   '& .MuiOutlinedInput-root': {
                     fontSize: "0.85rem"
@@ -594,10 +675,10 @@ const Register = () => {
                 <Grid item>
                   <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
                     Already have a staff account?{" "}
-                    <Link 
-                      component={RouterLink} 
-                      to="/login" 
-                      sx={{ 
+                    <Link
+                      component={RouterLink}
+                      to="/login"
+                      sx={{
                         color: "primary.main",
                         fontSize: "0.8rem",
                         textDecoration: 'none',
@@ -612,15 +693,15 @@ const Register = () => {
                 </Grid>
               </Grid>
 
-              <Box sx={{ 
+              <Box sx={{
                 textAlign: "center",
                 pt: 1,
                 pb: 1
               }}>
                 <Typography
                   variant="caption"
-                  sx={{ 
-                    color: "text.secondary", 
+                  sx={{
+                    color: "text.secondary",
                     display: 'block',
                     mb: 0.25,
                     fontSize: "0.7rem"
@@ -630,8 +711,8 @@ const Register = () => {
                 </Typography>
                 <Typography
                   variant="caption"
-                  sx={{ 
-                    color: "text.secondary", 
+                  sx={{
+                    color: "text.secondary",
                     fontSize: "0.7rem"
                   }}
                 >

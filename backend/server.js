@@ -5,15 +5,10 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB, { supabase } from './src/config/db.js';
 import aiAssistantRoutes from './src/api/ai-assistant.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-// Get the current file's directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, 'src', '.env') });
+dotenv.config();
 
 // Create Express app
 const app = express();
@@ -25,7 +20,8 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
   'https://lts-admission.vercel.app',
   'https://lts-admission-git-main-godfrey-bwalyas-projects-33224b1d.vercel.app',
-  'https://lts-admission-itxd5p2d0-godfrey-bwalyas-projects-33224b1d.vercel.app'
+  'https://lts-admission-itxd5p2d0-godfrey-bwalyas-projects-33224b1d.vercel.app',
+  'https://www.literacytreeschool.com'
 ];
 
 app.use(cors({
@@ -53,24 +49,21 @@ app.get('/health', (req, res) => {
 
 app.use('/api/ai', aiAssistantRoutes);
 
-// Import and use routes with error handling
-const initializeRoutes = async () => {
-  try {
-    const { default: router } = await import('./src/routes/index.js');
-    app.use('/api', router);
-    console.log('✅ Routes mounted successfully');
-  } catch (err) {
-    console.error('❌ Route initialization failed:', err);
-    
-    // Provide basic routes if main routes fail
-    app.use('/api', (req, res) => {
-      res.status(500).json({ 
-        error: 'Routes not available', 
-        message: 'Check route configuration' 
-      });
+try {
+  const router = await import('./src/routes/index.js');
+  app.use('/api', router.default);
+  console.log('✅ Routes mounted successfully');
+} catch (err) {
+  console.error('❌ Route initialization failed:', err);
+  
+  // Provide basic routes if main routes fail
+  app.use('/api', (req, res) => {
+    res.status(500).json({ 
+      error: 'Routes not available', 
+      message: 'Check route configuration' 
     });
-  }
-};
+  });
+}
 
 // Create HTTP server
 const server = createServer(app);

@@ -2,11 +2,9 @@
 import axios from 'axios';
 
 // Create an Axios instance with a base URL.
-// This way, you don't have to write the full URL for every API call.
-// The `||` fallback ensures it works even if the environment variable isn't set.
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL || 'https://lts-backend-qg6a.onrender.com/api',
-  withCredentials: true // Important for sending cookies with requests if your backend uses them
+  withCredentials: true 
 });
 
 // Request Interceptor: This runs BEFORE every request is sent.

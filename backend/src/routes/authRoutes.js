@@ -168,7 +168,7 @@ router.post('/register', [
       email,
       password: hashedPassword,
       phone,
-      staffid: staffId,
+      staffId: staffId,
       role: 'staff',
       isActive: true,
       createdAt: new Date().toISOString(),

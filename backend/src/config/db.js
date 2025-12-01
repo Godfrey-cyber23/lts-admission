@@ -6,7 +6,31 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+// Try multiple possible paths for the .env file
+const envPaths = [
+  path.join(__dirname, '.env'),
+  path.join(__dirname, '..', '.env'),
+  path.join(__dirname, '..', '..', '.env'),
+  path.resolve(process.cwd(), '.env')
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+  try {
+    dotenv.config({ path: envPath });
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.log(`📁 Environment loaded from: ${envPath}`);
+      envLoaded = true;
+      break;
+    }
+  } catch (error) {
+    // Continue to next path
+  }
+}
+
+if (!envLoaded) {
+  console.warn('⚠️  Could not find .env file with required Supabase credentials');
+}
 
 // Initialize the Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -65,22 +89,15 @@ const testConnection = async () => {
     // Test 2: Database connection - use a simple query to test connection
     console.log('🗄️ Testing database connection...');
     try {
-      // Try to query a system table that should always exist
+      // First try to query the users table directly since that's what we need
       const { data: testData, error: testError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('id')
         .limit(1);
 
       if (testError) {
-        // If profiles table doesn't exist, try creating a test query
-        const { error: simpleError } = await supabase
-          .from('_test_connection')
-          .select('*')
-          .limit(0);
-        
-        if (simpleError && simpleError.code === '42P01') {
-          // Table doesn't exist, but connection is working
-          tests.push({ name: 'Database', status: 'success', error: 'Connection working (test table does not exist)' });
+        if (testError.code === '42P01' || testError.message.includes('relation "users" does not exist')) {
+          tests.push({ name: 'Database', status: 'warning', error: 'Users table does not exist yet - run setup script' });
         } else {
           tests.push({ name: 'Database', status: 'failed', error: testError.message });
         }

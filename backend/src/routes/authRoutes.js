@@ -9,15 +9,15 @@ import sendEmail from '../utils/email.js';
 
 const router = express.Router();
 
-// Generate JWT token
+// Generate JWT token - using integer ID from your database
 const generateToken = (id, role) => {
   return jwt.sign(
     { 
-      id,
+      id, // This is now an integer, not UUID
       role,
       type: 'access'
     }, 
-    process.env.JWT_SECRET || '09432ec4a0b4dd3ffa1737e0b806d783b068f9b3a0af2f18316705b7f1888e25230751ebc73cc51d153e7ba150998d36cfdf28efcf5a31ab6030ecd3fcddaa25be6829eb8ae6d2500d4951f52d0a30167f17ec938ab3b364b616dc2c1b9c4f07d25bf88265b1430095a2292d1c45a0e0b88792f6f536e89ad6aab82cd0862e5f1e6306e6b2973090d1059a4975d36912f5981ff80af457dc1edff5fe4ac580f6d802a9c4d19781a01b6a2f7ce0fd6d739dca10f10e4fe4eea6761662a238f39a4a65b432c75c84605ffa7a873807e39efa6362f55e835ccf30247a82fd9d0954f229bfb41bed7607660b09e20c64abc517c1da53edaf92bad0a8be9708a57b29',
+    process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
     {
       expiresIn: process.env.JWT_EXPIRE || '7d',
     }
@@ -43,7 +43,7 @@ const catchAsync = (fn) => {
 };
 
 // Protect middleware for authentication
-export const protect = catchAsync(async (req, res, next) => {
+const protect = catchAsync(async (req, res, next) => {
   // 1) Getting token and check if it's there
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -57,34 +57,49 @@ export const protect = catchAsync(async (req, res, next) => {
     });
   }
 
-  // 2) Verification token
-  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production');
+  try {
+    // 2) Verification token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || '09432ec4a0b4dd3ffa1737e0b806d783b068f9b3a0af2f18316705b7f1888e25230751ebc73cc51d153e7ba150998d36cfdf28efcf5a31ab6030ecd3fcddaa25be6829eb8ae6d2500d4951f52d0a30167f17ec938ab3b364b616dc2c1b9c4f07d25bf88265b1430095a2292d1c45a0e0b88792f6f536e89ad6aab82cd0862e5f1e6306e6b2973090d1059a4975d36912f5981ff80af457dc1edff5fe4ac580f6d802a9c4d19781a01b6a2f7ce0fd6d739dca10f10e4fe4eea6761662a238f39a4a65b432c75c84605ffa7a873807e39efa6362f55e835ccf30247a82fd9d0954f229bfb41bed7607660b09e20c64abc517c1da53edaf92bad0a8be9708a57b29');
 
-  // 3) Check if user still exists
-  const { data: currentUser, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', decoded.id)
-    .single();
+    // 3) Check if user still exists - using integer ID
+    const { data: currentUser, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decoded.id) // This expects an integer, which matches your database
+      .single();
 
-  if (error || !currentUser) {
-    return res.status(401).json({
+    if (error || !currentUser) {
+      return res.status(401).json({
+        success: false,
+        message: 'The user belonging to this token no longer exists.'
+      });
+    }
+
+    // 4) Check if user is active
+    if (!currentUser.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated.'
+      });
+    }
+
+    // GRANT ACCESS TO PROTECTED ROUTE
+    req.user = currentUser;
+    next();
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired token. Please log in again.'
+      });
+    }
+    
+    console.error('Protect middleware error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'The user belonging to this token no longer exists.'
+      message: 'Authentication error'
     });
   }
-
-  // 4) Check if user is active
-  if (!currentUser.isActive) {
-    return res.status(403).json({
-      success: false,
-      message: 'Your account has been deactivated.'
-    });
-  }
-
-  // GRANT ACCESS TO PROTECTED ROUTE
-  req.user = currentUser;
-  next();
 });
 
 // Login route
@@ -92,7 +107,7 @@ router.post('/login', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 1 }).withMessage('Password is required'),
   body('staffId').notEmpty().withMessage('Staff ID is required')
-], catchAsync(async (req, res, next) => {
+], catchAsync(async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -105,62 +120,70 @@ router.post('/login', [
 
   const { email, password, staffId } = req.body;
 
-  // Find user by email and staff ID using Supabase
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', email)
-    .eq('staffId', staffId)
-    .single();
+  try {
+    // Find user by email and staff ID using Supabase
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase().trim())
+      .eq('staffId', staffId.trim())
+      .single();
 
-  if (error || !user) {
-    return res.status(401).json({
+    if (error || !user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email, password, or staff ID'
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact administrator.'
+      });
+    }
+
+    // Verify password using bcrypt
+    const isPasswordValid = await verifyPassword(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email, password, or staff ID'
+      });
+    }
+
+    // Generate token
+    const token = generateToken(user.id, user.role);
+
+    // Update last login
+    await supabase
+      .from('users')
+      .update({ 
+        lastLogin: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', user.id);
+
+    // Return user data (excluding password) and token
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Invalid email, password, or staff ID'
+      message: 'An error occurred during login'
     });
   }
-
-  // Check if user is active
-  if (!user.isActive) {
-    return res.status(401).json({
-      success: false,
-      message: 'Your account has been deactivated. Please contact administrator.'
-    });
-  }
-
-  // Verify password using bcrypt
-  const isPasswordValid = await verifyPassword(password, user.password);
-  if (!isPasswordValid) {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid email, password, or staff ID'
-    });
-  }
-
-  // Generate token
-  const token = generateToken(user.id, user.role);
-
-  // Update last login
-  await supabase
-    .from('users')
-    .update({ 
-      lastLogin: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    })
-    .eq('id', user.id);
-
-  // Return user data (excluding password) and token
-  const { password: _, ...userWithoutPassword } = user;
-  
-  res.json({
-    success: true,
-    message: 'Login successful',
-    token,
-    user: userWithoutPassword
-  });
 }));
 
-// Register staff route
+// Register staff route - FIXED FOR INTEGER ID
 router.post('/register', [
   body('firstName').notEmpty().trim().withMessage('First name is required'),
   body('lastName').notEmpty().trim().withMessage('Last name is required'),
@@ -202,6 +225,7 @@ router.post('/register', [
       .eq('email', sanitizedData.email)
       .single();
 
+    // PGRST116 means "no rows returned" - which is OK
     if (checkError && checkError.code !== 'PGRST116') {
       console.error('Database error checking existing user:', checkError);
       return res.status(500).json({
@@ -244,7 +268,7 @@ router.post('/register', [
     // Hash password
     const hashedPassword = await hashPassword(sanitizedData.password);
 
-    // Create new staff user
+    // Create new staff user - database will auto-generate the integer ID
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert([{
@@ -256,8 +280,13 @@ router.post('/register', [
         staffId: sanitizedData.staffId,
         role: 'staff',
         isActive: true,
+        lastLogin: null,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        resetPasswordToken: null,
+        resetPasswordExpire: null,
+        auth_id: null, // This can be null since we're not using Supabase Auth
+        profileImage: null
       }])
       .select()
       .single();
@@ -441,8 +470,8 @@ router.post('/forgot-password', [
   const { data: user, error } = await supabase
     .from('users')
     .select('id, email, firstName, lastName')
-    .eq('email', email)
-    .eq('staffId', staffId)
+    .eq('email', email.toLowerCase().trim())
+    .eq('staffId', staffId.trim())
     .single();
 
   // For security, don't reveal if email exists or not
@@ -540,7 +569,7 @@ router.post('/reset-password', [
     .from('users')
     .select('*')
     .eq('resetPasswordToken', hashedToken)
-    .eq('staffId', staffId)
+    .eq('staffId', staffId.trim())
     .gt('resetPasswordExpire', new Date().toISOString())
     .single();
 
@@ -656,8 +685,14 @@ router.post('/register-admin', [
       staffId: staffId.trim(),
       role: 'admin',
       isActive: true,
+      lastLogin: null,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      resetPasswordToken: null,
+      resetPasswordExpire: null,
+      auth_id: null,
+      phone: null,
+      profileImage: null
     }])
     .select()
     .single();

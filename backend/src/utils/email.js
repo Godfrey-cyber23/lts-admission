@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 const sendEmail = async (options) => {
   let transporter;
-  
+
   try {
     console.log('Attempting to send email:', {
       to: options.email,
@@ -13,37 +13,38 @@ const sendEmail = async (options) => {
       emailHost: process.env.EMAIL_HOST
     });
 
-    // Check if we're in development or using specific email services
-    if (process.env.NODE_ENV === 'development' || 
-        process.env.EMAIL_HOST?.includes('ethereal.email') ||
-        process.env.EMAIL_HOST?.includes('mailtrap.io')) {
-      
+    // DEVELOPMENT / TESTING (Ethereal / Mailtrap)
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.EMAIL_HOST?.includes('ethereal.email') ||
+      process.env.EMAIL_HOST?.includes('mailtrap.io')
+    ) {
+      // MAILTRAP
       if (process.env.EMAIL_HOST?.includes('mailtrap.io')) {
         console.log('Using Mailtrap for email testing');
-        
-        // Mailtrap configuration
-        transporter = nodemailer.createTransporter({
+
+        transporter = nodemailer.createTransport({
           host: process.env.EMAIL_HOST,
           port: parseInt(process.env.EMAIL_PORT) || 2525,
-          secure: false, // Mailtrap uses false
           auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
           },
-          // Add timeout configuration
-          connectionTimeout: 15000, // 15 seconds
-          greetingTimeout: 10000,   // 10 seconds
-          socketTimeout: 15000,     // 15 seconds
-          debug: process.env.NODE_ENV === 'development', // Enable debug in development
+          secure: false,
+          connectionTimeout: 15000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+          debug: process.env.NODE_ENV === 'development',
         });
-      } else if (process.env.EMAIL_HOST?.includes('ethereal.email')) {
+      }
+
+      // ETHEREAL
+      else if (process.env.EMAIL_HOST?.includes('ethereal.email')) {
         console.log('Using Ethereal for email testing');
-        
-        // Create a test account for Ethereal
+
         const testAccount = await nodemailer.createTestAccount();
-        
-        // Create transporter with Ethereal credentials
-        transporter = nodemailer.createTransporter({
+
+        transporter = nodemailer.createTransport({
           host: 'smtp.ethereal.email',
           port: 587,
           secure: false,
@@ -55,11 +56,13 @@ const sendEmail = async (options) => {
           greetingTimeout: 10000,
           socketTimeout: 15000,
         });
-        
+
         console.log('Created Ethereal test account:', testAccount.user);
       }
-    } else {
-      // Production email service configuration
+    }
+
+    // PRODUCTION (GMAIL, YAHOO, OUTLOOK, CUSTOM SMTP)
+    else {
       let emailConfig = {
         host: process.env.EMAIL_HOST,
         port: parseInt(process.env.EMAIL_PORT) || 587,
@@ -73,19 +76,23 @@ const sendEmail = async (options) => {
         socketTimeout: 15000,
       };
 
-      // Special configuration for common providers
+      // SPECIAL HANDLING: GMAIL
       if (process.env.EMAIL_HOST?.includes('gmail.com')) {
-        emailConfig.service = 'gmail';
-      } else if (process.env.EMAIL_HOST?.includes('yahoo.com')) {
-        emailConfig.service = 'yahoo';
-      } else if (process.env.EMAIL_HOST?.includes('outlook.com')) {
-        emailConfig.service = 'outlook';
+        console.log('Using Gmail SMTP with App Password');
+
+        emailConfig = {
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER, // full Gmail address
+            pass: process.env.EMAIL_PASS, // App Password
+          },
+        };
       }
 
-      transporter = nodemailer.createTransporter(emailConfig);
+      transporter = nodemailer.createTransport(emailConfig);
     }
 
-    // Verify transporter configuration before sending
+    // VERIFY CONNECTION
     console.log('Verifying transporter configuration...');
     await transporter.verify();
     console.log('Transporter verified successfully');
@@ -98,31 +105,27 @@ const sendEmail = async (options) => {
       html: options.html || options.message,
     };
 
-    // If using Ethereal, update from address for clarity
-    if (process.env.EMAIL_HOST?.includes('ethereal.email')) {
-      mailOptions.from = `"Literacy Tree School" <${transporter.options.auth.user}>`;
-    }
-
     console.log('Sending email with options:', {
       from: mailOptions.from,
       to: mailOptions.to,
-      subject: mailOptions.subject
+      subject: mailOptions.subject,
     });
 
     const info = await transporter.sendMail(mailOptions);
-    
+
     console.log('Email sent successfully:', {
       messageId: info.messageId,
       response: info.response,
-      previewUrl: nodemailer.getTestMessageUrl(info)
+      previewUrl: nodemailer.getTestMessageUrl(info),
     });
 
     return {
       success: true,
       messageId: info.messageId,
       response: info.response,
-      previewUrl: nodemailer.getTestMessageUrl(info)
+      previewUrl: nodemailer.getTestMessageUrl(info),
     };
+
   } catch (error) {
     console.error('Email sending failed with details:', {
       error: error.message,
@@ -131,22 +134,15 @@ const sendEmail = async (options) => {
       response: error.response,
       stack: error.stack
     });
-    
-    // Provide more specific error messages
+
     let errorMessage = 'Failed to send email';
-    
-    if (error.code === 'ETIMEDOUT' || error.code === 'TIMEOUT') {
-      errorMessage = 'Email server timeout. Please try again.';
-    } else if (error.code === 'ECONNECTION') {
-      errorMessage = 'Could not connect to email server. Check your configuration.';
-    } else if (error.code === 'EAUTH') {
-      errorMessage = 'Email authentication failed. Check your credentials.';
-    } else if (error.code === 'ESOCKET') {
-      errorMessage = 'Network error while connecting to email server.';
-    } else if (error.message?.includes('self signed certificate')) {
-      errorMessage = 'SSL certificate error. Check your email provider settings.';
-    }
-    
+
+    if (error.code === 'ETIMEDOUT') errorMessage = 'Email server timeout. Please try again.';
+    else if (error.code === 'ECONNECTION') errorMessage = 'Could not connect to email server.';
+    else if (error.code === 'EAUTH') errorMessage = 'Email authentication failed.';
+    else if (error.message?.includes('self signed certificate'))
+      errorMessage = 'SSL certificate error.';
+
     throw new Error(errorMessage);
   }
 };

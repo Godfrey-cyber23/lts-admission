@@ -33,6 +33,7 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,32 +45,110 @@ const ForgotPassword = () => {
     setLoading(true);
     setError('');
     setSuccess('');
+    setDebugInfo('');
 
-    if (!formData.email.trim() || !formData.staffId.trim()) {
-      setError('Both Email and Staff ID are required');
+    // Validate inputs
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setError('Please enter a valid email address');
       setLoading(false);
       return;
     }
 
+    if (!formData.staffId.trim()) {
+      setError('Staff ID is required');
+      setLoading(false);
+      return;
+    }
+
+    console.log('Forgot password attempt:', {
+      email: formData.email,
+      staffId: formData.staffId
+    });
+
     try {
-      const response = await api.post('/auth/forgot-password', {
-        email: formData.email,
-        staffId: formData.staffId,
+      // Use fetch directly for better debugging
+      const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          email: formData.email.toLowerCase().trim(),
+          staffId: formData.staffId.trim().toUpperCase()
+        })
       });
 
-      setSuccess('If a valid staff account with that email and ID exists, a password reset link has been sent.');
+      const responseText = await response.text();
+      console.log('Forgot password response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText
+      });
+
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse response:', e);
+        responseData = { message: 'Server returned invalid response' };
+      }
+
+      if (!response.ok) {
+        if (response.status === 400 && responseData.errors) {
+          const validationErrors = responseData.errors.map(err => 
+            `${err.field || err.param}: ${err.msg}`
+          ).join(', ');
+          throw new Error(`Validation failed: ${validationErrors}`);
+        }
+        throw new Error(responseData.message || `Request failed with status ${response.status}`);
+      }
+
+      // Always show success message (for security, don't reveal if user exists)
+      setSuccess('If an account with that email and staff ID exists, a password reset link has been sent. Please check your email inbox and spam folder.');
       
+      // Clear form
       setFormData({ email: '', staffId: '' });
 
-      setTimeout(() => {
-        navigate('/login');
-      }, 5000);
+      // Show debug info in development
+      if (process.env.NODE_ENV === 'development') {
+        setDebugInfo(`Email attempted: ${formData.email}, Staff ID: ${formData.staffId}`);
+      }
 
     } catch (err) {
-      setSuccess('If a valid staff account with that email and ID exists, a password reset link has been sent.');
-      console.error("Forgot password error:", err.response?.data?.message);
+      console.error('Forgot password error:', err);
+      
+      // For security reasons, still show success message
+      // This prevents attackers from knowing which emails/staff IDs exist
+      setSuccess('If an account with that email and staff ID exists, a password reset link has been sent. Please check your email inbox and spam folder.');
+      
+      // But also log the real error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        setError(`Debug: ${err.message}`);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    // Test endpoint to check if email service is working
+    try {
+      setDebugInfo('Testing email service...');
+      const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email || 'test@example.com',
+          subject: 'Test Email from Literacy Tree School',
+          message: 'This is a test email to verify the email service is working.'
+        })
+      });
+      
+      const result = await response.json();
+      setDebugInfo(`Test result: ${JSON.stringify(result)}`);
+    } catch (err) {
+      setDebugInfo(`Test failed: ${err.message}`);
     }
   };
 
@@ -162,7 +241,7 @@ const ForgotPassword = () => {
               fontSize: { xs: "1.2rem", sm: "1.4rem" }
             }}
           >
-            Forgot Password
+            Reset Your Password
           </Typography>
 
           <Typography 
@@ -175,7 +254,7 @@ const ForgotPassword = () => {
               fontSize: "0.85rem"
             }}
           >
-            Enter your email and Staff ID to receive a password reset link.
+            Enter your email and Staff ID. If your account exists, you'll receive a reset link.
           </Typography>
 
           {error && (
@@ -240,6 +319,7 @@ const ForgotPassword = () => {
                 }
               }}
               size="small"
+              helperText="Enter the email associated with your staff account"
             />
 
             <TextField
@@ -266,9 +346,6 @@ const ForgotPassword = () => {
                 },
                 '& .MuiInputLabel-root': {
                   fontSize: "0.85rem"
-                },
-                '& .MuiFormHelperText-root': {
-                  fontSize: "0.7rem"
                 }
               }}
               helperText="Enter your official staff ID"
@@ -297,6 +374,20 @@ const ForgotPassword = () => {
               {loading ? <CircularProgress size={18} color="inherit" /> : 'Send Reset Link'}
             </Button>
 
+            {/* Debug button - only show in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                onClick={handleTestEmail}
+                fullWidth
+                variant="outlined"
+                color="secondary"
+                size="small"
+                sx={{ mb: 1, fontSize: '0.7rem', py: 0.5 }}
+              >
+                Test Email Service
+              </Button>
+            )}
+
             <Box sx={{ textAlign: 'center', mb: 0.5 }}>
               <Link 
                 component="button"
@@ -315,6 +406,25 @@ const ForgotPassword = () => {
                 ← Back to Login
               </Link>
             </Box>
+
+            {/* Debug info */}
+            {debugInfo && (
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  display: 'block',
+                  mt: 1,
+                  p: 1,
+                  bgcolor: 'grey.100',
+                  borderRadius: 1,
+                  fontSize: '0.65rem',
+                  color: 'text.secondary',
+                  fontFamily: 'monospace'
+                }}
+              >
+                {debugInfo}
+              </Typography>
+            )}
           </Box>
 
           {/* Spacing between form and footer */}

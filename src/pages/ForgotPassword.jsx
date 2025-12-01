@@ -1,4 +1,4 @@
-// ForgotPassword.jsx - Updated with better error handling
+// ForgotPassword.jsx - Cleaned up version using API module
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LockIcon from '@mui/icons-material/Lock';
@@ -67,53 +67,21 @@ const ForgotPassword = () => {
     });
 
     try {
-      const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email.toLowerCase().trim(),
-          staffId: formData.staffId.trim().toUpperCase()
-        }),
-        // Add timeout
-        signal: AbortSignal.timeout(30000)
+      // Use API module instead of direct fetch
+      const response = await api.post('/auth/forgot-password', {
+        email: formData.email.toLowerCase().trim(),
+        staffId: formData.staffId.trim().toUpperCase()
       });
 
-      console.log('Response status:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
-        
-        let errorMessage = `Server error: ${response.status}`;
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.message || errorMessage;
-          
-          // If there's a preview URL (for Ethereal emails), show it
-          if (errorData.previewUrl) {
-            setPreviewUrl(errorData.previewUrl);
-            errorMessage += ' (Check preview link below)';
-          }
-        } catch (e) {
-          // Not JSON response
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const responseData = await response.json();
-      console.log('Success response:', responseData);
+      console.log('Success response:', response.data);
 
       // Always show success message (for security)
       setSuccess('If an account with that email and staff ID exists, a password reset link has been sent.');
       
       // If there's a preview URL (for Ethereal emails), show it
-      if (responseData.previewUrl) {
-        setPreviewUrl(responseData.previewUrl);
-        setSuccess(prev => prev + ' Click the preview link below to view the test email.');
+      if (response.data.previewUrl) {
+        setPreviewUrl(response.data.previewUrl);
+        setSuccess(prev => prev + ' Click preview link below to view test email.');
       }
       
       // Clear form
@@ -122,12 +90,14 @@ const ForgotPassword = () => {
     } catch (err) {
       console.error('Forgot password error:', err);
       
-      if (err.name === 'AbortError' || err.name === 'TimeoutError') {
-        setError('Request timeout. Please try again.');
-      } else if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
-        setError('Network error. Please check your connection and try again.');
-      } else {
-        setError(err.message || 'An error occurred. Please try again.');
+      // Extract error message from API response
+      const errorMessage = err.response?.data?.message || err.message || 'An error occurred. Please try again.';
+      
+      setError(errorMessage);
+      
+      // If there's a preview URL in error response (for Ethereal emails), show it
+      if (err.response?.data?.previewUrl) {
+        setPreviewUrl(err.response.data.previewUrl);
       }
       
       // Still show security message
@@ -144,37 +114,32 @@ const ForgotPassword = () => {
       setError('');
       setSuccess('Testing email service...');
       
-      const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/test-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email || 'test@example.com'
-        })
+      // Use API module instead of direct fetch
+      const response = await api.post('/auth/test-email', {
+        email: formData.email || 'test@example.com'
       });
       
-      const result = await response.json();
-      
-      if (result.success) {
-        setSuccess(`Test email sent successfully! ${result.previewUrl ? 'Check the preview link.' : ''}`);
-        if (result.previewUrl) {
-          setPreviewUrl(result.previewUrl);
+      if (response.data.success) {
+        setSuccess(`Test email sent successfully! ${response.data.previewUrl ? 'Check preview link.' : ''}`);
+        if (response.data.previewUrl) {
+          setPreviewUrl(response.data.previewUrl);
         }
       } else {
-        setError(`Test failed: ${result.message}`);
+        setError(`Test failed: ${response.data.message}`);
       }
     } catch (err) {
-      setError(`Test error: ${err.message}`);
+      setError(`Test error: ${err.response?.data?.message || err.message}`);
     }
   };
 
   const handleDebugConfig = async () => {
     try {
-      const response = await fetch('https://lts-backend-qg6a.onrender.com/api/auth/email-config');
-      const config = await response.json();
-      console.log('Email config:', config);
-      setSuccess(`Email config: ${JSON.stringify(config.config)}`);
+      // Use API module instead of direct fetch
+      const response = await api.get('/auth/email-config');
+      console.log('Email config:', response.data);
+      setSuccess(`Email config: ${JSON.stringify(response.data.config)}`);
     } catch (err) {
-      setError(`Config error: ${err.message}`);
+      setError(`Config error: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -345,7 +310,7 @@ const ForgotPassword = () => {
                 }
               }}
               size="small"
-              helperText="Enter the email associated with your staff account"
+              helperText="Enter email associated with your staff account"
             />
 
             <TextField
@@ -399,50 +364,6 @@ const ForgotPassword = () => {
             >
               {loading ? <CircularProgress size={18} color="inherit" /> : 'Send Reset Link'}
             </Button>
-
-            {/* Debug buttons */}
-            <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-              <Button
-                onClick={handleTestEmail}
-                fullWidth
-                variant="outlined"
-                color="secondary"
-                size="small"
-                sx={{ fontSize: '0.7rem', py: 0.5 }}
-              >
-                Test Email
-              </Button>
-              <Button
-                onClick={handleDebugConfig}
-                fullWidth
-                variant="outlined"
-                color="info"
-                size="small"
-                sx={{ fontSize: '0.7rem', py: 0.5 }}
-              >
-                Check Config
-              </Button>
-            </Box>
-
-            {/* Preview URL for Ethereal emails */}
-            {previewUrl && (
-              <Alert 
-                severity="info" 
-                sx={{ 
-                  width: "100%", 
-                  mb: 1,
-                  fontSize: "0.75rem",
-                  py: 0.5
-                }}
-              >
-                <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                  <strong>Test Email Preview:</strong>{' '}
-                  <Link href={previewUrl} target="_blank" rel="noopener noreferrer">
-                    Click here to view email
-                  </Link>
-                </Typography>
-              </Alert>
-            )}
 
             <Box sx={{ textAlign: 'center', mb: 0.5 }}>
               <Link 

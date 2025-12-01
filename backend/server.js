@@ -5,10 +5,15 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB, { supabase } from './src/config/db.js';
 import aiAssistantRoutes from './src/api/ai-assistant.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// Get the current file's directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Create Express app
 const app = express();
@@ -49,21 +54,24 @@ app.get('/health', (req, res) => {
 
 app.use('/api/ai', aiAssistantRoutes);
 
-try {
-  const router = await import('./src/routes/index.js');
-  app.use('/api', router.default);
-  console.log('✅ Routes mounted successfully');
-} catch (err) {
-  console.error('❌ Route initialization failed:', err);
-  
-  // Provide basic routes if main routes fail
-  app.use('/api', (req, res) => {
-    res.status(500).json({ 
-      error: 'Routes not available', 
-      message: 'Check route configuration' 
+// Initialize routes function
+const initializeRoutes = async () => {
+  try {
+    const router = await import('./src/routes/index.js');
+    app.use('/api', router.default);
+    console.log('✅ Routes mounted successfully');
+  } catch (err) {
+    console.error('❌ Route initialization failed:', err);
+    
+    // Provide basic routes if main routes fail
+    app.use('/api', (req, res) => {
+      res.status(500).json({ 
+        error: 'Routes not available', 
+        message: 'Check route configuration' 
+      });
     });
-  });
-}
+  }
+};
 
 // Create HTTP server
 const server = createServer(app);
@@ -85,11 +93,11 @@ const start = async () => {
   try {
     console.log('🚀 Starting server...');
     
-    // Initialize routes before starting server
-    await initializeRoutes();
-    
     // Connect to database
     await connectDB();
+    
+    // Initialize routes
+    await initializeRoutes();
     
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {

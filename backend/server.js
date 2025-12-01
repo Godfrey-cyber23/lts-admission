@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, 'src', '.env') });
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Create Express app
 const app = express();
@@ -25,7 +25,8 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
   'https://lts-admission.vercel.app',
   'https://lts-admission-git-main-godfrey-bwalyas-projects-33224b1d.vercel.app',
-  'https://lts-admission-itxd5p2d0-godfrey-bwalyas-projects-33224b1d.vercel.app'
+  'https://lts-admission-itxd5p2d0-godfrey-bwalyas-projects-33224b1d.vercel.app',
+  'https://www.literacytreeschool.com'
 ];
 
 app.use(cors({
@@ -53,11 +54,11 @@ app.get('/health', (req, res) => {
 
 app.use('/api/ai', aiAssistantRoutes);
 
-// Import and use routes with error handling
+// Initialize routes function
 const initializeRoutes = async () => {
   try {
-    const { default: router } = await import('./src/routes/index.js');
-    app.use('/api', router);
+    const router = await import('./src/routes/index.js');
+    app.use('/api', router.default);
     console.log('✅ Routes mounted successfully');
   } catch (err) {
     console.error('❌ Route initialization failed:', err);
@@ -92,11 +93,11 @@ const start = async () => {
   try {
     console.log('🚀 Starting server...');
     
-    // Initialize routes before starting server
-    await initializeRoutes();
-    
     // Connect to database
     await connectDB();
+    
+    // Initialize routes
+    await initializeRoutes();
     
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {

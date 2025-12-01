@@ -18,49 +18,17 @@ router.use((req, res, next) => {
   next();
 });
 
+
 router.use('/auth', authRoutes);
+router.use('/admissions', admissionRoutes);
+router.use('/pages', pageRoutes);
+router.use('/subscribers', subscriberRoutes);
+router.use('/programs', programRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/students', studentRoutes);
+router.use('/academic', academicRoutes);
+router.use('/finance', financeRoutes);
+router.use('/staff', staffRoutes);
+router.use('/events', eventRoutes);
 
-// Mount routes with validation
-const mountRoutes = () => {
-  console.log('Mounting routes...');
-  
-  try {
-    router.use('/auth', authRoutes);
-    console.log('✅ Auth routes mounted');
-    
-    router.use('/admissions', admissionRoutes);
-    console.log('✅ Admission routes mounted');
-    
-    router.use('/pages', pageRoutes);
-    console.log('✅ Page routes mounted');
-
-    router.use('/subscribers', subscriberRoutes);
-    console.log('✅ Subscribers routes mounted');
-    
-    router.use('/programs', programRoutes);
-    console.log('✅ Program routes mounted');
-    router.use('/dashboard', dashboardRoutes);
-    
-    router.use('/students', studentRoutes);
-    console.log('✅ Student routes mounted');
-
-    router.use('/academic', academicRoutes);
-    console.log('✅ Academic routes mounted');
-    
-    router.use('/finance', financeRoutes);
-    console.log('✅ Finance routes mounted');
-    
-    router.use('/staff', staffRoutes);
-    console.log('✅ Staff routes mounted');
-    
-    router.use('/events', eventRoutes);
-    console.log('✅ Event routes mounted');
-
-    return router;
-  } catch (err) {
-    console.error('Route mounting failed:'.red, err);
-    throw err;
-  }
-};
-
-export default mountRoutes();
+export default router;

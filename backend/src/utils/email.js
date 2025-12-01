@@ -1,3 +1,4 @@
+// src/utils/email.js
 import nodemailer from 'nodemailer';
 
 const sendEmail = async (options) => {
@@ -59,7 +60,7 @@ const sendEmail = async (options) => {
       html: options.html || options.message, // Use HTML if provided, otherwise use text
     };
 
-    // If using Ethereal, update the from address for clarity
+    // If using Ethereal, update from address for clarity
     if (process.env.NODE_ENV === 'development' && process.env.EMAIL_HOST === 'smtp.ethereal.email') {
       mailOptions.from = `"Literacy Tree School" <${transporter.options.auth.user}>`;
     }

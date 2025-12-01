@@ -1,4 +1,4 @@
-// ForgotPassword.jsx - Cleaned up version using API module
+// ForgotPassword.jsx - Updated with improved error handling and UI
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LockIcon from '@mui/icons-material/Lock';
@@ -17,9 +17,14 @@ import {
   useTheme,
   useMediaQuery,
   Link,
+  Collapse,
+  IconButton,
 } from '@mui/material';
 import {
   Email as EmailIcon,
+  ExpandMore,
+  ExpandLess,
+  Info as InfoIcon,
 } from '@mui/icons-material';
 
 const ForgotPassword = () => {
@@ -35,6 +40,7 @@ const ForgotPassword = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
+  const [showDebugOptions, setShowDebugOptions] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -141,6 +147,10 @@ const ForgotPassword = () => {
     } catch (err) {
       setError(`Config error: ${err.response?.data?.message || err.message}`);
     }
+  };
+
+  const toggleDebugOptions = () => {
+    setShowDebugOptions(!showDebugOptions);
   };
 
   return (
@@ -384,6 +394,77 @@ const ForgotPassword = () => {
               </Link>
             </Box>
           </Box>
+
+          {/* Debug Options - Collapsible */}
+          <Box sx={{ width: '100%', mt: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                p: 0.5,
+                borderRadius: 1,
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                }
+              }}
+              onClick={toggleDebugOptions}
+            >
+              <Typography variant="caption" sx={{ fontSize: '0.7rem', mr: 0.5 }}>
+                Debug Options
+              </Typography>
+              <IconButton size="small">
+                {showDebugOptions ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+              </IconButton>
+            </Box>
+            
+            <Collapse in={showDebugOptions}>
+              <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                <Button
+                  onClick={handleTestEmail}
+                  fullWidth
+                  variant="outlined"
+                  color="secondary"
+                  size="small"
+                  sx={{ fontSize: '0.7rem', py: 0.5 }}
+                >
+                  Test Email
+                </Button>
+                <Button
+                  onClick={handleDebugConfig}
+                  fullWidth
+                  variant="outlined"
+                  color="info"
+                  size="small"
+                  sx={{ fontSize: '0.7rem', py: 0.5 }}
+                >
+                  Check Config
+                </Button>
+              </Box>
+            </Collapse>
+          </Box>
+
+          {/* Preview URL for Ethereal emails */}
+          {previewUrl && (
+            <Alert 
+              severity="info" 
+              sx={{ 
+                width: "100%", 
+                mb: 1,
+                fontSize: "0.75rem",
+                py: 0.5
+              }}
+              icon={<InfoIcon fontSize="small" />}
+            >
+              <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                <strong>Test Email Preview:</strong>{' '}
+                <Link href={previewUrl} target="_blank" rel="noopener noreferrer">
+                  Click here to view email
+                </Link>
+              </Typography>
+            </Alert>
+          )}
 
           {/* Spacing between form and footer */}
           <Box sx={{ height: 12 }} />

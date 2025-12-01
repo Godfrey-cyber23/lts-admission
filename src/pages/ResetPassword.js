@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+// ResetPassword.jsx - Make sure it's extracting staffId from URL
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import LockIcon from '@mui/icons-material/Lock';
-import BadgeIcon from '@mui/icons-material/Badge'; // Import BadgeIcon for Staff ID
+import BadgeIcon from '@mui/icons-material/Badge';
 import api from '../api/api';
 import {
   Box,
@@ -13,18 +14,25 @@ import {
   Alert,
   CircularProgress,
   InputAdornment,
-  IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
+  Email as EmailIcon,
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
+import IconButton from '@mui/material/IconButton';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchParams] = useSearchParams();
+  
   const [formData, setFormData] = useState({
-    staffId: '', // Added staffId to state
+    token: '',
+    staffId: '',
     password: '',
     confirmPassword: '',
     showPassword: false,
@@ -34,56 +42,23 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Extract token and staffId from URL when component mounts
+  useEffect(() => {
+    const token = searchParams.get('token');
+    const staffId = searchParams.get('staffId');
+    
+    if (token) {
+      setFormData(prev => ({ ...prev, token }));
+    }
+    
+    if (staffId) {
+      setFormData(prev => ({ ...prev, staffId: decodeURIComponent(staffId) }));
+    }
+  }, [searchParams]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    // Validation for Staff ID
-    if (!formData.staffId.trim()) {
-      setError('Staff ID is required');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const token = searchParams.get('token');
-      await api.post('/auth/reset-password', {
-        token,
-        staffId: formData.staffId, // Include staffId in the request
-        password: formData.password,
-      });
-
-      setSuccess('Password reset successfully! Redirecting to login...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        'Failed to reset password. Please check your Staff ID and ensure the link is valid.'
-      );
-    } finally {
-      setLoading(false);
-    }
   };
 
   const togglePasswordVisibility = () => {
@@ -94,16 +69,71 @@ const ResetPassword = () => {
     setFormData((prev) => ({ ...prev, showConfirmPassword: !prev.showConfirmPassword }));
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    // Validate inputs
+    if (!formData.token.trim()) {
+      setError('Reset token is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.staffId.trim()) {
+      setError('Staff ID is required');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await api.post('/auth/reset-password', {
+        token: formData.token,
+        password: formData.password,
+        staffId: formData.staffId.trim().toUpperCase()
+      });
+
+      setSuccess(response.data.message);
+      
+      // Redirect to login after successful reset
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (err) {
+      console.error('Reset password error:', err);
+      setError(err.response?.data?.message || 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Grid
       container
       component="main"
       sx={{
-        height: "100%",
+        height: "100vh",
+        minHeight: "100vh",
         position: "relative",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        padding: { xs: 2, sm: 3 },
+        overflow: "hidden",
         "&::before": {
           content: '""',
           position: "absolute",
@@ -131,18 +161,21 @@ const ResetPassword = () => {
     >
       <Grid
         item
-        xs={10}
-        sm={6}
+        xs={12}
+        sm={8}
         md={5}
         lg={4}
+        xl={3}
         component={Paper}
         elevation={6}
         sx={{
-          borderRadius: "10px",
+          borderRadius: 2,
           backgroundColor: "rgba(255, 255, 255, 0.95)",
-          padding: { xs: 2, sm: 4 },
-          margin: 2,
-          maxWidth: "450px",
+          backdropFilter: "blur(10px)",
+          padding: { xs: 1.5, sm: 2.5 },
+          margin: 1,
+          maxWidth: "380px",
+          width: "100%",
         }}
       >
         <Box
@@ -150,46 +183,86 @@ const ResetPassword = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            width: "100%",
           }}
         >
           {/* School Logo */}
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 1.5 }}>
             <img
               src="/school-logo.jpg"
               alt="Literacy Tree School Logo"
-              style={{ height: "80px" }}
+              style={{ 
+                height: isMobile ? "45px" : "55px",
+                width: "auto",
+                objectFit: "contain"
+              }}
             />
           </Box>
 
           <Typography
-            component="h2"
+            component="h1"
             color="darkgreen"
-            variant="h4"
-            sx={{ mb: 1, fontWeight: 600 }}
+            variant="h6"
+            sx={{ 
+              mb: 0.5,
+              fontWeight: 600,
+              textAlign: "center",
+              fontSize: { xs: "1.2rem", sm: "1.4rem" }
+            }}
           >
-            Reset Password
+            Reset Your Password
           </Typography>
 
-          <Typography variant="body1" sx={{ mb: 3, color: "text.secondary", textAlign: 'center' }}>
-            Enter your Staff ID and new password below.
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              mb: 1.5,
+              color: "text.secondary", 
+              textAlign: 'center',
+              lineHeight: 1.4,
+              fontSize: "0.85rem"
+            }}
+          >
+            Enter your new password below.
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                width: "100%", 
+                mb: 1.5,
+                fontSize: "0.75rem",
+                py: 0.5
+              }}
+            >
               {error}
             </Alert>
           )}
 
           {success && (
-            <Alert severity="success" sx={{ width: "100%", mb: 2 }}>
+            <Alert 
+              severity="success" 
+              sx={{ 
+                width: "100%", 
+                mb: 1.5,
+                fontSize: "0.75rem",
+                py: 0.5
+              }}
+            >
               {success}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
-            {/* Staff ID Field */}
+          <Box 
+            component="form" 
+            onSubmit={handleSubmit} 
+            sx={{ 
+              width: "100%",
+            }}
+          >
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               id="staffId"
@@ -201,29 +274,37 @@ const ResetPassword = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <BadgeIcon color="primary" />
+                    <BadgeIcon color="primary" fontSize="small" />
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 2 }}
-              helperText="Enter your official staff ID"
+              sx={{ 
+                mb: 1,
+                '& .MuiOutlinedInput-root': {
+                  fontSize: "0.85rem"
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: "0.85rem"
+                }
+              }}
+              size="small"
+              helperText="Enter your staff ID"
             />
 
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               name="password"
               label="New Password"
               type={formData.showPassword ? "text" : "password"}
               id="password"
-              autoComplete="new-password"
               value={formData.password}
               onChange={handleChange}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LockIcon color="primary" />
+                    <LockIcon color="primary" fontSize="small" />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -232,18 +313,32 @@ const ResetPassword = () => {
                       aria-label="toggle password visibility"
                       onClick={togglePasswordVisibility}
                       edge="end"
+                      size="small"
                     >
-                      {formData.showPassword ? <VisibilityOff /> : <Visibility />}
+                      {formData.showPassword ? (
+                        <VisibilityOff fontSize="small" />
+                      ) : (
+                        <Visibility fontSize="small" />
+                      )}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 1,
+                '& .MuiOutlinedInput-root': {
+                  fontSize: "0.85rem"
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: "0.85rem"
+                }
+              }}
+              size="small"
               helperText="Password must be at least 6 characters long"
             />
 
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               name="confirmPassword"
@@ -255,7 +350,7 @@ const ResetPassword = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LockIcon color="primary" />
+                    <LockIcon color="primary" fontSize="small" />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -264,13 +359,27 @@ const ResetPassword = () => {
                       aria-label="toggle confirm password visibility"
                       onClick={toggleConfirmPasswordVisibility}
                       edge="end"
+                      size="small"
                     >
-                      {formData.showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                      {formData.showConfirmPassword ? (
+                        <VisibilityOff fontSize="small" />
+                      ) : (
+                        <Visibility fontSize="small" />
+                      )}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 1.5,
+                '& .MuiOutlinedInput-root': {
+                  fontSize: "0.85rem"
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: "0.85rem"
+                }
+              }}
+              size="small"
             />
 
             <Button
@@ -279,32 +388,68 @@ const ResetPassword = () => {
               variant="contained"
               disabled={loading}
               sx={{
-                mt: 3,
-                mb: 2,
-                py: 1.5,
-                borderRadius: "8px",
+                mb: 1,
+                py: 0.8,
+                borderRadius: 1,
                 fontWeight: 600,
-                bgcolor: "primary.main",
+                fontSize: "0.85rem",
+                textTransform: 'none',
+                minHeight: '36px',
                 "&:hover": {
-                  bgcolor: "primary.dark",
                   transform: "translateY(-1px)",
+                  boxShadow: 2,
                 },
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Reset Password'}
+              {loading ? <CircularProgress size={18} color="inherit" /> : 'Reset Password'}
             </Button>
+
+            <Box sx={{ textAlign: 'center', mb: 0.5 }}>
+              <Typography
+                component="button"
+                variant="body2"
+                onClick={() => navigate('/login')}
+                sx={{
+                  color: 'primary.main',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                ← Back to Login
+              </Typography>
+            </Box>
           </Box>
 
-          <Box sx={{ mt: 4, textAlign: "center" }}>
+          {/* Spacing between form and footer */}
+          <Box sx={{ height: 12 }} />
+
+          {/* Footer */}
+          <Box sx={{ 
+            width: "100%",
+            textAlign: "center",
+          }}>
             <Typography
-              variant="body2"
-              sx={{ color: "text.secondary", fontSize: "0.8rem" }}
+              variant="caption"
+              sx={{ 
+                color: "text.secondary", 
+                display: 'block',
+                mb: 0.25,
+                fontSize: "0.7rem"
+              }}
             >
               Literacy Tree School Management System
             </Typography>
             <Typography
-              variant="body2"
-              sx={{ color: "text.secondary", fontSize: "0.8rem" }}
+              variant="caption"
+              sx={{ 
+                color: "text.secondary",
+                fontSize: "0.7rem"
+              }}
             >
               © {new Date().getFullYear()} All rights reserved
             </Typography>

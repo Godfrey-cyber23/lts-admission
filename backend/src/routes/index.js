@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import authRoutes from './authRoutes.js';
 import admissionRoutes from './admissionRoutes.js';
 import pageRoutes from './public/pageRoutes.js';
 import programRoutes from './public/programRoutes.js';
@@ -18,8 +17,6 @@ router.use((req, res, next) => {
   next();
 });
 
-
-router.use('/auth', authRoutes);
 router.use('/admissions', admissionRoutes);
 router.use('/pages', pageRoutes);
 router.use('/subscribers', subscriberRoutes);

@@ -5,22 +5,21 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { supabase } from '../config/db.js';
-import catchAsync from '../utils/catchAsync.js';
 import sendEmail from '../utils/email.js';
 
 const router = express.Router();
 
 // Generate JWT token
-const generateToken = (userId, role) => {
+const generateToken = (id, role) => {
   return jwt.sign(
     { 
-      id: userId, // Changed from userId to id for consistency
+      id,
       role,
       type: 'access'
     }, 
-    process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production', 
+    process.env.JWT_SECRET || '09432ec4a0b4dd3ffa1737e0b806d783b068f9b3a0af2f18316705b7f1888e25230751ebc73cc51d153e7ba150998d36cfdf28efcf5a31ab6030ecd3fcddaa25be6829eb8ae6d2500d4951f52d0a30167f17ec938ab3b364b616dc2c1b9c4f07d25bf88265b1430095a2292d1c45a0e0b88792f6f536e89ad6aab82cd0862e5f1e6306e6b2973090d1059a4975d36912f5981ff80af457dc1edff5fe4ac580f6d802a9c4d19781a01b6a2f7ce0fd6d739dca10f10e4fe4eea6761662a238f39a4a65b432c75c84605ffa7a873807e39efa6362f55e835ccf30247a82fd9d0954f229bfb41bed7607660b09e20c64abc517c1da53edaf92bad0a8be9708a57b29',
     {
-      expiresIn: '7d',
+      expiresIn: process.env.JWT_EXPIRE || '7d',
     }
   );
 };
@@ -35,6 +34,58 @@ const hashPassword = async (password) => {
 const verifyPassword = async (inputPassword, storedPassword) => {
   return await bcrypt.compare(inputPassword, storedPassword);
 };
+
+// Error handling middleware
+const catchAsync = (fn) => {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
+// Protect middleware for authentication
+export const protect = catchAsync(async (req, res, next) => {
+  // 1) Getting token and check if it's there
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: 'You are not logged in! Please log in to get access.'
+    });
+  }
+
+  // 2) Verification token
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production');
+
+  // 3) Check if user still exists
+  const { data: currentUser, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', decoded.id)
+    .single();
+
+  if (error || !currentUser) {
+    return res.status(401).json({
+      success: false,
+      message: 'The user belonging to this token no longer exists.'
+    });
+  }
+
+  // 4) Check if user is active
+  if (!currentUser.isActive) {
+    return res.status(403).json({
+      success: false,
+      message: 'Your account has been deactivated.'
+    });
+  }
+
+  // GRANT ACCESS TO PROTECTED ROUTE
+  req.user = currentUser;
+  next();
+});
 
 // Login route
 router.post('/login', [
@@ -111,12 +162,12 @@ router.post('/login', [
 
 // Register staff route
 router.post('/register', [
-  body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required'),
+  body('firstName').notEmpty().trim().withMessage('First name is required'),
+  body('lastName').notEmpty().trim().withMessage('Last name is required'),
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
-  body('staffId').notEmpty().withMessage('Staff ID is required')
-], catchAsync(async (req, res, next) => {
+  body('staffId').notEmpty().trim().withMessage('Staff ID is required')
+], catchAsync(async (req, res) => {
   console.log('Registration request received:', req.body);
   
   const errors = validationResult(req);
@@ -130,18 +181,26 @@ router.post('/register', [
   }
 
   const { firstName, lastName, email, password, phone, staffId } = req.body;
-  console.log('Processing registration for:', { firstName, lastName, email, staffId });
+  
+  // Trim and sanitize inputs
+  const sanitizedData = {
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
+    email: email.toLowerCase().trim(),
+    password: password.trim(),
+    phone: phone ? phone.trim() : null,
+    staffId: staffId.trim()
+  };
+
+  console.log('Processing registration for:', sanitizedData);
 
   try {
-    // Check if user already exists
-    console.log('Checking if user exists...');
+    // Check if user already exists by email
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id')
-      .eq('email', email)
+      .eq('email', sanitizedData.email)
       .single();
-
-    console.log('User check result:', { existingUser, checkError });
 
     if (checkError && checkError.code !== 'PGRST116') {
       console.error('Database error checking existing user:', checkError);
@@ -160,14 +219,11 @@ router.post('/register', [
     }
 
     // Check if staff ID already exists
-    console.log('Checking if staff ID exists...');
     const { data: existingStaff, error: staffError } = await supabase
       .from('users')
       .select('id')
-      .eq('staffId', staffId)
+      .eq('staffId', sanitizedData.staffId)
       .single();
-
-    console.log('Staff ID check result:', { existingStaff, staffError });
 
     if (staffError && staffError.code !== 'PGRST116') {
       console.error('Database error checking existing staff ID:', staffError);
@@ -186,20 +242,18 @@ router.post('/register', [
     }
 
     // Hash password
-    console.log('Hashing password...');
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(sanitizedData.password);
 
     // Create new staff user
-    console.log('Creating new user...');
-    const { data: newUser, error } = await supabase
+    const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert([{
-        firstName,
-        lastName,
-        email,
+        firstName: sanitizedData.firstName,
+        lastName: sanitizedData.lastName,
+        email: sanitizedData.email,
         password: hashedPassword,
-        phone,
-        staffId,
+        phone: sanitizedData.phone,
+        staffId: sanitizedData.staffId,
         role: 'staff',
         isActive: true,
         createdAt: new Date().toISOString(),
@@ -208,13 +262,11 @@ router.post('/register', [
       .select()
       .single();
 
-    console.log('User creation result:', { newUser, error });
-
-    if (error) {
-      console.error('Registration error:', error);
+    if (createError) {
+      console.error('Registration error:', createError);
       return res.status(500).json({
         success: false,
-        message: 'Failed to create user: ' + error.message
+        message: 'Failed to create user: ' + createError.message
       });
     }
 
@@ -236,77 +288,144 @@ router.post('/register', [
 }));
 
 // Get current user route
-router.get('/me', catchAsync(async (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+router.get('/me', protect, catchAsync(async (req, res) => {
+  const { password, ...userWithoutPassword } = req.user;
   
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: 'No token provided'
+  res.json({
+    success: true,
+    user: userWithoutPassword
+  });
+}));
+
+// Update user details
+router.put('/update-details', protect, [
+  body('firstName').optional().trim(),
+  body('lastName').optional().trim(),
+  body('email').optional().isEmail().normalizeEmail(),
+  body('phone').optional().trim(),
+  body('profileImage').optional().trim()
+], catchAsync(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Validation failed', 
+      errors: errors.array() 
     });
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || '09432ec4a0b4dd3ffa1737e0b806d783b068f9b3a0af2f18316705b7f1888e25230751ebc73cc51d153e7ba150998d36cfdf28efcf5a31ab6030ecd3fcddaa25be6829eb8ae6d2500d4951f52d0a30167f17ec938ab3b364b616dc2c1b9c4f07d25bf88265b1430095a2292d1c45a0e0b88792f6f536e89ad6aab82cd0862e5f1e6306e6b2973090d1059a4975d36912f5981ff80af457dc1edff5fe4ac580f6d802a9c4d19781a01b6a2f7ce0fd6d739dca10f10e4fe4eea6761662a238f39a4a65b432c75c84605ffa7a873807e39efa6362f55e835ccf30247a82fd9d0954f229bfb41bed7607660b09e20c64abc517c1da53edaf92bad0a8be9708a57b29');
-    
-    // Find user by ID using Supabase
-    const { data: user, error } = await supabase
+  const { firstName, lastName, email, phone, profileImage } = req.body;
+
+  const updateData = {
+    ...(firstName && { firstName: firstName.trim() }),
+    ...(lastName && { lastName: lastName.trim() }),
+    ...(email && { email: email.toLowerCase().trim() }),
+    ...(phone && { phone: phone.trim() }),
+    ...(profileImage && { profileImage: profileImage.trim() }),
+    updatedAt: new Date().toISOString()
+  };
+
+  // Check if email is being updated and if it already exists
+  if (updateData.email && updateData.email !== req.user.email) {
+    const { data: existingUser } = await supabase
       .from('users')
-      .select('*')
-      .eq('id', decoded.id) // Changed from decoded.userId to decoded.id
+      .select('id')
+      .eq('email', updateData.email)
+      .neq('id', req.user.id)
       .single();
 
-    if (error || !user) {
-      return res.status(401).json({
+    if (existingUser) {
+      return res.status(400).json({
         success: false,
-        message: 'User not found'
+        message: 'Email already in use'
       });
     }
+  }
 
-    // Check if user is active
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Your account has been deactivated'
-      });
-    }
+  const { data: updatedUser, error } = await supabase
+    .from('users')
+    .update(updateData)
+    .eq('id', req.user.id)
+    .select()
+    .single();
 
-    const { password, ...userWithoutPassword } = user;
-
-    res.json({
-      success: true,
-      user: userWithoutPassword
-    });
-
-  } catch (error) {
-    console.error('Get user error:', error);
-    
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token'
-      });
-    }
-    
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Token expired'
-      });
-    }
-
-    res.status(500).json({
+  if (error) {
+    console.error('Update error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Failed to update user details'
     });
   }
+
+  const { password: _, ...userWithoutPassword } = updatedUser;
+
+  res.json({
+    success: true,
+    message: 'Profile updated successfully',
+    user: userWithoutPassword
+  });
+}));
+
+// Update password
+router.put('/update-password', protect, [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long')
+], catchAsync(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Validation failed', 
+      errors: errors.array() 
+    });
+  }
+
+  const { currentPassword, newPassword } = req.body;
+
+  // Verify current password
+  const isPasswordCorrect = await verifyPassword(currentPassword, req.user.password);
+  if (!isPasswordCorrect) {
+    return res.status(401).json({
+      success: false,
+      message: 'Current password is incorrect'
+    });
+  }
+
+  // Hash new password
+  const hashedPassword = await hashPassword(newPassword);
+
+  // Update password
+  const { error } = await supabase
+    .from('users')
+    .update({
+      password: hashedPassword,
+      updatedAt: new Date().toISOString()
+    })
+    .eq('id', req.user.id);
+
+  if (error) {
+    console.error('Password update error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update password'
+    });
+  }
+
+  // Generate new token
+  const token = generateToken(req.user.id, req.user.role);
+
+  res.json({
+    success: true,
+    message: 'Password updated successfully',
+    token
+  });
 }));
 
 // Forgot password route
 router.post('/forgot-password', [
   body('email').isEmail().normalizeEmail(),
   body('staffId').notEmpty().withMessage('Staff ID is required')
-], catchAsync(async (req, res, next) => {
+], catchAsync(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ 
@@ -399,7 +518,7 @@ router.post('/reset-password', [
   body('token').notEmpty().withMessage('Reset token is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
   body('staffId').notEmpty().withMessage('Staff ID is required')
-], catchAsync(async (req, res, next) => {
+], catchAsync(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ 
@@ -462,12 +581,12 @@ router.post('/reset-password', [
 
 // Register admin route (first-time setup)
 router.post('/register-admin', [
-  body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required'),
+  body('firstName').notEmpty().trim().withMessage('First name is required'),
+  body('lastName').notEmpty().trim().withMessage('Last name is required'),
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
-  body('staffId').notEmpty().withMessage('Staff ID is required')
-], catchAsync(async (req, res, next) => {
+  body('staffId').notEmpty().trim().withMessage('Staff ID is required')
+], catchAsync(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ 
@@ -504,7 +623,7 @@ router.post('/register-admin', [
   const { data: existingStaff, error: staffError } = await supabase
     .from('users')
     .select('id')
-    .eq('staffId', staffId)
+    .eq('staffId', staffId.trim())
     .single();
 
   // Handle database error properly
@@ -530,11 +649,11 @@ router.post('/register-admin', [
   const { data: newUser, error } = await supabase
     .from('users')
     .insert([{
-      firstName,
-      lastName,
-      email,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      staffId, // Using shorthand property name
+      staffId: staffId.trim(),
       role: 'admin',
       isActive: true,
       createdAt: new Date().toISOString(),
@@ -563,4 +682,15 @@ router.post('/register-admin', [
   });
 }));
 
+// Logout route (client-side only, but included for completeness)
+router.post('/logout', catchAsync(async (req, res) => {
+  // Since we're using JWT, logout is client-side (just remove token)
+  // This endpoint can be used to blacklist tokens if needed
+  res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+}));
+
+export { protect };
 export default router;

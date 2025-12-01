@@ -117,8 +117,11 @@ router.post('/register', [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
   body('staffId').notEmpty().withMessage('Staff ID is required')
 ], catchAsync(async (req, res, next) => {
+  console.log('Registration request received:', req.body);
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
     return res.status(400).json({ 
       success: false, 
       message: 'Validation failed', 
@@ -127,89 +130,109 @@ router.post('/register', [
   }
 
   const { firstName, lastName, email, password, phone, staffId } = req.body;
+  console.log('Processing registration for:', { firstName, lastName, email, staffId });
 
-  // Check if user already exists
-  const { data: existingUser, error: checkError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .single();
+  try {
+    // Check if user already exists
+    console.log('Checking if user exists...');
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
 
-  // Handle database error properly
-  if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-    console.error('Database error checking existing user:', checkError);
+    console.log('User check result:', { existingUser, checkError });
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Database error checking existing user:', checkError);
+      return res.status(500).json({
+        success: false,
+        message: 'Database error occurred while checking user'
+      });
+    }
+
+    if (existingUser) {
+      console.log('User already exists');
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
+    // Check if staff ID already exists
+    console.log('Checking if staff ID exists...');
+    const { data: existingStaff, error: staffError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('staffId', staffId)
+      .single();
+
+    console.log('Staff ID check result:', { existingStaff, staffError });
+
+    if (staffError && staffError.code !== 'PGRST116') {
+      console.error('Database error checking existing staff ID:', staffError);
+      return res.status(500).json({
+        success: false,
+        message: 'Database error occurred while checking staff ID'
+      });
+    }
+
+    if (existingStaff) {
+      console.log('Staff ID already exists');
+      return res.status(400).json({
+        success: false,
+        message: 'Staff ID already exists'
+      });
+    }
+
+    // Hash password
+    console.log('Hashing password...');
+    const hashedPassword = await hashPassword(password);
+
+    // Create new staff user
+    console.log('Creating new user...');
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert([{
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        phone,
+        staffId,
+        role: 'staff',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    console.log('User creation result:', { newUser, error });
+
+    if (error) {
+      console.error('Registration error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create user: ' + error.message
+      });
+    }
+
+    const { password: _, ...userWithoutPassword } = newUser;
+
+    console.log('Registration successful');
+    res.status(201).json({
+      success: true,
+      message: 'Staff registered successfully',
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Unexpected error during registration:', error);
     return res.status(500).json({
       success: false,
-      message: 'Database error occurred while checking user'
+      message: 'An unexpected error occurred during registration'
     });
   }
-
-  if (existingUser) {
-    return res.status(400).json({
-      success: false,
-      message: 'User with this email already exists'
-    });
-  }
-
-  // Check if staff ID already exists
-  const { data: existingStaff, error: staffError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('staffId', staffId)
-    .single();
-
-  // Handle database error properly
-  if (staffError && staffError.code !== 'PGRST116') {
-    console.error('Database error checking existing staff ID:', staffError);
-    return res.status(500).json({
-      success: false,
-      message: 'Database error occurred while checking staff ID'
-    });
-  }
-
-  if (existingStaff) {
-    return res.status(400).json({
-      success: false,
-      message: 'Staff ID already exists'
-    });
-  }
-
-  // Hash password
-  const hashedPassword = await hashPassword(password);
-
-  // Create new staff user
-  const { data: newUser, error } = await supabase
-    .from('users')
-    .insert([{
-      firstName,
-      lastName,
-      email,
-      password: hashedPassword,
-      phone,
-      staffId, // Using shorthand property name
-      role: 'staff',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }])
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Registration error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to create user: ' + error.message
-    });
-  }
-
-  const { password: _, ...userWithoutPassword } = newUser;
-
-  res.status(201).json({
-    success: true,
-    message: 'Staff registered successfully',
-    user: userWithoutPassword
-  });
 }));
 
 // Get current user route
